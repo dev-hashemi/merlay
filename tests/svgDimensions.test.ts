@@ -3,6 +3,21 @@ import assert from 'node:assert';
 import { JSDOM } from 'jsdom';
 import { normalizeSvgDimensions } from '../src/canvas/renderer/svgDimensions';
 
+/**
+ * Obsidian augments SVGElement with setCssStyles at runtime; jsdom lacks it,
+ * so install a faithful mock (assigns onto the element's inline style).
+ */
+function withObsidianCssHelpers(svg: SVGSVGElement): void {
+  const el = svg as unknown as {
+    setCssStyles?: (styles: Record<string, string>) => void;
+  };
+  if (typeof el.setCssStyles !== 'function') {
+    el.setCssStyles = function (styles: Record<string, string>) {
+      Object.assign((this as SVGSVGElement).style, styles);
+    };
+  }
+}
+
 test('normalizeSvgDimensions: sets natural width and height from viewBox and overrides max-width', () => {
   const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
   const doc = dom.window.document;
@@ -10,6 +25,7 @@ test('normalizeSvgDimensions: sets natural width and height from viewBox and ove
   svg.setAttribute('viewBox', '-8 -8 1500 900');
   svg.setAttribute('width', '100%');
   svg.style.maxWidth = '1500px';
+  withObsidianCssHelpers(svg);
 
   normalizeSvgDimensions(svg);
 
@@ -20,8 +36,10 @@ test('normalizeSvgDimensions: sets natural width and height from viewBox and ove
   assert.strictEqual(svg.style.getPropertyValue('min-width'), '1500px');
   assert.strictEqual(svg.style.getPropertyValue('min-height'), '900px');
   assert.strictEqual(svg.style.getPropertyValue('max-width'), 'none');
-  assert.strictEqual(svg.style.getPropertyPriority('max-width'), 'important');
-  assert.strictEqual(svg.style.getPropertyPriority('width'), 'important');
+  // No inline !important: the max-width override lives in styles.css
+  // (.mermaid-native-svg-mount svg { max-width: none !important; }).
+  assert.strictEqual(svg.style.getPropertyPriority('max-width'), '');
+  assert.strictEqual(svg.style.getPropertyPriority('width'), '');
 });
 
 test('normalizeSvgDimensions: falls back to style.maxWidth when viewBox is missing', () => {
@@ -31,6 +49,7 @@ test('normalizeSvgDimensions: falls back to style.maxWidth when viewBox is missi
   svg.setAttribute('width', '100%');
   svg.setAttribute('height', '400');
   svg.style.maxWidth = '850px';
+  withObsidianCssHelpers(svg);
 
   normalizeSvgDimensions(svg);
 
@@ -48,6 +67,7 @@ test('SVG mount: parsed SVG gets normalized 1:1 dimensions without shrinking in 
 
   const doc = new dom.window.DOMParser().parseFromString(rawSvgHtml, 'text/html');
   const svg = doc.querySelector('svg') as SVGSVGElement;
+  withObsidianCssHelpers(svg);
   normalizeSvgDimensions(svg);
   mountEl.append(dom.window.document.importNode(svg, true));
 
@@ -60,7 +80,7 @@ test('SVG mount: parsed SVG gets normalized 1:1 dimensions without shrinking in 
   assert.strictEqual(mountedSvg.style.getPropertyValue('min-width'), '2800px');
   assert.strictEqual(mountedSvg.style.getPropertyValue('min-height'), '1600px');
   assert.strictEqual(mountedSvg.style.getPropertyValue('max-width'), 'none');
-  assert.strictEqual(mountedSvg.style.getPropertyPriority('max-width'), 'important');
-  assert.strictEqual(mountedSvg.style.getPropertyPriority('width'), 'important');
-  assert.strictEqual(mountedSvg.style.getPropertyPriority('height'), 'important');
+  assert.strictEqual(mountedSvg.style.getPropertyPriority('max-width'), '');
+  assert.strictEqual(mountedSvg.style.getPropertyPriority('width'), '');
+  assert.strictEqual(mountedSvg.style.getPropertyPriority('height'), '');
 });

@@ -37,15 +37,22 @@ export function normalizeSvgDimensions(svg: SVGSVGElement): void {
     }
   }
 
+  // Dynamic pixel dimensions cannot be expressed as static CSS classes, so they
+  // go through Obsidian's setCssStyles helper (plain inline styles already beat
+  // non-!important stylesheet rules). The `max-width: none !important` override
+  // against Obsidian/theme responsive constraints lives in styles.css
+  // (.mermaid-native-svg-mount svg).
+  const inlineStyles: Partial<CSSStyleDeclaration> = {};
   if (naturalWidth !== null) {
     svg.setAttribute('width', `${naturalWidth}`);
-    svg.style.setProperty('width', `${naturalWidth}px`, 'important');
-    svg.style.setProperty('min-width', `${naturalWidth}px`, 'important');
+    inlineStyles.width = `${naturalWidth}px`;
+    inlineStyles.minWidth = `${naturalWidth}px`;
   }
   if (naturalHeight !== null) {
     svg.setAttribute('height', `${naturalHeight}`);
-    svg.style.setProperty('height', `${naturalHeight}px`, 'important');
-    svg.style.setProperty('min-height', `${naturalHeight}px`, 'important');
+    inlineStyles.height = `${naturalHeight}px`;
+    inlineStyles.minHeight = `${naturalHeight}px`;
   }
-  svg.style.setProperty('max-width', 'none', 'important');
+  inlineStyles.maxWidth = 'none';
+  svg.setCssStyles(inlineStyles);
 }
