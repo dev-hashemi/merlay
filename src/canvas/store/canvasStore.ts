@@ -53,6 +53,7 @@ export interface CanvasStoreState {
   connectingSourceId: string | null;
   connectingSourceKind: 'start' | 'end' | null;
   connectingHandleKind: 'start' | 'end' | null;
+  connectingTargetId: string | null;
   dragLine: DragLine | null;
 
   // Camera & Viewport
@@ -121,6 +122,7 @@ export interface CanvasStoreState {
   setConnectingSourceId: (id: string | null) => void;
   setConnectingSourceKind: (kind: 'start' | 'end' | null) => void;
   setConnectingHandleKind: (kind: 'start' | 'end' | null) => void;
+  setConnectingTargetId: (id: string | null) => void;
 
   setCamera: (updates: {
     pan?: { x: number; y: number };
@@ -174,6 +176,7 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
   connectingSourceId: null,
   connectingSourceKind: null,
   connectingHandleKind: null,
+  connectingTargetId: null,
   dragLine: null,
 
   // Initial Camera
@@ -240,6 +243,7 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
       connectingSourceId: sourceId,
       connectingSourceKind: sourceKind,
       connectingHandleKind: sourceKind,
+      connectingTargetId: null,
       dragLine,
     }),
   setDragLine: (dragLine) =>
@@ -252,6 +256,7 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
     set({ connectingSourceKind: kind, connectingHandleKind: kind }),
   setConnectingHandleKind: (kind) =>
     set({ connectingSourceKind: kind, connectingHandleKind: kind }),
+  setConnectingTargetId: (id) => set({ connectingTargetId: id }),
 
   setCamera: (updates) =>
     set((state) => ({
@@ -346,6 +351,7 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
       connectingSourceId: null,
       connectingSourceKind: null,
       connectingHandleKind: null,
+      connectingTargetId: null,
       dragLine: null,
     }),
 }));

@@ -219,31 +219,41 @@ test('Sequence Interactivity: Selection halo extraction for actor-man stick figu
     closest: () => false,
   };
 
-  // Node skipping test
+  // Node skipping test — whole participant (top + lifeline + bottom) highlights together.
+  // Only the invisible lifeline hit-area overlay is skipped.
   function shouldSkipNodeEl(nodeEl: MockEl): boolean {
-    return (
-      nodeEl.classList.includes('actor-line') ||
-      nodeEl.classList.includes('mermaid-lifeline-hit-area') ||
-      nodeEl.classList.includes('actor-bottom') ||
-      nodeEl.closest('.actor-bottom') ||
-      nodeEl.tagName === 'line'
-    );
+    return nodeEl.classList.includes('mermaid-lifeline-hit-area');
   }
 
+  const hitArea: MockEl = {
+    tagName: 'line',
+    classList: ['mermaid-lifeline-hit-area'],
+    children: [],
+    closest: () => false,
+  };
+
   assert.strictEqual(shouldSkipNodeEl(stickFigure), false, 'Stick figure top group should NOT be skipped');
-  assert.strictEqual(shouldSkipNodeEl(lifeline), true, 'Lifeline line should be skipped');
-  assert.strictEqual(shouldSkipNodeEl(bottomBox), true, 'Bottom actor should be skipped');
+  assert.strictEqual(shouldSkipNodeEl(lifeline), false, 'Lifeline line should NOT be skipped (whole participant highlights)');
+  assert.strictEqual(shouldSkipNodeEl(bottomBox), false, 'Bottom actor should NOT be skipped (whole participant highlights)');
+  assert.strictEqual(shouldSkipNodeEl(hitArea), true, 'Invisible lifeline hit-area should be skipped');
 
   // Shape elements extraction test
   function extractShapes(nodeEl: MockEl): MockEl[] {
     let shapes = nodeEl.children.filter((el) => {
       if (el.classList.includes('mermaid-node-selection-halo')) return false;
-      if (el.classList.includes('actor-line') || el.classList.includes('mermaid-lifeline-hit-area')) return false;
+      if (el.classList.includes('mermaid-drop-target-halo')) return false;
+      if (el.classList.includes('mermaid-lifeline-hit-area')) return false;
       return ['rect', 'circle', 'polygon', 'path', 'ellipse', 'line'].includes(el.tagName);
     });
 
     if (!nodeEl.classList.includes('actor-man')) {
-      const primary = shapes.filter((el) => el.classList.includes('actor-top') || el.classList.includes('basic'));
+      const primary = shapes.filter(
+        (el) =>
+          el.classList.includes('actor-top') ||
+          el.classList.includes('actor-bottom') ||
+          el.classList.includes('actor') ||
+          el.classList.includes('basic')
+      );
       if (primary.length > 0) shapes = primary;
     }
     return shapes;

@@ -98,6 +98,7 @@ export function useCanvasMouseInteractions({
   const connectingSourceKind = useCanvasStore(
     (s) => s.connectingSourceKind ?? s.connectingHandleKind
   );
+  const connectingTargetId = useCanvasStore((s) => s.connectingTargetId);
   const dragLine = useCanvasStore((s) => s.dragLine);
 
   const hoveredNodeId = useCanvasStore((s) => s.hoveredNodeId);
@@ -301,6 +302,20 @@ export function useCanvasMouseInteractions({
       const currentWorldX = (e.clientX - worldRect.left) / zoom;
       const currentWorldY = (e.clientY - worldRect.top) / zoom;
       const sourceId = store.connectingSourceId;
+
+      // Track the pending drop target so the canvas can highlight the
+      // participant that will receive the connection.
+      const rawTarget = (e.target as HTMLElement)?.closest?.('[data-mermaid-node-id]');
+      const rawTargetId =
+        rawTarget?.getAttribute('data-mermaid-node-id') ||
+        rawTarget?.getAttribute('name') ||
+        rawTarget?.getAttribute('data-id') ||
+        null;
+      const resolvedTargetId =
+        rawTargetId && rawTargetId !== sourceId ? rawTargetId : null;
+      if (store.connectingTargetId !== resolvedTargetId) {
+        store.setConnectingTargetId(resolvedTargetId);
+      }
 
       let sourceRect: Rect | null = null;
       if (getLocalRect && worldRef.current) {
@@ -569,6 +584,7 @@ export function useCanvasMouseInteractions({
     setConnectingSourceId,
     connectingSourceKind,
     setConnectingSourceKind,
+    connectingTargetId,
     dragLine,
     setDragLine,
     hoveredNodeId,

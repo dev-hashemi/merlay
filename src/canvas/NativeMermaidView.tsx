@@ -5,10 +5,11 @@
  * All diagram-specific behavior comes from the DiagramDriver — no type branching here.
  */
 
-import React, { useRef, useState, useCallback, useMemo } from 'react';
+import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import { detectDiagramType } from '../diagrams/registry';
 import { CursorMode, NativeMermaidViewProps } from './types';
 import { useHistory } from './useHistory';
+import { applyDropTargetHalo } from './renderer/selectionHalo';
 
 import { useCanvasCamera } from './hooks/useCanvasCamera';
 import { useCanvasSelection } from './hooks/useCanvasSelection';
@@ -303,6 +304,22 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     setSyntaxError: mutations.setSyntaxError,
   });
 
+  // 11. Drop-target highlight while drag-connecting
+  const connectingSourceId = useCanvasStore((s) => s.connectingSourceId);
+  const connectingTargetId = useCanvasStore((s) => s.connectingTargetId);
+  useEffect(() => {
+    applyDropTargetHalo(svgMountRef.current, connectingTargetId, connectingSourceId);
+    if (!connectingSourceId && !connectingTargetId && svgMountRef.current) {
+      // Ensure stale drop-target classes are cleared when drag ends.
+      svgMountRef.current
+        .querySelectorAll('.mermaid-drop-target-halo')
+        .forEach((el) => el.remove());
+      svgMountRef.current.querySelectorAll('.mermaid-drop-target').forEach((el) => {
+        el.classList.remove('mermaid-drop-target');
+      });
+    }
+  }, [connectingSourceId, connectingTargetId, svgMountRef, code]);
+
   return (
     <div
       className={`mermaid-native-editor-root is-mode-${cursorMode} ${
@@ -318,6 +335,8 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
       onMouseLeave={() => {
         if (!mouse.connectingSourceId) {
           useCanvasStore.getState().setHoveredNode(null, null, null);
+        } else {
+          useCanvasStore.getState().setConnectingTargetId(null);
         }
       }}
       onClick={() => {

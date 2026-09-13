@@ -361,6 +361,41 @@ pre.language-mermaid {
   stroke-width: 1.5px !important;
 }
 
+/* Mirrored bottom participant boxes are part of the selection */
+.mermaid-native-svg-mount .actor-bottom.mermaid-node-selected,
+.mermaid-native-svg-mount .actor-bottom.mermaid-node-selected :is(rect, circle, polygon, path, ellipse) {
+  stroke: var(--mermaid-accent, #7c3aed) !important;
+  filter: drop-shadow(0 0 4px var(--mermaid-accent, #7c3aed)) !important;
+}
+
+/* Pending drop target while drag-connecting (whole participant column) */
+.mermaid-native-svg-mount .mermaid-drop-target {
+  filter: drop-shadow(0 0 5px var(--mermaid-accent, #7c3aed)) !important;
+}
+.mermaid-native-svg-mount line.actor-line.mermaid-drop-target {
+  stroke: var(--mermaid-accent, #7c3aed) !important;
+  stroke-width: 2px !important;
+}
+.mermaid-drop-target-halo {
+  fill: none !important;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none !important;
+  stroke: var(--mermaid-accent, #7c3aed) !important;
+  stroke-width: 3px !important;
+  stroke-opacity: 0.9 !important;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 6 3 !important;
+  filter: drop-shadow(0 0 4px var(--mermaid-accent, #7c3aed));
+  animation: merlayDropTargetDash 0.9s infinite linear;
+}
+
+@keyframes merlayDropTargetDash {
+  to {
+    stroke-dashoffset: -9;
+  }
+}
+
 .mermaid-native-svg-mount .edgeLabel {
   cursor: pointer;
   user-select: none;
