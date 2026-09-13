@@ -73,7 +73,7 @@ export function setupClusterInteractivity({
       '.cluster, .box, [class*="cluster"], [class*="box"]'
     );
     for (const other of Array.from(inner)) {
-      if (other !== el && isClusterContainer(other as Element)) return true;
+      if (other !== el && isClusterContainer(other)) return true;
     }
     return false;
   };

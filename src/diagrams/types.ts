@@ -103,7 +103,10 @@ export interface NodeKindOption {
  * 'start' | 'end' kind obtained from the DOM adapter.
  */
 export interface AnchorApi<TAst = unknown> {
-  isAnchor(nodeId: string): boolean;
+  // Function-property style (not method syntax) so detached references
+  // (e.g. passing `anchors.isAnchor` as a prop) are `this`-safe.
+  // Implementations must use arrow functions, never `this`.
+  isAnchor: (nodeId: string) => boolean;
   has(ast: TAst, kind: 'start' | 'end', compositeId?: string): boolean;
   /** Create the anchor plus an initial node; returns the created node id. */
   add(ast: TAst, kind: 'start' | 'end', compositeId?: string): string | null;
