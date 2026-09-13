@@ -103,10 +103,6 @@ Mermaid is a declarative, code-first diagramming language that computes its own 
 
 ## 🚀 Installation
 
-### Via Community Plugins *(Coming Soon)*
-1. Open **Settings → Community plugins** in Obsidian.
-2. Search for **Merlay** and click **Install**, then **Enable**.
-
 ### Via BRAT (Beta Testing)
 1. Install the [Obsidian BRAT](https://github.com/TfTHacker/obsidian42-brat) plugin.
 2. Open BRAT settings → click **"Add Beta plugin"**.

@@ -83,7 +83,13 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         isConnecting={!!mouse.connectingSourceId}
         isEditing={!!inlineEditing.editingNodeId}
         isMultiSelect={selection.isMultiSelect}
-        isAnchor={driver.mutations.anchors?.isAnchor}
+        // Arrow closure keeps `isAnchor` bound regardless of how the
+        // checker resolves the detached method reference.
+        isAnchor={
+          driver.mutations.anchors
+            ? (id: string) => driver.mutations.anchors?.isAnchor(id) ?? false
+            : undefined
+        }
       />
 
       {/* Multi-Select Layer */}

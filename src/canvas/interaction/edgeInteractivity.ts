@@ -6,6 +6,11 @@
 import { MermaidEdgeDef } from '../../diagrams/viewModel';
 import { matchSvgEdgeToAst } from '../../utils/edgeMatching';
 import { getDistanceToSvgPath } from '../../utils/edgeGeometry';
+import {
+  clearEdgeHoverHalos,
+  EDGE_HOVERED_CLONE_CLS,
+  showEdgeHoverHalo,
+} from '../renderer/selectionHalo';
 
 export interface SetupEdgeInteractivityOptions {
   mountEl: HTMLElement;
@@ -150,20 +155,18 @@ export function setupEdgeInteractivity({
     };
 
     hitArea.onmouseenter = () => {
-      pathEl.classList.add('mermaid-edge-hovered');
+      showEdgeHoverHalo(mountEl, pathEl, targetEdgeId);
     };
 
     hitArea.onmousemove = () => {
-      if (!pathEl.classList.contains('mermaid-edge-hovered')) {
-        mountEl
-          .querySelectorAll('.mermaid-edge-hovered')
-          .forEach((p) => p.classList.remove('mermaid-edge-hovered'));
-        pathEl.classList.add('mermaid-edge-hovered');
+      if (!mountEl.querySelector(`.${EDGE_HOVERED_CLONE_CLS}[data-mermaid-edge-id="${targetEdgeId}"]`)) {
+        clearEdgeHoverHalos(mountEl);
+        showEdgeHoverHalo(mountEl, pathEl, targetEdgeId);
       }
     };
 
     hitArea.onmouseleave = () => {
-      pathEl.classList.remove('mermaid-edge-hovered');
+      clearEdgeHoverHalos(mountEl, targetEdgeId);
     };
 
     pathEl.onmousemove = hitArea.onmousemove;

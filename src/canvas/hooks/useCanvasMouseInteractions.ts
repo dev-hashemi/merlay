@@ -534,7 +534,7 @@ export function useCanvasMouseInteractions({
           const edgeYPositions: Array<{ id: string; y: number }> = [];
           for (const edge of displayEdges) {
             const edgeEl = svgMountRef.current.querySelector(
-              `[data-mermaid-edge-id="${edge.id}"]:not(.mermaid-edge-hit-area)`
+              `[data-mermaid-edge-id="${edge.id}"]:not(.mermaid-edge-hit-area):not(.mermaid-edge-selected-clone):not(.mermaid-edge-hovered-clone)`
             );
             if (edgeEl) {
               const r = getLocalRect(edgeEl);

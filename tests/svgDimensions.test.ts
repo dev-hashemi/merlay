@@ -36,8 +36,8 @@ test('normalizeSvgDimensions: sets natural width and height from viewBox and ove
   assert.strictEqual(svg.style.getPropertyValue('min-width'), '1500px');
   assert.strictEqual(svg.style.getPropertyValue('min-height'), '900px');
   assert.strictEqual(svg.style.getPropertyValue('max-width'), 'none');
-  // No inline !important: the max-width override lives in styles.css
-  // (.mermaid-native-svg-mount svg { max-width: none !important; }).
+  // No inline priority flag: the max-width override lives in styles.css
+  // (#merlay-svg-mount.mermaid-native-svg-mount svg).
   assert.strictEqual(svg.style.getPropertyPriority('max-width'), '');
   assert.strictEqual(svg.style.getPropertyPriority('width'), '');
 });

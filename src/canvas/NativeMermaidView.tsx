@@ -376,7 +376,10 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
         }}
       >
         {/* Native Mermaid SVG Output */}
-        <div className="mermaid-native-svg-mount mermaid" ref={svgMountRef} />
+        {/* Fixed id is a pure CSS hook: `#merlay-svg-mount`-scoped rules
+            outrank Mermaid's `#<render-id>`-scoped theme without !important.
+            It may repeat across diagram views; nothing queries it by id. */}
+        <div className="mermaid-native-svg-mount mermaid" id="merlay-svg-mount" ref={svgMountRef} />
 
         {/* Interactive Overlay Layer (full editing overlays for editable diagrams, marquee only for view-only) */}
         {isEditable ? (

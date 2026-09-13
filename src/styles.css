@@ -22,29 +22,40 @@ pre.language-mermaid {
   position: relative;
 }
 
-.merlay-edit-btn,
-.mermaid-studio-edit-btn {
+/* NOTE (lint): this file avoids the important flag entirely. Specificity strategy:
+   - Doubled classes (`.x.x` = 0,2,0) outrank Obsidian core / theme
+     single-class and element selectors regardless of source order.
+   - `#merlay-svg-mount`-scoped rules (1,2,0+) outrank Mermaid's embedded
+     `#<render-id>`-scoped theme (max 1,2,0) — the mount id is set in
+     NativeMermaidView purely as a CSS hook.
+   - `cursor` / `pointer-events` stay low-specificity on purpose so the
+     connecting / panning `*` rules below always win while active.
+   - Edge selection/hover strokes live on geometry clones (see
+     selectionHalo.ts), which carry no Mermaid inline styles. */
+
+.merlay-edit-btn.merlay-edit-btn,
+.mermaid-studio-edit-btn.mermaid-studio-edit-btn {
   position: absolute;
   top: var(--size-2-2, 8px);
   right: 36px; /* Positioned cleanly beside Obsidian's 'Edit this block' button */
   width: var(--size-4-4, 28px);
   height: var(--size-4-4, 28px);
-  display: inline-flex !important;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: var(--size-2-1, 4px) !important;
-  background-color: var(--background-primary) !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: var(--radius-s, 4px) !important;
-  color: var(--text-muted) !important;
-  cursor: pointer !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
-  z-index: 25 !important;
-  box-shadow: var(--shadow-s, 0 1px 2px rgba(0, 0, 0, 0.1)) !important;
-  box-sizing: border-box !important;
-  user-select: none !important;
+  padding: var(--size-2-1, 4px);
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s, 4px);
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  z-index: 25;
+  box-shadow: var(--shadow-s, 0 1px 2px rgba(0, 0, 0, 0.1));
+  box-sizing: border-box;
+  user-select: none;
 }
 
 .block-language-mermaid:hover .merlay-edit-btn,
@@ -57,16 +68,16 @@ pre.language-mermaid {
 .merlay-edit-btn:focus,
 .mermaid-studio-edit-btn:hover,
 .mermaid-studio-edit-btn:focus {
-  opacity: 1 !important;
-  pointer-events: auto !important;
+  opacity: 1;
+  pointer-events: auto;
 }
 
-.merlay-edit-btn:hover,
-.mermaid-studio-edit-btn:hover {
-  color: var(--text-normal) !important;
-  background-color: var(--background-modifier-hover) !important;
-  border-color: var(--background-modifier-border-hover) !important;
-  transform: none !important;
+.merlay-edit-btn.merlay-edit-btn:hover,
+.mermaid-studio-edit-btn.mermaid-studio-edit-btn:hover {
+  color: var(--text-normal);
+  background-color: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border-hover);
+  transform: none;
 }
 
 .merlay-edit-btn svg,
@@ -91,27 +102,27 @@ pre.language-mermaid {
 .mermaid-studio-leaf-root .mermaid-studio-edit-btn,
 .mermaid-native-editor-root .merlay-edit-btn,
 .mermaid-native-editor-root .mermaid-studio-edit-btn {
-  display: none !important;
-  pointer-events: none !important;
+  display: none;
+  pointer-events: none;
 }
 
 /* 2. Modal Window & Root Container */
-.mod-mermaid-block-modal {
-  width: 92vw !important;
-  height: 88vh !important;
-  max-width: 1400px !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  border-radius: 12px !important;
-  border: 1px solid var(--mermaid-border) !important;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5) !important;
+.mod-mermaid-block-modal.mod-mermaid-block-modal {
+  width: 92vw;
+  height: 88vh;
+  max-width: 1400px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--mermaid-border);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
 }
 
 .mod-mermaid-block-modal .modal-close-button {
-  top: 14px !important;
-  right: 14px !important;
-  z-index: 1000 !important;
-  cursor: pointer !important;
+  top: 14px;
+  right: 14px;
+  z-index: 1000;
+  cursor: pointer;
 }
 
 .mermaid-block-modal-root,
@@ -268,22 +279,29 @@ pre.language-mermaid {
   cursor: grab;
 }
 
-.mermaid-native-editor-root.is-panning,
-.mermaid-native-editor-root.is-mode-hand:active {
-  cursor: grabbing !important;
+/* Cursor overrides use a tripled root class plus a `*` variant: `cursor` set
+   directly on a node always beats an inherited root cursor, so the override
+   must target every descendant directly with higher specificity. */
+.mermaid-native-editor-root.mermaid-native-editor-root.mermaid-native-editor-root.is-panning,
+.mermaid-native-editor-root.mermaid-native-editor-root.mermaid-native-editor-root.is-panning *,
+.mermaid-native-editor-root.mermaid-native-editor-root.mermaid-native-editor-root.is-mode-hand:active,
+.mermaid-native-editor-root.mermaid-native-editor-root.mermaid-native-editor-root.is-mode-hand:active * {
+  cursor: grabbing;
 }
 
-.mermaid-native-editor-root.is-space-held {
-  cursor: grab !important;
+.mermaid-native-editor-root.mermaid-native-editor-root.mermaid-native-editor-root.is-space-held,
+.mermaid-native-editor-root.mermaid-native-editor-root.mermaid-native-editor-root.is-space-held * {
+  cursor: grab;
 }
 
-.mermaid-native-editor-root.is-space-held.is-panning {
-  cursor: grabbing !important;
+.mermaid-native-editor-root.mermaid-native-editor-root.mermaid-native-editor-root.is-space-held.is-panning,
+.mermaid-native-editor-root.mermaid-native-editor-root.mermaid-native-editor-root.is-space-held.is-panning * {
+  cursor: grabbing;
 }
 
-.mermaid-native-editor-root.is-connecting,
-.mermaid-native-editor-root.is-connecting * {
-  cursor: crosshair !important;
+.mermaid-native-editor-root.mermaid-native-editor-root.mermaid-native-editor-root.is-connecting,
+.mermaid-native-editor-root.mermaid-native-editor-root.mermaid-native-editor-root.is-connecting * {
+  cursor: crosshair;
 }
 
 /* 4. Native SVG World & Mount */
@@ -296,21 +314,21 @@ pre.language-mermaid {
   will-change: transform;
 }
 
-.mermaid-native-svg-mount,
-.mermaid-native-svg-mount.mermaid {
+.mermaid-native-svg-mount.mermaid-native-svg-mount,
+.mermaid-native-svg-mount.mermaid-native-svg-mount.mermaid {
   position: absolute;
   top: 80px;
   left: 80px;
   display: inline-block;
   pointer-events: all;
-  max-width: none !important;
-  width: max-content !important;
+  max-width: none;
+  width: max-content;
 }
 
-.mermaid-native-svg-mount svg {
+#merlay-svg-mount.mermaid-native-svg-mount svg {
   overflow: visible;
   display: block;
-  max-width: none !important;
+  max-width: none;
 }
 
 .mermaid-native-svg-mount .node,
@@ -332,60 +350,91 @@ pre.language-mermaid {
   transition: stroke 0.15s ease, stroke-width 0.15s ease;
 }
 
-.mermaid-native-svg-mount path.mermaid-edge-hovered {
-  stroke: var(--mermaid-accent) !important;
-  stroke-width: 3px !important;
-}
-
-.mermaid-native-svg-mount path.mermaid-edge-selected,
-.mermaid-native-svg-mount line.mermaid-edge-selected {
-  stroke: var(--mermaid-accent, #7c3aed) !important;
-  stroke-width: 3.5px !important;
-  filter: drop-shadow(0 0 5px var(--mermaid-accent, #7c3aed)) !important;
-}
+/* Edge hover/selection strokes live on geometry clones (see selectionHalo.ts),
+   so these rules only style the clones plus edge labels. */
 
 .mermaid-edge-hit-area,
 .mermaid-lifeline-hit-area {
-  pointer-events: stroke !important;
-  cursor: pointer !important;
+  pointer-events: stroke;
+  cursor: pointer;
 }
 
-.mermaid-native-svg-mount .edgeLabel.mermaid-edge-selected,
-.mermaid-native-svg-mount [class*="edgeLabel"].mermaid-edge-selected,
-.mermaid-native-svg-mount .messageText.mermaid-edge-selected {
-  filter: drop-shadow(0 0 4px var(--mermaid-accent, #7c3aed)) !important;
+/* Enforce designed hit widths: Mermaid's `#<id> line` theme rule would shrink
+   line hit-areas via the id scope, so these carry the mount-id scope. */
+#merlay-svg-mount.mermaid-native-svg-mount path.mermaid-edge-hit-area,
+#merlay-svg-mount.mermaid-native-svg-mount line.mermaid-edge-hit-area {
+  stroke-width: 14px;
 }
 
-.mermaid-native-svg-mount line.actor-line.mermaid-node-selected {
-  stroke: var(--mermaid-accent, #7c3aed) !important;
-  stroke-width: 1.5px !important;
+/* Hit-areas are interaction-only and must never paint: a theme rule coloring
+   `line`/`path` elements would otherwise turn these wide zones into visible
+   bars (the stroke attribute alone loses to any matching stylesheet rule). */
+#merlay-svg-mount.mermaid-native-svg-mount path.mermaid-edge-hit-area,
+#merlay-svg-mount.mermaid-native-svg-mount line.mermaid-edge-hit-area,
+#merlay-svg-mount.mermaid-native-svg-mount line.mermaid-lifeline-hit-area {
+  stroke: transparent;
+  fill: none;
+}
+
+#merlay-svg-mount.mermaid-native-svg-mount line.mermaid-lifeline-hit-area {
+  stroke-width: 28px;
+}
+
+#merlay-svg-mount.mermaid-native-svg-mount .edgeLabel.mermaid-edge-selected,
+#merlay-svg-mount.mermaid-native-svg-mount [class*="edgeLabel"].mermaid-edge-selected,
+#merlay-svg-mount.mermaid-native-svg-mount .messageText.mermaid-edge-selected {
+  filter: drop-shadow(0 0 4px var(--mermaid-accent, #7c3aed));
+}
+
+/* Edge selection/hover halo clones: accent stroke over the original geometry.
+   Stroke width is widened per-edge via setCssStyles when the original is
+   custom-thick (linkStyle); the class value is the default. */
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-selected-clone,
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-hovered-clone {
+  fill: none;
+  stroke: var(--mermaid-accent, #7c3aed);
+  pointer-events: none;
+}
+
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-selected-clone {
+  stroke-width: 3.5px;
+  filter: drop-shadow(0 0 5px var(--mermaid-accent, #7c3aed));
+}
+
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-hovered-clone {
+  stroke-width: 3px;
+}
+
+#merlay-svg-mount.mermaid-native-svg-mount line.actor-line.mermaid-node-selected {
+  stroke: var(--mermaid-accent, #7c3aed);
+  stroke-width: 1.5px;
 }
 
 /* Mirrored bottom participant boxes are part of the selection */
-.mermaid-native-svg-mount .actor-bottom.mermaid-node-selected,
-.mermaid-native-svg-mount .actor-bottom.mermaid-node-selected :is(rect, circle, polygon, path, ellipse) {
-  stroke: var(--mermaid-accent, #7c3aed) !important;
-  filter: drop-shadow(0 0 4px var(--mermaid-accent, #7c3aed)) !important;
+#merlay-svg-mount.mermaid-native-svg-mount .actor-bottom.mermaid-node-selected,
+#merlay-svg-mount.mermaid-native-svg-mount .actor-bottom.mermaid-node-selected :is(rect, circle, polygon, path, ellipse) {
+  stroke: var(--mermaid-accent, #7c3aed);
+  filter: drop-shadow(0 0 4px var(--mermaid-accent, #7c3aed));
 }
 
 /* Pending drop target while drag-connecting (whole participant column) */
-.mermaid-native-svg-mount .mermaid-drop-target {
-  filter: drop-shadow(0 0 5px var(--mermaid-accent, #7c3aed)) !important;
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-drop-target {
+  filter: drop-shadow(0 0 5px var(--mermaid-accent, #7c3aed));
 }
-.mermaid-native-svg-mount line.actor-line.mermaid-drop-target {
-  stroke: var(--mermaid-accent, #7c3aed) !important;
-  stroke-width: 2px !important;
+#merlay-svg-mount.mermaid-native-svg-mount line.actor-line.mermaid-drop-target {
+  stroke: var(--mermaid-accent, #7c3aed);
+  stroke-width: 2px;
 }
-.mermaid-drop-target-halo {
-  fill: none !important;
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-drop-target-halo {
+  fill: none;
   vector-effect: non-scaling-stroke;
-  pointer-events: none !important;
-  stroke: var(--mermaid-accent, #7c3aed) !important;
-  stroke-width: 3px !important;
-  stroke-opacity: 0.9 !important;
+  pointer-events: none;
+  stroke: var(--mermaid-accent, #7c3aed);
+  stroke-width: 3px;
+  stroke-opacity: 0.9;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 6 3 !important;
+  stroke-dasharray: 6 3;
   filter: drop-shadow(0 0 4px var(--mermaid-accent, #7c3aed));
   animation: merlayDropTargetDash 0.9s infinite linear;
 }
@@ -416,27 +465,27 @@ pre.language-mermaid {
 }
 
 /* Node Selection Halo (Matches exact SVG geometry of all 14 node shapes) */
-.mermaid-node-selection-halo {
-  fill: none !important;
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-node-selection-halo {
+  fill: none;
   vector-effect: non-scaling-stroke;
-  pointer-events: none !important;
+  pointer-events: none;
 }
 
 /* Outer soft pulsing halo glow */
-.mermaid-node-selection-halo-glow {
-  stroke: var(--mermaid-accent, #7c3aed) !important;
-  stroke-width: 6px !important;
-  stroke-opacity: 0.32 !important;
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-node-selection-halo-glow {
+  stroke: var(--mermaid-accent, #7c3aed);
+  stroke-width: 6px;
+  stroke-opacity: 0.32;
   stroke-linecap: round;
   stroke-linejoin: round;
   animation: pulseSvgGlow 1.8s infinite ease-in-out;
 }
 
 /* Inner crisp accent contour */
-.mermaid-node-selection-halo-accent {
-  stroke: var(--mermaid-accent, #7c3aed) !important;
-  stroke-width: 2.5px !important;
-  stroke-opacity: 1 !important;
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-node-selection-halo-accent {
+  stroke: var(--mermaid-accent, #7c3aed);
+  stroke-width: 2.5px;
+  stroke-opacity: 1;
   stroke-linecap: round;
   stroke-linejoin: round;
   filter: drop-shadow(0 0 3px var(--mermaid-accent, #7c3aed));
@@ -604,11 +653,6 @@ pre.language-mermaid {
   to {
     opacity: 1;
   }
-}
-
-/* Legacy handle hidden */
-.mermaid-connection-handle {
-  display: none !important;
 }
 
 /* Edge Action HUD */
@@ -1091,8 +1135,8 @@ pre.language-mermaid {
 }
 
 /* Distinct default look for group containers (unstyled subgraphs).
-   CSS-only so explicit `style <subId>` user styles (inline) still win,
-   and the !important selection highlight below still wins. */
+   CSS-only so explicit `style <subId>` user styles (inline) still win;
+   the mount-id-scoped selection highlight below outranks the theme. */
 .mermaid-native-svg-mount .cluster > rect {
   fill: var(--mermaid-accent-subtle);
   stroke: var(--mermaid-accent, #7c3aed);
@@ -1109,34 +1153,34 @@ pre.language-mermaid {
 }
 
 /* Subgraph SVG Selection Highlight */
-.mermaid-cluster-selected rect {
-  stroke: var(--mermaid-accent, #7c3aed) !important;
-  stroke-width: 2.5px !important;
-  stroke-dasharray: 6 3 !important;
-  filter: drop-shadow(0 0 6px var(--mermaid-accent, #7c3aed)) !important;
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-cluster-selected rect {
+  stroke: var(--mermaid-accent, #7c3aed);
+  stroke-width: 2.5px;
+  stroke-dasharray: 6 3;
+  filter: drop-shadow(0 0 6px var(--mermaid-accent, #7c3aed));
 }
 
 /* Sequence Box Containers & Participant Styling */
 .mermaid-native-svg-mount g[data-mermaid-subgraph-id] rect.rect {
-  pointer-events: all !important;
-  cursor: pointer !important;
+  pointer-events: all;
+  cursor: pointer;
   transition: stroke 0.15s ease;
 }
 
-.mermaid-native-svg-mount g[data-mermaid-subgraph-id]:hover rect.rect {
-  stroke: var(--mermaid-accent, #7c3aed) !important;
-  stroke-width: 1.5px !important;
+#merlay-svg-mount.mermaid-native-svg-mount g[data-mermaid-subgraph-id]:hover rect.rect {
+  stroke: var(--mermaid-accent, #7c3aed);
+  stroke-width: 1.5px;
 }
 
-.mermaid-native-svg-mount g[data-mermaid-subgraph-id].mermaid-cluster-selected rect.rect {
-  stroke: var(--mermaid-accent, #7c3aed) !important;
-  stroke-width: 2.5px !important;
-  stroke-dasharray: 6 3 !important;
-  filter: drop-shadow(0 0 6px var(--mermaid-accent, #7c3aed)) !important;
+#merlay-svg-mount.mermaid-native-svg-mount g[data-mermaid-subgraph-id].mermaid-cluster-selected rect.rect {
+  stroke: var(--mermaid-accent, #7c3aed);
+  stroke-width: 2.5px;
+  stroke-dasharray: 6 3;
+  filter: drop-shadow(0 0 6px var(--mermaid-accent, #7c3aed));
 }
 
 .mermaid-native-svg-mount g[data-mermaid-subgraph-id] text.text {
-  cursor: pointer !important;
+  cursor: pointer;
 }
 
 .mermaid-native-svg-mount rect.actor:hover,
@@ -1208,14 +1252,14 @@ pre.language-mermaid {
 }
 
 /* Active Highlight for View-Only Selected Elements */
-.mermaid-native-editor-root.is-view-only .mermaid-native-svg-mount .mermaid-view-highlight {
-  filter: drop-shadow(0 0 6px var(--mermaid-accent, #7c3aed)) drop-shadow(0 0 2px var(--mermaid-accent, #7c3aed)) !important;
-  opacity: 1 !important;
+.mermaid-native-editor-root.is-view-only #merlay-svg-mount.mermaid-native-svg-mount .mermaid-view-highlight {
+  filter: drop-shadow(0 0 6px var(--mermaid-accent, #7c3aed)) drop-shadow(0 0 2px var(--mermaid-accent, #7c3aed));
+  opacity: 1;
 }
 
-.mermaid-native-editor-root.is-view-only .mermaid-native-svg-mount .mermaid-view-highlight > :is(rect, circle, polygon, ellipse, path) {
-  stroke: var(--mermaid-accent, #7c3aed) !important;
-  stroke-width: 2.5px !important;
+.mermaid-native-editor-root.is-view-only #merlay-svg-mount.mermaid-native-svg-mount .mermaid-view-highlight > :is(rect, circle, polygon, ellipse, path) {
+  stroke: var(--mermaid-accent, #7c3aed);
+  stroke-width: 2.5px;
 }
 
 .mermaid-canvas-hint-bar.mermaid-view-only-banner {
@@ -1291,8 +1335,8 @@ pre.language-mermaid {
 }
 
 .merlay-settings-title {
-  margin: 0 !important;
-  padding: 0 !important;
+  margin: 0;
+  padding: 0;
   font-size: 1.2rem;
   font-weight: 600;
   color: var(--text-normal);
