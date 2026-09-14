@@ -5,15 +5,42 @@
 
 :root {
   --mermaid-accent: var(--interactive-accent, #7c3aed);
-  --mermaid-accent-hover: var(--interactive-accent-hover, #6d28d9);
-  --mermaid-accent-subtle: rgba(124, 58, 237, 0.12);
+  --mermaid-accent-hover: var(--interactive-accent-hover, var(--mermaid-accent));
+  --mermaid-accent-subtle: color-mix(in srgb, var(--mermaid-accent) 15%, transparent);
+  --mermaid-bg: var(--background-primary, #1e1e1e);
+  --mermaid-bg-secondary: var(--background-secondary, #252525);
+  --mermaid-border: var(--background-modifier-border, rgba(125, 125, 125, 0.2));
+  --mermaid-text: var(--text-normal, #dcddde);
+  --mermaid-text-muted: var(--text-muted, #888888);
+  --mermaid-radius: var(--radius-m, 6px);
+  --mermaid-shadow: var(--shadow-m, 0 4px 16px rgba(0, 0, 0, 0.25));
+  --mermaid-grid-dot: var(--background-modifier-border, rgba(125, 125, 125, 0.18));
+}
+
+.theme-light {
+  --mermaid-accent: var(--interactive-accent, #7c3aed);
+  --mermaid-accent-hover: var(--interactive-accent-hover, var(--mermaid-accent));
+  --mermaid-accent-subtle: color-mix(in srgb, var(--mermaid-accent) 12%, transparent);
+  --mermaid-bg: var(--background-primary, #ffffff);
+  --mermaid-bg-secondary: var(--background-secondary, #f8f8f8);
+  --mermaid-border: var(--background-modifier-border, rgba(0, 0, 0, 0.1));
+  --mermaid-text: var(--text-normal, #222222);
+  --mermaid-text-muted: var(--text-muted, #777777);
+  --mermaid-shadow: var(--shadow-m, 0 4px 16px rgba(0, 0, 0, 0.08));
+  --mermaid-grid-dot: var(--background-modifier-border, rgba(0, 0, 0, 0.12));
+}
+
+.theme-dark {
+  --mermaid-accent: var(--interactive-accent, #7c3aed);
+  --mermaid-accent-hover: var(--interactive-accent-hover, var(--mermaid-accent));
+  --mermaid-accent-subtle: color-mix(in srgb, var(--mermaid-accent) 15%, transparent);
   --mermaid-bg: var(--background-primary, #1e1e1e);
   --mermaid-bg-secondary: var(--background-secondary, #252525);
   --mermaid-border: var(--background-modifier-border, rgba(255, 255, 255, 0.12));
   --mermaid-text: var(--text-normal, #dcddde);
   --mermaid-text-muted: var(--text-muted, #888888);
-  --mermaid-radius: 6px;
-  --mermaid-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --mermaid-shadow: var(--shadow-m, 0 4px 16px rgba(0, 0, 0, 0.35));
+  --mermaid-grid-dot: var(--background-modifier-border, rgba(255, 255, 255, 0.12));
 }
 
 /* 1. Inline "Visual Mode" Button on ```mermaid blocks in Notes */
@@ -113,9 +140,9 @@ pre.language-mermaid {
   max-width: 1400px;
   padding: 0;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: var(--radius-l, 12px);
   border: 1px solid var(--mermaid-border);
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--modal-shadow, var(--shadow-l, 0 12px 48px rgba(0, 0, 0, 0.35)));
 }
 
 .mod-mermaid-block-modal .modal-close-button {
@@ -142,7 +169,7 @@ pre.language-mermaid {
   overflow: hidden;
   user-select: none;
   background-color: var(--mermaid-bg);
-  background-image: radial-gradient(var(--mermaid-border) 1px, transparent 1px);
+  background-image: radial-gradient(var(--mermaid-grid-dot) 1.2px, transparent 1.2px);
   background-size: 20px 20px;
 }
 
@@ -167,7 +194,7 @@ pre.language-mermaid {
   background: var(--mermaid-bg-secondary);
   border: 1px solid var(--mermaid-border);
   padding: 4px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-m, 8px);
   box-shadow: var(--mermaid-shadow);
   pointer-events: all;
 }
@@ -181,8 +208,8 @@ pre.language-mermaid {
   letter-spacing: 0.04em;
   padding: 3px 8px;
   border-radius: 5px;
-  background: var(--background-modifier-active-hover, rgba(125, 125, 125, 0.15));
-  color: var(--text-muted);
+  background: var(--background-modifier-active-hover, var(--mermaid-accent-subtle));
+  color: var(--mermaid-text-muted);
   border: 1px solid var(--mermaid-border);
   user-select: none;
 }
@@ -209,7 +236,7 @@ pre.language-mermaid {
 
 .mermaid-tool-btn.mod-cta {
   background: var(--mermaid-accent);
-  color: #ffffff;
+  color: var(--text-on-accent, #ffffff);
 }
 
 .mermaid-tool-btn.mod-cta:hover {
@@ -222,8 +249,8 @@ pre.language-mermaid {
 }
 
 .mermaid-tool-btn.close-btn:hover {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  background: var(--background-modifier-error, rgba(239, 68, 68, 0.15));
+  color: var(--text-error, #ef4444);
 }
 
 .mermaid-bar-divider {
@@ -237,7 +264,7 @@ pre.language-mermaid {
 .mermaid-mode-segmented {
   display: inline-flex;
   align-items: center;
-  background: var(--background-primary);
+  background: var(--mermaid-bg);
   border: 1px solid var(--mermaid-border);
   border-radius: 6px;
   padding: 2px;
@@ -266,8 +293,8 @@ pre.language-mermaid {
 
 .mermaid-mode-btn.is-active {
   background: var(--mermaid-accent);
-  color: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  color: var(--text-on-accent, #ffffff);
+  box-shadow: var(--shadow-s, 0 1px 3px rgba(0, 0, 0, 0.2));
 }
 
 /* Cursor Mode States */
@@ -383,7 +410,7 @@ pre.language-mermaid {
 #merlay-svg-mount.mermaid-native-svg-mount .edgeLabel.mermaid-edge-selected,
 #merlay-svg-mount.mermaid-native-svg-mount [class*="edgeLabel"].mermaid-edge-selected,
 #merlay-svg-mount.mermaid-native-svg-mount .messageText.mermaid-edge-selected {
-  filter: drop-shadow(0 0 4px var(--mermaid-accent, #7c3aed));
+  filter: drop-shadow(0 0 4px var(--mermaid-accent));
 }
 
 /* Edge selection/hover halo clones: accent stroke over the original geometry.
@@ -392,13 +419,13 @@ pre.language-mermaid {
 #merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-selected-clone,
 #merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-hovered-clone {
   fill: none;
-  stroke: var(--mermaid-accent, #7c3aed);
+  stroke: var(--mermaid-accent);
   pointer-events: none;
 }
 
 #merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-selected-clone {
   stroke-width: 3.5px;
-  filter: drop-shadow(0 0 5px var(--mermaid-accent, #7c3aed));
+  filter: drop-shadow(0 0 5px var(--mermaid-accent));
 }
 
 #merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-hovered-clone {
@@ -406,36 +433,36 @@ pre.language-mermaid {
 }
 
 #merlay-svg-mount.mermaid-native-svg-mount line.actor-line.mermaid-node-selected {
-  stroke: var(--mermaid-accent, #7c3aed);
+  stroke: var(--mermaid-accent);
   stroke-width: 1.5px;
 }
 
 /* Mirrored bottom participant boxes are part of the selection */
 #merlay-svg-mount.mermaid-native-svg-mount .actor-bottom.mermaid-node-selected,
 #merlay-svg-mount.mermaid-native-svg-mount .actor-bottom.mermaid-node-selected :is(rect, circle, polygon, path, ellipse) {
-  stroke: var(--mermaid-accent, #7c3aed);
-  filter: drop-shadow(0 0 4px var(--mermaid-accent, #7c3aed));
+  stroke: var(--mermaid-accent);
+  filter: drop-shadow(0 0 4px var(--mermaid-accent));
 }
 
 /* Pending drop target while drag-connecting (whole participant column) */
 #merlay-svg-mount.mermaid-native-svg-mount .mermaid-drop-target {
-  filter: drop-shadow(0 0 5px var(--mermaid-accent, #7c3aed));
+  filter: drop-shadow(0 0 5px var(--mermaid-accent));
 }
 #merlay-svg-mount.mermaid-native-svg-mount line.actor-line.mermaid-drop-target {
-  stroke: var(--mermaid-accent, #7c3aed);
+  stroke: var(--mermaid-accent);
   stroke-width: 2px;
 }
 #merlay-svg-mount.mermaid-native-svg-mount .mermaid-drop-target-halo {
   fill: none;
   vector-effect: non-scaling-stroke;
   pointer-events: none;
-  stroke: var(--mermaid-accent, #7c3aed);
+  stroke: var(--mermaid-accent);
   stroke-width: 3px;
   stroke-opacity: 0.9;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 6 3;
-  filter: drop-shadow(0 0 4px var(--mermaid-accent, #7c3aed));
+  filter: drop-shadow(0 0 4px var(--mermaid-accent));
   animation: merlayDropTargetDash 0.9s infinite linear;
 }
 
@@ -473,7 +500,7 @@ pre.language-mermaid {
 
 /* Outer soft pulsing halo glow */
 #merlay-svg-mount.mermaid-native-svg-mount .mermaid-node-selection-halo-glow {
-  stroke: var(--mermaid-accent, #7c3aed);
+  stroke: var(--mermaid-accent);
   stroke-width: 6px;
   stroke-opacity: 0.32;
   stroke-linecap: round;
@@ -483,12 +510,12 @@ pre.language-mermaid {
 
 /* Inner crisp accent contour */
 #merlay-svg-mount.mermaid-native-svg-mount .mermaid-node-selection-halo-accent {
-  stroke: var(--mermaid-accent, #7c3aed);
+  stroke: var(--mermaid-accent);
   stroke-width: 2.5px;
   stroke-opacity: 1;
   stroke-linecap: round;
   stroke-linejoin: round;
-  filter: drop-shadow(0 0 3px var(--mermaid-accent, #7c3aed));
+  filter: drop-shadow(0 0 3px var(--mermaid-accent));
 }
 
 @keyframes pulseSvgGlow {
@@ -510,7 +537,7 @@ pre.language-mermaid {
   border-radius: 3px;
   pointer-events: none;
   z-index: 120;
-  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.1);
+  box-shadow: 0 0 0 1px var(--mermaid-accent-subtle);
 }
 
 /* Multi-Select Floating Action HUD */
@@ -595,7 +622,7 @@ pre.language-mermaid {
 .mermaid-hud-btn.sprout-btn,
 .mermaid-hud-btn.insert-step-btn {
   background: var(--mermaid-accent);
-  color: #ffffff;
+  color: var(--text-on-accent, #ffffff);
 }
 
 .mermaid-hud-btn.sprout-btn:hover,
@@ -608,8 +635,8 @@ pre.language-mermaid {
 }
 
 .mermaid-hud-btn.delete-btn:hover {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  background: var(--background-modifier-error, rgba(239, 68, 68, 0.15));
+  color: var(--text-error, #ef4444);
 }
 
 .mermaid-hud-divider {
@@ -625,15 +652,15 @@ pre.language-mermaid {
   align-items: center;
   gap: 5px;
   padding: 3px 8px;
-  background: var(--background-secondary, #1e1e1e);
-  color: var(--text-muted, #a0a0a0);
-  border: 1px solid var(--mermaid-border, rgba(255, 255, 255, 0.14));
+  background: var(--mermaid-bg-secondary);
+  color: var(--mermaid-text-muted);
+  border: 1px solid var(--mermaid-border);
   border-radius: 12px;
   font-size: 11px;
   font-weight: 500;
   line-height: 1;
   letter-spacing: 0.02em;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--mermaid-shadow);
   pointer-events: none;
   user-select: none;
   white-space: nowrap;
@@ -642,7 +669,7 @@ pre.language-mermaid {
 }
 
 .mermaid-connect-hint-pill svg {
-  color: var(--mermaid-accent, #6366f1);
+  color: var(--mermaid-accent);
   flex-shrink: 0;
 }
 
@@ -709,7 +736,7 @@ pre.language-mermaid {
   width: 320px;
   background: var(--mermaid-bg-secondary);
   border-left: 1px solid var(--mermaid-border);
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-l, -4px 0 20px rgba(0, 0, 0, 0.25));
   display: flex;
   flex-direction: column;
   z-index: 600;
@@ -742,11 +769,11 @@ pre.language-mermaid {
 }
 
 .mermaid-code-error-badge {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  background: var(--background-modifier-error, rgba(239, 68, 68, 0.15));
+  color: var(--text-error, #ef4444);
   font-size: 11px;
   padding: 4px 10px;
-  border-bottom: 1px solid rgba(239, 68, 68, 0.3);
+  border-bottom: 1px solid var(--background-modifier-error-border, rgba(239, 68, 68, 0.3));
 }
 
 .mermaid-code-drawer-textarea {
@@ -769,7 +796,7 @@ pre.language-mermaid {
   background: var(--mermaid-bg-secondary);
   border: 1px solid var(--mermaid-border);
   border-radius: 12px;
-  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.35), 0 8px 12px -6px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-l, 0 12px 28px -4px rgba(0, 0, 0, 0.25));
   padding: 8px;
   z-index: 200;
   pointer-events: all;
@@ -876,7 +903,7 @@ pre.language-mermaid {
 }
 
 .mermaid-swatch-btn.is-active {
-  border-color: #ffffff;
+  border-color: var(--text-normal);
   box-shadow: 0 0 0 2px var(--mermaid-accent);
 }
 
@@ -912,7 +939,7 @@ pre.language-mermaid {
   background: var(--mermaid-bg-secondary);
   color: var(--mermaid-accent);
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-s, 0 1px 3px rgba(0, 0, 0, 0.15));
 }
 
 .mermaid-color-input-wrapper {
@@ -928,7 +955,7 @@ pre.language-mermaid {
   border: 1px solid var(--mermaid-border);
   border-radius: 4px;
   cursor: pointer;
-  background: transparent;
+  background: var(--mermaid-bg);
 }
 
 .mermaid-color-picker-input::-webkit-color-swatch-wrapper {
@@ -959,16 +986,16 @@ pre.language-mermaid {
 }
 
 .mermaid-style-reset-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: #ef4444;
-  color: #ef4444;
+  background: var(--background-modifier-error, rgba(239, 68, 68, 0.1));
+  border-color: var(--text-error, #ef4444);
+  color: var(--text-error, #ef4444);
 }
 
 .mermaid-hud-color-indicator {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--mermaid-border);
   box-sizing: border-box;
   margin-left: 2px;
 }
@@ -1139,7 +1166,7 @@ pre.language-mermaid {
    the mount-id-scoped selection highlight below outranks the theme. */
 .mermaid-native-svg-mount .cluster > rect {
   fill: var(--mermaid-accent-subtle);
-  stroke: var(--mermaid-accent, #7c3aed);
+  stroke: var(--mermaid-accent);
   stroke-width: 1.5px;
   stroke-dasharray: 5 5;
 }
@@ -1147,17 +1174,17 @@ pre.language-mermaid {
 /* Same container look for empty groups, which mermaid degrades to plain nodes */
 .mermaid-native-svg-mount .node[data-mermaid-subgraph-id] :is(rect, circle, polygon, ellipse, path):not(.mermaid-node-selection-halo) {
   fill: var(--mermaid-accent-subtle);
-  stroke: var(--mermaid-accent, #7c3aed);
+  stroke: var(--mermaid-accent);
   stroke-width: 1.5px;
   stroke-dasharray: 5 5;
 }
 
 /* Subgraph SVG Selection Highlight */
 #merlay-svg-mount.mermaid-native-svg-mount .mermaid-cluster-selected rect {
-  stroke: var(--mermaid-accent, #7c3aed);
+  stroke: var(--mermaid-accent);
   stroke-width: 2.5px;
   stroke-dasharray: 6 3;
-  filter: drop-shadow(0 0 6px var(--mermaid-accent, #7c3aed));
+  filter: drop-shadow(0 0 6px var(--mermaid-accent));
 }
 
 /* Sequence Box Containers & Participant Styling */
@@ -1168,15 +1195,15 @@ pre.language-mermaid {
 }
 
 #merlay-svg-mount.mermaid-native-svg-mount g[data-mermaid-subgraph-id]:hover rect.rect {
-  stroke: var(--mermaid-accent, #7c3aed);
+  stroke: var(--mermaid-accent);
   stroke-width: 1.5px;
 }
 
 #merlay-svg-mount.mermaid-native-svg-mount g[data-mermaid-subgraph-id].mermaid-cluster-selected rect.rect {
-  stroke: var(--mermaid-accent, #7c3aed);
+  stroke: var(--mermaid-accent);
   stroke-width: 2.5px;
   stroke-dasharray: 6 3;
-  filter: drop-shadow(0 0 6px var(--mermaid-accent, #7c3aed));
+  filter: drop-shadow(0 0 6px var(--mermaid-accent));
 }
 
 .mermaid-native-svg-mount g[data-mermaid-subgraph-id] text.text {
@@ -1185,7 +1212,7 @@ pre.language-mermaid {
 
 .mermaid-native-svg-mount rect.actor:hover,
 .mermaid-native-svg-mount g.actor-man:hover {
-  stroke: var(--mermaid-accent, #7c3aed);
+  stroke: var(--mermaid-accent);
   filter: drop-shadow(0 0 3px var(--mermaid-accent-subtle));
 }
 
@@ -1196,14 +1223,14 @@ pre.language-mermaid {
   bottom: 14px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--mermaid-bg-secondary, #252525);
-  border: 1px solid var(--mermaid-border, rgba(255, 255, 255, 0.12));
+  background: var(--mermaid-bg-secondary);
+  border: 1px solid var(--mermaid-border);
   backdrop-filter: blur(8px);
   padding: 6px 16px;
   border-radius: 20px;
   font-size: 11.5px;
-  color: var(--mermaid-text-muted, #999);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  color: var(--mermaid-text-muted);
+  box-shadow: var(--mermaid-shadow);
   pointer-events: none;
   z-index: 90;
   white-space: nowrap;
@@ -1216,7 +1243,7 @@ pre.language-mermaid {
 }
 
 .mermaid-canvas-hint-bar strong {
-  color: var(--mermaid-text, #dcddde);
+  color: var(--mermaid-text);
   font-weight: 500;
 }
 
@@ -1248,36 +1275,36 @@ pre.language-mermaid {
 }
 
 .mermaid-native-editor-root.is-view-only.is-mode-select .mermaid-native-svg-mount svg :is(.node, [class*="node"], .cluster, .actor, [class*="actor"], .task, [class*="task"], .commit, [class*="commit"], [class*="slice"], [class*="entity"], .pieCircle, g[id]):not(.label):not(text):hover {
-  filter: drop-shadow(0 0 4px var(--mermaid-accent, #7c3aed));
+  filter: drop-shadow(0 0 4px var(--mermaid-accent));
 }
 
 /* Active Highlight for View-Only Selected Elements */
 .mermaid-native-editor-root.is-view-only #merlay-svg-mount.mermaid-native-svg-mount .mermaid-view-highlight {
-  filter: drop-shadow(0 0 6px var(--mermaid-accent, #7c3aed)) drop-shadow(0 0 2px var(--mermaid-accent, #7c3aed));
+  filter: drop-shadow(0 0 6px var(--mermaid-accent)) drop-shadow(0 0 2px var(--mermaid-accent));
   opacity: 1;
 }
 
 .mermaid-native-editor-root.is-view-only #merlay-svg-mount.mermaid-native-svg-mount .mermaid-view-highlight > :is(rect, circle, polygon, ellipse, path) {
-  stroke: var(--mermaid-accent, #7c3aed);
+  stroke: var(--mermaid-accent);
   stroke-width: 2.5px;
 }
 
 .mermaid-canvas-hint-bar.mermaid-view-only-banner {
-  background: var(--background-secondary, #252525);
-  border: 1px solid var(--mermaid-border, rgba(255, 255, 255, 0.16));
-  color: var(--text-muted, #a0a0a0);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  background: var(--mermaid-bg-secondary);
+  border: 1px solid var(--mermaid-border);
+  color: var(--mermaid-text-muted);
+  box-shadow: var(--mermaid-shadow);
 }
 
 .mermaid-canvas-hint-bar.mermaid-view-only-banner strong {
-  color: var(--text-normal, #dcddde);
+  color: var(--mermaid-text);
   font-weight: 600;
 }
 
 .mermaid-diagram-badge.is-view-only {
-  background: var(--background-modifier-box, rgba(255, 255, 255, 0.08));
-  border: 1px dashed var(--mermaid-border, rgba(255, 255, 255, 0.25));
-  color: var(--text-muted, #999);
+  background: var(--background-modifier-box, var(--mermaid-accent-subtle));
+  border: 1px dashed var(--mermaid-border);
+  color: var(--mermaid-text-muted);
 }
 
 /* Brand Mark in Top Bar */

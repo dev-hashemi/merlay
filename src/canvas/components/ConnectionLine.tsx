@@ -27,7 +27,7 @@ export const ConnectionLine: React.FC<ConnectionLineProps> = ({ dragLine }) => {
         y1={dragLine.y1}
         x2={dragLine.x2}
         y2={dragLine.y2}
-        stroke="var(--mermaid-accent, #7c3aed)"
+        stroke="var(--mermaid-accent, var(--interactive-accent, #7c3aed))"
         strokeWidth={2.5}
         strokeDasharray="4 4"
       />

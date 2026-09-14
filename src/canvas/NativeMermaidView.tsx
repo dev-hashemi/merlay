@@ -320,6 +320,19 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     }
   }, [connectingSourceId, connectingTargetId, svgMountRef, code]);
 
+  // 12. Theme switch synchronization (Obsidian css-change event)
+  useEffect(() => {
+    const onCssChange = () => {
+      selection.updateSelectedNodeHalo(selection.selectedNodeIdsRef.current);
+      selection.updateSelectedEdgeHalo(selection.selectedEdgeIdsRef.current);
+      selection.updateSelectedNodeRect();
+    };
+    const ref = app.workspace.on('css-change', onCssChange);
+    return () => {
+      app.workspace.offref(ref);
+    };
+  }, [app, selection]);
+
   return (
     <div
       className={`mermaid-native-editor-root is-mode-${cursorMode} ${
