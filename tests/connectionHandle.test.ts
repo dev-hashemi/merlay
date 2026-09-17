@@ -108,6 +108,33 @@ test('Connection Handle: Flowchart drag-connect creates valid edge between steps
   assert.ok(serialized.includes('A --> B'));
 });
 
+test('Connection Handle: Flowchart drag-connect works between nodes in different subgraphs (issue #3)', () => {
+  const fcDriver = getDriver('flowchart')!;
+  const ast = fcDriver.parse(
+    'flowchart LR\n' +
+      '    subgraph sub_1 ["Group 1"]\n' +
+      '        step_1 ["Node 1"]\n' +
+      '    end\n' +
+      '    subgraph sub_2 ["Group 2"]\n' +
+      '        step_2 ["Node 2"]\n' +
+      '    end\n'
+  );
+
+  assert.strictEqual(ast.edges.length, 0);
+
+  // Drag from step_1 to step_2 — official Mermaid allows edges across subgraphs,
+  // so the canvas drop guard must not veto it (only state composites are restricted).
+  fcDriver.mutations.connect(ast, 'step_1', 'step_2');
+  assert.strictEqual(ast.edges.length, 1);
+  assert.strictEqual(ast.edges[0].from, 'step_1');
+  assert.strictEqual(ast.edges[0].to, 'step_2');
+
+  const serialized = fcDriver.serialize(ast);
+  assert.ok(serialized.includes('step_1 --> step_2'));
+  assert.ok(serialized.includes('subgraph sub_1'));
+  assert.ok(serialized.includes('subgraph sub_2'));
+});
+
 test('Connection Handle: State diagram drag-connect from start anchor to state and state to end anchor', () => {
   const stateDriver = getDriver('stateDiagram')!;
   const ast = stateDriver.parse('stateDiagram-v2\n    Idle\n');

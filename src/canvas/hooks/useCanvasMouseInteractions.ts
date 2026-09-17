@@ -500,27 +500,11 @@ export function useCanvasMouseInteractions({
         return isSourceInsideTarget(cSourceId, targetNodeId);
       })();
 
-      // Official Mermaid rule: inner nodes of different composite states cannot transition directly
-      const isCrossCompositeBlocked = (() => {
-        if (!targetNodeId || !cSourceId || !displayNodes) return false;
-        const srcNode = displayNodes.get(cSourceId);
-        const tgtNode = displayNodes.get(targetNodeId);
-        if (
-          srcNode?.subgraphId &&
-          tgtNode?.subgraphId &&
-          srcNode.subgraphId !== tgtNode.subgraphId
-        ) {
-          return true;
-        }
-        return false;
-      })();
-
       if (
         targetNodeId &&
         targetNodeId !== cSourceId &&
         !isBlockedAnchorEdge &&
-        !isInnerToOuterBlocked &&
-        !isCrossCompositeBlocked
+        !isInnerToOuterBlocked
       ) {
         const worldRect = worldRef.current ? worldRef.current.getBoundingClientRect() : null;
         const dropY = worldRect ? (e.clientY - worldRect.top) / zoom : 0;
