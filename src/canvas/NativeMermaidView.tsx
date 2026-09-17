@@ -403,6 +403,8 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
         isFullscreen={isFullscreen}
         onToggleFullscreen={handleToggleFullscreen}
         svgMountRef={svgMountRef}
+        app={app}
+        code={code}
       />
 
       {/* Interactive World Canvas */}

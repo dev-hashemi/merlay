@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { App } from 'obsidian';
 import { CursorMode } from '../types';
 import {
   SelectModeIcon,
@@ -39,6 +40,8 @@ export interface CanvasTopBarProps {
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
   svgMountRef?: React.RefObject<HTMLDivElement>;
+  app?: App;
+  code?: string;
 }
 
 export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
@@ -63,6 +66,8 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
   isFullscreen = false,
   onToggleFullscreen,
   svgMountRef,
+  app,
+  code,
 }) => {
   const { labels, capabilities } = driver;
   const isEditable = capabilities.editable !== false;
@@ -251,6 +256,8 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
               isOpen={isExportOpen}
               onClose={() => setIsExportOpen(false)}
               svgMountRef={svgMountRef}
+              app={app}
+              code={code}
             />
           </div>
         )}

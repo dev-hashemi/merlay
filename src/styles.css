@@ -1222,6 +1222,44 @@ pre.language-mermaid {
   font-weight: 500;
 }
 
+.mermaid-export-scale-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  font-size: 12px;
+  color: var(--mermaid-text);
+  user-select: none;
+}
+
+.mermaid-export-scale-pills {
+  display: flex;
+  gap: 4px;
+}
+
+.mermaid-export-scale-pill {
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.mermaid-export-scale-pill:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.mermaid-export-scale-pill.is-active {
+  background: var(--mermaid-accent);
+  color: #ffffff;
+  border-color: var(--mermaid-accent);
+}
+
 .mermaid-export-actions {
   display: flex;
   flex-direction: column;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { App } from 'obsidian';
 import {
   ImageIcon,
   VectorIcon,
@@ -17,14 +18,19 @@ export interface ExportPopoverProps {
   isOpen: boolean;
   onClose: () => void;
   svgMountRef: React.RefObject<HTMLDivElement>;
+  app?: App;
+  code?: string;
 }
 
 export const ExportPopover: React.FC<ExportPopoverProps> = ({
   isOpen,
   onClose,
   svgMountRef,
+  app,
+  code,
 }) => {
   const [includeBackground, setIncludeBackground] = useState<boolean>(true);
+  const [scale, setScale] = useState<number>(2);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -58,8 +64,14 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
 
   if (!isOpen) return null;
 
+  const target = {
+    app,
+    code,
+    svgMountEl: svgMountRef.current,
+  };
+
   const handleAction = async (action: () => Promise<unknown> | unknown) => {
-    if (!svgMountRef.current || isExporting) return;
+    if (isExporting) return;
     setIsExporting(true);
     try {
       await action();
@@ -101,6 +113,24 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
         <span className="mermaid-export-option-label">Include background</span>
       </label>
 
+      {/* Option: Resolution Scale */}
+      <div className="mermaid-export-scale-row">
+        <span className="mermaid-export-option-label">Resolution:</span>
+        <div className="mermaid-export-scale-pills">
+          {[1, 2, 3].map((s) => (
+            <button
+              key={s}
+              type="button"
+              className={`mermaid-export-scale-pill ${scale === s ? 'is-active' : ''}`}
+              onClick={() => setScale(s)}
+              title={`${s}× resolution multiplier`}
+            >
+              {s}×
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="mermaid-popover-divider" />
 
       {/* Action Buttons */}
@@ -111,7 +141,7 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
           disabled={isExporting}
           onClick={() =>
             handleAction(() =>
-              copyPngToClipboard(svgMountRef.current!, { includeBackground })
+              copyPngToClipboard(target, { includeBackground, scale })
             )
           }
           title="Copy PNG image to clipboard for easy pasting into notes or chat"
@@ -129,7 +159,7 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
           disabled={isExporting}
           onClick={() =>
             handleAction(() =>
-              copySvgToClipboard(svgMountRef.current!, { includeBackground })
+              copySvgToClipboard(target, { includeBackground })
             )
           }
           title="Copy raw SVG vector XML to clipboard"
@@ -149,7 +179,7 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
           disabled={isExporting}
           onClick={() =>
             handleAction(() =>
-              downloadPng(svgMountRef.current!, { includeBackground })
+              downloadPng(target, { includeBackground, scale })
             )
           }
           title="Download diagram as high-resolution PNG image file"
@@ -167,7 +197,7 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
           disabled={isExporting}
           onClick={() =>
             handleAction(() =>
-              downloadSvg(svgMountRef.current!, { includeBackground })
+              downloadSvg(target, { includeBackground })
             )
           }
           title="Download diagram as scalable vector SVG file"
