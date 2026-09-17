@@ -171,6 +171,7 @@ Determine how standard canvas interactions behave:
 ### Step 2.5: Semantic Error Prevention Rules (UX Guardrails)
 Mermaid will fail to render if syntax rules are violated. The UI must prevent errors before they reach the parser:
 - **Disallowed Connections**: Prevent connections between disallowed scopes (e.g. in state diagrams, states in different composite regions cannot connect directly).
+- **Refused Drops Must Be Visible**: Every illegal connection needs *both* enforcement and feedback — a silent no-op looks identical to a bug (see issue #3). Implement the `canConnect(ast, fromId, toId)` driver predicate for every rule from Step 1.2 item 6; the canvas then shows a red drag line, red target glow, and `not-allowed` cursor automatically, and skips the mutation on drop. No canvas changes are needed — only the driver predicate.
 - **Identifier Collisions**: Auto-generate unique IDs (e.g. `class_1`, `class_2`) when creating or duplicating nodes.
 - **Character Escaping**: Automatically quote labels containing brackets, parenthesis, colons, or punctuation so Mermaid does not confuse them with syntax tokens.
 - **Empty Container Safeguard**: If a container requires at least one child (e.g., Mermaid composite state `state Comp { ... }` cannot have empty braces), automatically insert a default placeholder state or dissolve the container.
@@ -266,7 +267,8 @@ Implement the functions required by [`DiagramMutations<TAst>`](../src/diagrams/t
 - `updateNodeLabel(ast, nodeId, label)`: Update label with safe character handling.
 - `isNodeTextEditable(ast, nodeId)`: Return true if node label can be edited inline.
 - `updateNodeKind(ast, nodeId, kind)`: Morph node type/shape.
-- `connect(ast, fromId, toId)`: Add edge with default arrow type.
+- `connect(ast, fromId, toId)`: Add edge with default arrow type. Must be a no-op (return null/void) for illegal pairs — never emit unrendersable Mermaid.
+- `canConnect(ast, fromId, toId)`: Pure legality predicate for the same rules. Share one helper between both (e.g. state diagrams share `canConnectStates` between `connectStates` and `canConnect`) so enforcement and hover feedback can never drift. Return `true` unconditionally when the diagram has no connection restrictions (e.g. flowchart, sequence); return `false` for view-only drivers.
 - `deleteEdge(ast, edgeId)`: Delete edge.
 - `updateEdgeLabel(ast, edgeId, label)`: Update edge caption/annotation.
 - `reverseEdge(ast, edgeId)`: Reverse edge endpoints safely.
@@ -318,6 +320,7 @@ Verify every mutation function in isolation:
 - Splitting an edge creates an intermediate node and two edges.
 - Duplicate nodes correctly clones subgraphs/edges and remaps IDs.
 - Valid connections succeed; invalid connections return null or are blocked.
+- `canConnect` matrix: every illegal pair from Step 1.2 item 6 returns `false`, every legal pair (including cross-container drops, when allowed) returns `true` — see `connectionHandle.test.ts` for the pattern.
 
 ### Tier 4: Edge Cases & Defensive Resilience Tests
 Test realistic user edge cases:
@@ -363,6 +366,7 @@ Follow the procedure defined in `new_diagram_playbook.md` and `ARCHITECTURE.md`.
    - Provide accurate `labels` (e.g., node, edge, group, addNode, addChild).
    - Set `capabilities` flags accurately (supportsDirection, supportsNodeKinds, supportsEdgeTypes, etc.).
    - Define `nodeKindOptions` with appropriate labels and icon keys.
+   - List every illegal connection pair (Step 1.2 item 6) and implement `canConnect` for it — refused drops must show feedback, never fail silently.
 
 4. **Preservation Guarantee**:
    - Ensure YAML frontmatter, comments (`%%`), directives (`accTitle`, `accDescr`), and unmodeled lines survive visual edits verbatim.
@@ -389,6 +393,7 @@ Follow the procedure defined in `new_diagram_playbook.md` and `ARCHITECTURE.md`.
 - [ ] **5. Serializer**: Implemented round-trip serializer producing clean standard Mermaid syntax.
 - [ ] **6. View Projection**: Implemented `project(ast)` mapping native AST to `MermaidNodeDef` / `MermaidEdgeDef` / `MermaidSubgraphDef`.
 - [ ] **7. Mutations**: Implemented all required `DiagramMutations` functions with cascade deletions and safe cloning.
+- [ ] **7b. Illegal-connection feedback**: `canConnect` implemented and sharing logic with `connect`; blocked drops show red line / red glow / `not-allowed` cursor via the canvas (no canvas changes).
 - [ ] **8. SVG DOM Adapter**: Mapped SVG element prefixes and selectors in `dom`.
 - [ ] **9. Registry**: Registered driver in `src/diagrams/registry.ts` and added starter template.
 - [ ] **10. Tests & Verification**:
