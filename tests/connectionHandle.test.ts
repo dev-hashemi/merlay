@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
 import { useCanvasStore } from '../src/canvas/store/canvasStore';
 import { getDriver } from '../src/diagrams/registry';
 import { createUnsupportedDiagramDriver } from '../src/diagrams/unsupported/unsupportedDriver';
@@ -221,3 +222,93 @@ test('Connection Handle: resetTransientUiState clears hover and connecting state
   assert.strictEqual(useCanvasStore.getState().connectingSourceId, null);
   assert.strictEqual(useCanvasStore.getState().dragLine, null);
 });
+
+test('Connection Handle: Drag-connect prioritizes inner nodes over enclosing subgraphs (issue #3 regression)', () => {
+  // Simulate DOM layout where a subgraph wraps an inner node
+  const dom = new JSDOM('<!DOCTYPE html><html><body><div id="world"></div></body></html>');
+  const doc = dom.window.document;
+  const worldEl = doc.getElementById('world')!;
+  worldEl.getBoundingClientRect = () => ({
+    left: 0,
+    top: 0,
+    right: 1000,
+    bottom: 1000,
+    width: 1000,
+    height: 1000,
+    x: 0,
+    y: 0,
+    toJSON: () => {},
+  });
+
+  // Subgraph cluster element (appears first in querySelectorAll)
+  const subEl = doc.createElement('div');
+  subEl.setAttribute('data-mermaid-node-id', 'sub_2');
+  subEl.getBoundingClientRect = () => ({
+    left: 200,
+    top: 100,
+    right: 600,
+    bottom: 400,
+    width: 400,
+    height: 300,
+    x: 200,
+    y: 100,
+    toJSON: () => {},
+  });
+  worldEl.appendChild(subEl);
+
+  // Inner node element (inside subgraph)
+  const nodeEl = doc.createElement('div');
+  nodeEl.setAttribute('data-mermaid-node-id', 'step_2');
+  nodeEl.getBoundingClientRect = () => ({
+    left: 250,
+    top: 150,
+    right: 350,
+    bottom: 200,
+    width: 100,
+    height: 50,
+    x: 250,
+    y: 150,
+    toJSON: () => {},
+  });
+  subEl.appendChild(nodeEl);
+
+  const displaySubgraphs = new Map<string, unknown>([
+    ['sub_1', { id: 'sub_1', label: 'Group 1' }],
+    ['sub_2', { id: 'sub_2', label: 'Group 2' }],
+  ]);
+
+  // When drop point is inside sub_2 and near step_2 (e.g. at 240, 150 - 10px from step_2)
+  // Candidate resolution must pick step_2, NOT sub_2
+  const dropX = 240;
+  const dropY = 150;
+  let closestDist = 50;
+  let closestNodeEl: Element | null = null;
+  const candidates = Array.from(worldEl.querySelectorAll('[data-mermaid-node-id]'));
+
+  for (const cand of candidates) {
+    const nid = cand.getAttribute('data-mermaid-node-id');
+    if (!nid || nid === 'step_1') continue;
+    if (displaySubgraphs.has(nid)) continue; // correctly skips subgraphs so inner nodes win
+
+    const r = cand.getBoundingClientRect();
+    const candX = r.left;
+    const candY = r.top;
+    const candW = r.width;
+    const candH = r.height;
+    const dx = Math.max(candX - dropX, 0, dropX - (candX + candW));
+    const dy = Math.max(candY - dropY, 0, dropY - (candY + candH));
+    const dist = Math.hypot(dx, dy);
+    if (dist < closestDist) {
+      closestDist = dist;
+      closestNodeEl = cand;
+    }
+  }
+
+  assert.strictEqual(
+    closestNodeEl,
+    nodeEl,
+    'drop near node inside subgraph must resolve to node, not subgraph'
+  );
+  assert.strictEqual(closestNodeEl?.getAttribute('data-mermaid-node-id'), 'step_2');
+});
+

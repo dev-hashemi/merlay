@@ -395,10 +395,13 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
       onPointerDown={(e) => {
         // Keep finger-drag routed to the canvas even if the pointer slides
         // off the original target (required for reliable touch connect/pan).
-        try {
-          e.currentTarget.setPointerCapture?.(e.pointerId);
-        } catch {
-          /* ignore */
+        // Mouse pointers do not use pointer capture so native clicks and hit-testing pass through.
+        if (e.pointerType !== 'mouse') {
+          try {
+            e.currentTarget.setPointerCapture?.(e.pointerId);
+          } catch {
+            /* ignore */
+          }
         }
         activePointersRef.current.set(e.pointerId, {
           x: e.clientX,
@@ -429,6 +432,13 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
       }}
       onPointerUp={(e) => {
         activePointersRef.current.delete(e.pointerId);
+        try {
+          if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+            e.currentTarget.releasePointerCapture?.(e.pointerId);
+          }
+        } catch {
+          /* ignore */
+        }
         if (pinchRef.current) {
           // Pinch just ended: the released finger's gesture was already
           // cancelled at pinch start, so there is nothing to commit.
@@ -439,6 +449,13 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
       }}
       onPointerCancel={(e) => {
         activePointersRef.current.delete(e.pointerId);
+        try {
+          if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+            e.currentTarget.releasePointerCapture?.(e.pointerId);
+          }
+        } catch {
+          /* ignore */
+        }
         endPinch();
         mouse.handlePointerCancel();
       }}

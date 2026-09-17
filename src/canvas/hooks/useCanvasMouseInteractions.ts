@@ -40,6 +40,18 @@ export function getPerimeterAnchor(
   };
 }
 
+/**
+ * Resolves the topmost DOM element underneath the pointer, bypassing any
+ * pointer capture redirection so hit-testing targets the visual element.
+ */
+function getHitElement(e: React.PointerEvent): Element | null {
+  if (typeof document !== 'undefined' && typeof document.elementFromPoint === 'function') {
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    if (el) return el;
+  }
+  return e.target instanceof Element ? e.target : null;
+}
+
 export interface UseCanvasMouseInteractionsOptions {
   worldRef: React.RefObject<HTMLDivElement>;
   svgMountRef?: React.RefObject<HTMLDivElement>;
@@ -376,14 +388,51 @@ export function useCanvasMouseInteractions({
 
       // Track the pending drop target so the canvas can highlight the
       // participant that will receive the connection.
-      const rawTarget = (e.target as HTMLElement)?.closest?.('[data-mermaid-node-id]');
+      const hitEl = getHitElement(e);
+      const rawTarget = hitEl?.closest?.('[data-mermaid-node-id]');
       const rawTargetId =
         rawTarget?.getAttribute('data-mermaid-node-id') ||
         rawTarget?.getAttribute('name') ||
         rawTarget?.getAttribute('data-id') ||
         null;
-      const resolvedTargetId =
-        rawTargetId && rawTargetId !== sourceId ? rawTargetId : null;
+
+      // If hovering directly over a real node (not a subgraph), target that node.
+      // If hovering over a subgraph or empty space, snap to closest real node within 50px.
+      let resolvedTargetId: string | null = null;
+      if (rawTargetId && displayNodes?.has(rawTargetId)) {
+        resolvedTargetId = rawTargetId !== sourceId ? rawTargetId : null;
+      } else if (worldRef.current) {
+        let closestDist = 50;
+        let snapNodeId: string | null = null;
+        const candidates = Array.from(
+          worldRef.current.querySelectorAll('[data-mermaid-node-id]')
+        );
+        for (const cand of candidates) {
+          const nid = cand.getAttribute('data-mermaid-node-id');
+          if (!nid || nid === sourceId) continue;
+          if (displaySubgraphs?.has(nid)) continue; // skip subgraphs so inner nodes win
+          const r = cand.getBoundingClientRect();
+          const candX = (r.left - worldRect.left) / zoom;
+          const candY = (r.top - worldRect.top) / zoom;
+          const candW = r.width / zoom;
+          const candH = r.height / zoom;
+          const dx = Math.max(candX - currentWorldX, 0, currentWorldX - (candX + candW));
+          const dy = Math.max(candY - currentWorldY, 0, currentWorldY - (candY + candH));
+          const dist = Math.hypot(dx, dy);
+          if (dist < closestDist) {
+            closestDist = dist;
+            snapNodeId = nid;
+          }
+        }
+        if (snapNodeId) {
+          resolvedTargetId = snapNodeId;
+        } else if (rawTargetId && rawTargetId !== sourceId) {
+          resolvedTargetId = rawTargetId;
+        }
+      } else if (rawTargetId && rawTargetId !== sourceId) {
+        resolvedTargetId = rawTargetId;
+      }
+
       if (store.connectingTargetId !== resolvedTargetId) {
         store.setConnectingTargetId(resolvedTargetId);
       }
@@ -486,47 +535,62 @@ export function useCanvasMouseInteractions({
     const cSourceKind = store.connectingSourceKind ?? store.connectingHandleKind;
 
     if (cSourceId) {
-      let targetNodeEl: Element | null = (e.target as HTMLElement).closest(
-        '[data-mermaid-node-id]'
-      );
+      const hitEl = getHitElement(e);
+      let targetNodeEl: Element | null =
+        hitEl?.closest?.('[data-mermaid-node-id]') ?? null;
 
       // Fallback 1: check if target is inside an element with name matching displayNodes
       if (!targetNodeEl) {
-        const namedContainer = (e.target as HTMLElement).closest('[name], [data-id]');
+        const namedContainer = hitEl?.closest?.('[name], [data-id]');
         const nameVal =
           namedContainer?.getAttribute('name') || namedContainer?.getAttribute('data-id');
-        if (nameVal && displayNodes.has(nameVal)) {
+        if (nameVal && displayNodes?.has(nameVal) && namedContainer) {
           targetNodeEl =
-            (namedContainer as HTMLElement).closest('[data-mermaid-node-id]') ||
+            namedContainer.closest('[data-mermaid-node-id]') ||
             namedContainer;
         }
       }
 
-      // Fallback 2: snap to closest node/lifeline within 45px radius
-      if (!targetNodeEl && worldRef.current) {
+      const directTargetId =
+        targetNodeEl?.getAttribute('data-mermaid-node-id') ||
+        targetNodeEl?.getAttribute('name') ||
+        targetNodeEl?.getAttribute('data-id') ||
+        null;
+
+      // Fallback 2: snap to closest node/lifeline within 50px radius.
+      // If nothing was hit directly OR if a subgraph was hit,
+      // search for real inner nodes so subgraphs never shadow their children.
+      if (
+        (!targetNodeEl || (directTargetId && displaySubgraphs?.has(directTargetId))) &&
+        worldRef.current
+      ) {
         const worldRect = worldRef.current.getBoundingClientRect();
         const dropX = (e.clientX - worldRect.left) / zoom;
         const dropY = (e.clientY - worldRect.top) / zoom;
         let closestDist = 50;
+        let closestNodeEl: Element | null = null;
         const candidates = Array.from(
           worldRef.current.querySelectorAll('[data-mermaid-node-id]')
         );
         for (const cand of candidates) {
           const nid = cand.getAttribute('data-mermaid-node-id');
-          if (nid && nid !== cSourceId) {
-            const r = cand.getBoundingClientRect();
-            const candX = (r.left - worldRect.left) / zoom;
-            const candY = (r.top - worldRect.top) / zoom;
-            const candW = r.width / zoom;
-            const candH = r.height / zoom;
-            const dx = Math.max(candX - dropX, 0, dropX - (candX + candW));
-            const dy = Math.max(candY - dropY, 0, dropY - (candY + candH));
-            const dist = Math.hypot(dx, dy);
-            if (dist < closestDist) {
-              closestDist = dist;
-              targetNodeEl = cand;
-            }
+          if (!nid || nid === cSourceId) continue;
+          if (displaySubgraphs?.has(nid)) continue; // skip subgraphs so inner nodes win
+          const r = cand.getBoundingClientRect();
+          const candX = (r.left - worldRect.left) / zoom;
+          const candY = (r.top - worldRect.top) / zoom;
+          const candW = r.width / zoom;
+          const candH = r.height / zoom;
+          const dx = Math.max(candX - dropX, 0, dropX - (candX + candW));
+          const dy = Math.max(candY - dropY, 0, dropY - (candY + candH));
+          const dist = Math.hypot(dx, dy);
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestNodeEl = cand;
           }
+        }
+        if (closestNodeEl) {
+          targetNodeEl = closestNodeEl;
         }
       }
 
@@ -539,9 +603,7 @@ export function useCanvasMouseInteractions({
         | 'end'
         | null;
 
-      const targetEdgeEl = (e.target as HTMLElement).closest(
-        '[data-mermaid-edge-id]'
-      );
+      const targetEdgeEl = hitEl?.closest?.('[data-mermaid-edge-id]');
       const targetEdgeId = targetEdgeEl?.getAttribute('data-mermaid-edge-id');
 
       // Directional guard for start/end anchors.

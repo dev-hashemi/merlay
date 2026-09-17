@@ -373,6 +373,10 @@ pre.language-mermaid {
   touch-action: none;
 }
 
+.mermaid-native-overlay {
+  pointer-events: none;
+}
+
 .mermaid-native-svg-mount.mermaid-native-svg-mount,
 .mermaid-native-svg-mount.mermaid-native-svg-mount.mermaid {
   position: absolute;

@@ -61,3 +61,24 @@ test('Touch drag-connect: cancelled gesture clears connecting state without muta
   assert.strictEqual(useCanvasStore.getState().connectingSourceId, null);
   assert.strictEqual(useCanvasStore.getState().dragLine, null);
 });
+
+test('Touch drag-connect: overlay container passes pointer events to canvas', () => {
+  const css = read('src/styles.css');
+  assert.ok(
+    /\.mermaid-native-overlay\s*\{[^}]*pointer-events:\s*none/s.test(css),
+    'overlay layer must have pointer-events: none so hit-testing reaches SVG'
+  );
+});
+
+test('Touch drag-connect: mouse pointers bypass pointer capture to protect hit testing', () => {
+  const view = read('src/canvas/NativeMermaidView.tsx');
+  assert.ok(
+    view.includes("e.pointerType !== 'mouse'"),
+    'pointer capture must only be set for non-mouse pointers'
+  );
+  assert.ok(
+    view.includes('releasePointerCapture'),
+    'pointer capture must be released on pointerup and pointercancel'
+  );
+});
+
