@@ -1,3 +1,8 @@
+# Release checklist (Obsidian community directory):
+# 1. manifest.json `version` is x.y.z and EXACTLY equals the git tag (no `v` prefix).
+# 2. versions.json has an entry for the new version; bump minAppVersion only if new APIs are used.
+# 3. Tag only after `npm test` + `npm run build` pass — this workflow attaches
+#    main.js + manifest.json + styles.css to the GitHub release automatically.
 name: Release Obsidian Plugin
 
 on:
