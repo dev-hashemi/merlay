@@ -286,12 +286,14 @@ export function clearEdgeHoverHalos(mountEl: HTMLElement | null, edgeId?: string
  * Adds .mermaid-drop-target to every SVG element for the target participant
  * (top box, lifeline, bottom box) and clones matching halo geometry with
  * .mermaid-drop-target-halo so the user sees what will connect.
- * Pass null/undefined or the source id to clear.
+ * When blocked is true, .mermaid-drop-blocked is used instead so the refusal
+ * is visible. Pass null/undefined or the source id to clear.
  */
 export function applyDropTargetHalo(
   mountEl: HTMLElement | null,
   targetId: string | null | undefined,
-  sourceId?: string | null
+  sourceId?: string | null,
+  blocked?: boolean
 ): void {
   if (!mountEl) return;
 
@@ -301,9 +303,13 @@ export function applyDropTargetHalo(
   mountEl.querySelectorAll('.mermaid-drop-target').forEach((el) => {
     el.classList.remove('mermaid-drop-target');
   });
+  mountEl.querySelectorAll('.mermaid-drop-blocked').forEach((el) => {
+    el.classList.remove('mermaid-drop-blocked');
+  });
 
   if (!targetId || targetId === sourceId) return;
 
+  const targetClass = blocked ? 'mermaid-drop-blocked' : 'mermaid-drop-target';
   const nodeEls = Array.from(
     mountEl.querySelectorAll(`[data-mermaid-node-id="${targetId}"]`)
   ).filter(
@@ -312,7 +318,7 @@ export function applyDropTargetHalo(
   if (nodeEls.length === 0) return;
 
   for (const nodeEl of nodeEls) {
-    nodeEl.classList.add('mermaid-drop-target');
+    nodeEl.classList.add(targetClass);
 
     let shapeElements = Array.from(
       nodeEl.querySelectorAll('rect, circle, polygon, path, ellipse, line')

@@ -352,6 +352,12 @@ pre.language-mermaid {
   cursor: crosshair;
 }
 
+/* Refused drop target while drag-connecting (driver canConnect === false) */
+.mermaid-native-editor-root.mermaid-native-editor-root.mermaid-native-editor-root.is-drop-blocked,
+.mermaid-native-editor-root.mermaid-native-editor-root.mermaid-native-editor-root.is-drop-blocked * {
+  cursor: not-allowed;
+}
+
 /* 4. Native SVG World & Mount */
 .mermaid-native-world {
   position: absolute;
@@ -485,6 +491,11 @@ pre.language-mermaid {
   stroke-dasharray: 6 3;
   filter: drop-shadow(0 0 4px var(--mermaid-accent));
   animation: merlayDropTargetDash 0.9s infinite linear;
+}
+
+/* Refused drop target while drag-connecting */
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-drop-blocked {
+  filter: drop-shadow(0 0 5px var(--text-error, #e5484d));
 }
 
 @keyframes merlayDropTargetDash {

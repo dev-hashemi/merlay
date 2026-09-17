@@ -73,6 +73,7 @@ export function createUnsupportedDiagramDriver(
       updateNodeKind: () => {},
       updateNodesKind: () => {},
       connect: () => {},
+      canConnect: () => false,
       deleteEdge: () => {},
       deleteEdges: () => {},
       updateEdgeLabel: () => {},

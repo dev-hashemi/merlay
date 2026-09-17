@@ -3,9 +3,10 @@ import { DragLine } from '../store/canvasStore';
 
 export interface ConnectionLineProps {
   dragLine: DragLine | null;
+  blocked?: boolean;
 }
 
-export const ConnectionLine: React.FC<ConnectionLineProps> = ({ dragLine }) => {
+export const ConnectionLine: React.FC<ConnectionLineProps> = ({ dragLine, blocked }) => {
   if (!dragLine) return null;
 
   return (
@@ -27,7 +28,11 @@ export const ConnectionLine: React.FC<ConnectionLineProps> = ({ dragLine }) => {
         y1={dragLine.y1}
         x2={dragLine.x2}
         y2={dragLine.y2}
-        stroke="var(--mermaid-accent, var(--interactive-accent, #7c3aed))"
+        stroke={
+          blocked
+            ? 'var(--text-error, #e5484d)'
+            : 'var(--mermaid-accent, var(--interactive-accent, #7c3aed))'
+        }
         strokeWidth={2.5}
         strokeDasharray="4 4"
       />

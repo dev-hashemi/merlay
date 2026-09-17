@@ -486,6 +486,7 @@ function stripEditorOverlays(svg: SVGSVGElement): void {
     'mermaid-cluster-selected',
     'mermaid-view-highlight',
     'mermaid-drop-target',
+    'mermaid-drop-blocked',
     'mermaid-edge-selected',
     'mermaid-node-selected',
   ];

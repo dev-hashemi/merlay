@@ -68,6 +68,8 @@ export interface UseCanvasMouseInteractionsOptions {
   displayEdges: MermaidEdgeDef[];
   displaySubgraphs?: Map<string, MermaidSubgraphDef>;
   driver: DiagramDriver;
+  /** Committed AST, for driver legality predicates (e.g. canConnect). Read-only. */
+  ast: unknown;
   applyMutation: (mutator: (currentAst: unknown) => void, keepNodeId?: string) => void;
   setSelectedNodeId: (id: string | null) => void;
 }
@@ -88,6 +90,7 @@ export function useCanvasMouseInteractions({
   displayEdges,
   displaySubgraphs,
   driver,
+  ast,
   applyMutation,
   setSelectedNodeId,
 }: UseCanvasMouseInteractionsOptions) {
@@ -99,6 +102,7 @@ export function useCanvasMouseInteractions({
     (s) => s.connectingSourceKind ?? s.connectingHandleKind
   );
   const connectingTargetId = useCanvasStore((s) => s.connectingTargetId);
+  const connectBlocked = useCanvasStore((s) => s.connectBlocked);
   const dragLine = useCanvasStore((s) => s.dragLine);
 
   const hoveredNodeId = useCanvasStore((s) => s.hoveredNodeId);
@@ -317,6 +321,15 @@ export function useCanvasMouseInteractions({
         store.setConnectingTargetId(resolvedTargetId);
       }
 
+      // Blocked-drop feedback: ask the driver whether this pair may connect.
+      // Pure predicate — the mutation itself stays the enforcement point.
+      const isDropBlocked =
+        !!resolvedTargetId &&
+        (m.canConnect ? !m.canConnect(ast, sourceId, resolvedTargetId) : false);
+      if (store.connectBlocked !== isDropBlocked) {
+        store.setConnectBlocked(isDropBlocked);
+      }
+
       let sourceRect: Rect | null = null;
       if (getLocalRect && worldRef.current) {
         const sourceEl = worldRef.current.querySelector(
@@ -500,11 +513,19 @@ export function useCanvasMouseInteractions({
         return isSourceInsideTarget(cSourceId, targetNodeId);
       })();
 
+      // Same driver predicate as the hover feedback: a refused drop skips the
+      // mutation entirely instead of relying on the mutation no-op.
+      const isDropBlocked =
+        !!targetNodeId &&
+        targetNodeId !== cSourceId &&
+        (m.canConnect ? !m.canConnect(ast, cSourceId, targetNodeId) : false);
+
       if (
         targetNodeId &&
         targetNodeId !== cSourceId &&
         !isBlockedAnchorEdge &&
-        !isInnerToOuterBlocked
+        !isInnerToOuterBlocked &&
+        !isDropBlocked
       ) {
         const worldRect = worldRef.current ? worldRef.current.getBoundingClientRect() : null;
         const dropY = worldRect ? (e.clientY - worldRect.top) / zoom : 0;
@@ -569,6 +590,7 @@ export function useCanvasMouseInteractions({
     connectingSourceKind,
     setConnectingSourceKind,
     connectingTargetId,
+    connectBlocked,
     dragLine,
     setDragLine,
     hoveredNodeId,

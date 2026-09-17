@@ -240,6 +240,8 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
         context?.insertAtIndex
       );
     },
+    // Messages between any participants (including across boxes) are legal.
+    canConnect: () => true,
     deleteEdge: (ast, edgeId) => {
       seq.deleteMessage(ast, edgeId);
     },

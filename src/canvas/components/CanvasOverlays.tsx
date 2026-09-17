@@ -66,8 +66,8 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
 
   return (
     <div className="mermaid-native-overlay">
-      {/* Connection Dragging SVG Line */}
-      <ConnectionLine dragLine={mouse.dragLine} />
+      {/* Connection Dragging SVG Line (red when the driver refuses the drop) */}
+      <ConnectionLine dragLine={mouse.dragLine} blocked={mouse.connectBlocked} />
 
       {/* Marquee Drag Selection Box */}
       <SelectionMarquee box={marquee.selectionBox} />

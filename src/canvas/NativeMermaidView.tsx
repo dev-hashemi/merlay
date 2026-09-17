@@ -292,6 +292,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     displayEdges: mutations.displayEdges,
     displaySubgraphs: mutations.displaySubgraphs,
     driver,
+    ast: mutations.ast,
     applyMutation: mutations.applyMutation,
     setSelectedNodeId: selection.setSelectedNodeId,
   });
@@ -317,11 +318,17 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     onInitialRender: handleFitView,
   });
 
-  // 11. Drop-target highlight while drag-connecting
+  // 11. Drop-target highlight while drag-connecting (red when the driver refuses)
   const connectingSourceId = useCanvasStore((s) => s.connectingSourceId);
   const connectingTargetId = useCanvasStore((s) => s.connectingTargetId);
+  const connectBlocked = useCanvasStore((s) => s.connectBlocked);
   useEffect(() => {
-    applyDropTargetHalo(svgMountRef.current, connectingTargetId, connectingSourceId);
+    applyDropTargetHalo(
+      svgMountRef.current,
+      connectingTargetId,
+      connectingSourceId,
+      connectBlocked
+    );
     if (!connectingSourceId && !connectingTargetId && svgMountRef.current) {
       // Ensure stale drop-target classes are cleared when drag ends.
       svgMountRef.current
@@ -330,8 +337,11 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
       svgMountRef.current.querySelectorAll('.mermaid-drop-target').forEach((el) => {
         el.classList.remove('mermaid-drop-target');
       });
+      svgMountRef.current.querySelectorAll('.mermaid-drop-blocked').forEach((el) => {
+        el.classList.remove('mermaid-drop-blocked');
+      });
     }
-  }, [connectingSourceId, connectingTargetId, svgMountRef, code]);
+  }, [connectingSourceId, connectingTargetId, connectBlocked, svgMountRef, code]);
 
   // 12. Theme switch synchronization (Obsidian css-change event)
   useEffect(() => {
@@ -352,7 +362,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
         isPanning ? 'is-panning' : ''
       } ${isSpacePressed ? 'is-space-held' : ''} ${!isEditable ? 'is-view-only' : ''} ${
         mouse.connectingSourceId ? 'is-connecting' : ''
-      }`}
+      } ${connectBlocked ? 'is-drop-blocked' : ''}`}
       ref={containerRef}
       onWheel={handleWheel}
       onMouseDown={mouse.handleMouseDown}

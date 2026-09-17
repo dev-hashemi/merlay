@@ -68,42 +68,60 @@ export function areInDifferentComposites(
   return false;
 }
 
+/**
+ * Pure legality predicate for a transition, shared by connectStates (enforcement)
+ * and the driver canConnect (blocked-drop hover feedback). Only structural
+ * blocks are reported — duplicate endpoints are still "connectable".
+ */
+export function canConnectStates(
+  ast: MermaidStateAST,
+  fromId: string,
+  toId: string
+): boolean {
+  const actualFrom = fromId.startsWith('[*]') ? '[*]' : fromId;
+  const actualTo = toId.startsWith('[*]') ? '[*]' : toId;
+
+  if (actualFrom === '[*]' && actualTo === '[*]') return false;
+
+  // If from is a scoped anchor e.g. '[*]:Active', target must be within 'Active'
+  if (fromId.startsWith('[*]:')) {
+    const compId = fromId.slice(4);
+    if (!isNodeInsideComposite(ast, actualTo, compId)) {
+      return false;
+    }
+  }
+
+  // If to is a scoped anchor e.g. '[*]:Active', source must be within 'Active'
+  if (toId.startsWith('[*]:')) {
+    const compId = toId.slice(4);
+    if (!isNodeInsideComposite(ast, actualFrom, compId)) {
+      return false;
+    }
+  }
+
+  // Only outer nodes can point to composites; inner nodes cannot point to the outer composite.
+  if (ast.compositeStates.has(actualTo) && isNodeInsideComposite(ast, actualFrom, actualTo)) {
+    return false;
+  }
+
+  // Official Mermaid rule: cannot define transitions between internal states of different composite states
+  if (areInDifferentComposites(ast, actualFrom, actualTo)) {
+    return false;
+  }
+
+  return true;
+}
+
 export function connectStates(
   ast: MermaidStateAST,
   fromId: string,
   toId: string,
   label?: string
 ): MermaidTransitionDef | null {
+  if (!canConnectStates(ast, fromId, toId)) return null;
+
   const actualFrom = fromId.startsWith('[*]') ? '[*]' : fromId;
   const actualTo = toId.startsWith('[*]') ? '[*]' : toId;
-
-  if (actualFrom === '[*]' && actualTo === '[*]') return null;
-
-  // If from is a scoped anchor e.g. '[*]:Active', verify target is within 'Active'
-  if (fromId.startsWith('[*]:')) {
-    const compId = fromId.slice(4);
-    if (!isNodeInsideComposite(ast, actualTo, compId)) {
-      return null;
-    }
-  }
-
-  // If to is a scoped anchor e.g. '[*]:Active', verify source is within 'Active'
-  if (toId.startsWith('[*]:')) {
-    const compId = toId.slice(4);
-    if (!isNodeInsideComposite(ast, actualFrom, compId)) {
-      return null;
-    }
-  }
-
-  // Only outer nodes can point to composites; inner nodes cannot point to the outer composite.
-  if (ast.compositeStates.has(actualTo) && isNodeInsideComposite(ast, actualFrom, actualTo)) {
-    return null;
-  }
-
-  // Official Mermaid rule: cannot define transitions between internal states of different composite states
-  if (areInDifferentComposites(ast, actualFrom, actualTo)) {
-    return null;
-  }
 
   // Same endpoints with the same label are duplicates; same endpoints with a
   // different label are distinct transitions (different events/conditions).

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { useCanvasStore } from '../src/canvas/store/canvasStore';
 import { getDriver } from '../src/diagrams/registry';
+import { createUnsupportedDiagramDriver } from '../src/diagrams/unsupported/unsupportedDriver';
 
 test('Connection Handle: Canvas store tracks hovered node and geometry for drag handle', () => {
   useCanvasStore.getState().resetTransientUiState();
@@ -154,6 +155,56 @@ test('Connection Handle: State diagram drag-connect from start anchor to state a
   const serialized = stateDriver.serialize(ast);
   assert.ok(serialized.includes('[*] --> Idle'));
   assert.ok(serialized.includes('Idle --> [*]'));
+});
+
+test('Connection Handle: canConnect mirrors official rules per diagram type', () => {
+  const fcDriver = getDriver('flowchart')!;
+  const seqDriver = getDriver('sequenceDiagram')!;
+  const stateDriver = getDriver('stateDiagram')!;
+
+  // Flowchart: any pair may connect, including across subgraphs (issue #3).
+  const fcAst = fcDriver.parse(
+    'flowchart LR\n    subgraph sub_1 ["G1"]\n        step_1 ["N1"]\n    end\n    subgraph sub_2 ["G2"]\n        step_2 ["N2"]\n    end\n'
+  );
+  assert.strictEqual(fcDriver.mutations.canConnect?.(fcAst, 'step_1', 'step_2'), true);
+
+  // Sequence: messages between any participants are legal.
+  const seqAst = seqDriver.parse('sequenceDiagram\n    Alice->>Bob: hi\n');
+  assert.strictEqual(seqDriver.mutations.canConnect?.(seqAst, 'Alice', 'Bob'), true);
+
+  // State: inner states of different composites are blocked (official Mermaid rule),
+  // composite-to-composite and outer-to-inner are allowed.
+  const stAst = stateDriver.parse(
+    'stateDiagram-v2\n    state Comp1 {\n        [*] --> s1\n        s1 --> [*]\n    }\n    state Comp2 {\n        [*] --> s2\n        s2 --> [*]\n    }\n    Outer\n'
+  );
+  assert.strictEqual(stateDriver.mutations.canConnect?.(stAst, 's1', 's2'), false);
+  assert.strictEqual(stateDriver.mutations.canConnect?.(stAst, 's2', 's1'), false);
+  assert.strictEqual(stateDriver.mutations.canConnect?.(stAst, 'Comp1', 'Comp2'), true);
+  assert.strictEqual(stateDriver.mutations.canConnect?.(stAst, 'Outer', 's1'), true);
+  assert.strictEqual(stateDriver.mutations.canConnect?.(stAst, 's1', 'Comp1'), false);
+
+  // Unsupported diagrams refuse drops (view-only).
+  const unsupported = createUnsupportedDiagramDriver('pie');
+  assert.strictEqual(
+    unsupported.mutations.canConnect?.(unsupported.createEmpty(), 'A', 'B'),
+    false
+  );
+});
+
+test('Connection Handle: connectBlocked flag tracks refused drops and resets', () => {
+  const store = useCanvasStore.getState();
+  assert.strictEqual(store.connectBlocked, false);
+
+  useCanvasStore.getState().setConnectBlocked(true);
+  assert.strictEqual(useCanvasStore.getState().connectBlocked, true);
+
+  // Starting/ending a drag clears the flag.
+  useCanvasStore.getState().setConnecting('A', null, { x1: 0, y1: 0, x2: 0, y2: 0 });
+  assert.strictEqual(useCanvasStore.getState().connectBlocked, false);
+
+  useCanvasStore.getState().setConnectBlocked(true);
+  useCanvasStore.getState().resetTransientUiState();
+  assert.strictEqual(useCanvasStore.getState().connectBlocked, false);
 });
 
 test('Connection Handle: resetTransientUiState clears hover and connecting state', () => {

@@ -224,6 +224,7 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
     connect: (ast, fromId, toId) => {
       st.connectStates(ast, fromId, toId);
     },
+    canConnect: (ast, fromId, toId) => st.canConnectStates(ast, fromId, toId),
     deleteEdge: (ast, edgeId) => {
       st.deleteTransition(ast, edgeId);
     },

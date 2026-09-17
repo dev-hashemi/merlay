@@ -55,6 +55,8 @@ export interface CanvasStoreState {
   connectingHandleKind: 'start' | 'end' | null;
   connectingTargetId: string | null;
   dragLine: DragLine | null;
+  /** True while the pending drop target would refuse the connection (driver canConnect). */
+  connectBlocked: boolean;
 
   // Camera & Viewport
   zoom: number;
@@ -123,6 +125,7 @@ export interface CanvasStoreState {
   setConnectingSourceKind: (kind: 'start' | 'end' | null) => void;
   setConnectingHandleKind: (kind: 'start' | 'end' | null) => void;
   setConnectingTargetId: (id: string | null) => void;
+  setConnectBlocked: (blocked: boolean) => void;
 
   setCamera: (updates: {
     pan?: { x: number; y: number };
@@ -178,6 +181,7 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
   connectingHandleKind: null,
   connectingTargetId: null,
   dragLine: null,
+  connectBlocked: false,
 
   // Initial Camera
   zoom: 1,
@@ -244,6 +248,7 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
       connectingSourceKind: sourceKind,
       connectingHandleKind: sourceKind,
       connectingTargetId: null,
+      connectBlocked: false,
       dragLine,
     }),
   setDragLine: (dragLine) =>
@@ -257,6 +262,7 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
   setConnectingHandleKind: (kind) =>
     set({ connectingSourceKind: kind, connectingHandleKind: kind }),
   setConnectingTargetId: (id) => set({ connectingTargetId: id }),
+  setConnectBlocked: (blocked) => set({ connectBlocked: blocked }),
 
   setCamera: (updates) =>
     set((state) => ({
@@ -353,5 +359,6 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
       connectingHandleKind: null,
       connectingTargetId: null,
       dragLine: null,
+      connectBlocked: false,
     }),
 }));

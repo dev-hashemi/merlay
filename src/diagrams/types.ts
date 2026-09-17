@@ -138,6 +138,12 @@ export interface DiagramMutations<TAst = unknown> {
 
   // Connections
   connect(ast: TAst, fromId: string, toId: string, context?: ConnectionContext): void;
+  /**
+   * Whether dropping fromId onto toId would create a connection. Pure predicate
+   * for blocked-drop hover feedback — connect() itself remains the enforcement
+   * point (no-op when illegal). Absent = always allowed.
+   */
+  canConnect?(ast: TAst, fromId: string, toId: string): boolean;
   deleteEdge(ast: TAst, edgeId: string): void;
   deleteEdges(ast: TAst, edgeIds: Iterable<string>): void;
   updateEdgeLabel(ast: TAst, edgeId: string, label: string): void;
