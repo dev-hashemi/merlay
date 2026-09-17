@@ -48,4 +48,3 @@ npm run build   # tsc + esbuild production bundle, must pass before any PR
 - One issue = one branch = one small PR. Branch names: `fix/<issue>-<slug>`.
 - PR body must contain `Fixes #<N>` so the issue auto-closes on merge.
 - Keep diffs small (<300 lines preferred). If larger, split into stacked PRs.
-- Do not commit `main.js`, `*.png`, `*.svg`, or local vault files unless part of the fix.
