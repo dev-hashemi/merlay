@@ -6,6 +6,10 @@ export interface ConnectionHintPillProps {
   hoveredNodeRect: Rect | null;
   hoveredNodeId: string | null;
   hoveredNodeKind?: 'start' | 'end' | null;
+  /** Tap-selected node fallback (touch has no hover). Ignored while multi-selecting. */
+  selectedNodeRect?: Rect | null;
+  selectedNodeId?: string | null;
+  selectedNodeKind?: 'start' | 'end' | null;
   isLR: boolean;
   cursorMode: CursorMode;
   isSpacePressed: boolean;
@@ -19,6 +23,9 @@ export const ConnectionHintPill: React.FC<ConnectionHintPillProps> = ({
   hoveredNodeRect,
   hoveredNodeId,
   hoveredNodeKind,
+  selectedNodeRect,
+  selectedNodeId,
+  selectedNodeKind,
   isLR,
   cursorMode,
   isSpacePressed,
@@ -27,9 +34,16 @@ export const ConnectionHintPill: React.FC<ConnectionHintPillProps> = ({
   isMultiSelect,
   isAnchor,
 }) => {
+  // Touch has no hover: fall back to the tap-selected node so finger users
+  // still discover drag-to-connect.
+  const showId = hoveredNodeId ?? (!isMultiSelect ? (selectedNodeId ?? null) : null);
+  const showRect =
+    hoveredNodeRect ?? (!isMultiSelect ? (selectedNodeRect ?? null) : null);
+  const showKind = hoveredNodeId ? hoveredNodeKind : selectedNodeKind;
+
   if (
-    !hoveredNodeRect ||
-    !hoveredNodeId ||
+    !showRect ||
+    !showId ||
     cursorMode === 'hand' ||
     isSpacePressed ||
     isConnecting ||
@@ -40,16 +54,16 @@ export const ConnectionHintPill: React.FC<ConnectionHintPillProps> = ({
   }
 
   // End anchors have no outgoing transitions in state diagrams
-  if (isAnchor && isAnchor(hoveredNodeId) && hoveredNodeKind === 'end') {
+  if (isAnchor && isAnchor(showId) && showKind === 'end') {
     return null;
   }
 
   // Position above the node by default, or below if too close to the canvas top
-  const isTooHigh = hoveredNodeRect.y < 34;
-  const posX = hoveredNodeRect.x + hoveredNodeRect.width / 2;
+  const isTooHigh = showRect.y < 34;
+  const posX = showRect.x + showRect.width / 2;
   const posY = isTooHigh
-    ? hoveredNodeRect.y + hoveredNodeRect.height + 8
-    : hoveredNodeRect.y - 8;
+    ? showRect.y + showRect.height + 8
+    : showRect.y - 8;
 
   const transform = isTooHigh ? 'translate(-50%, 0)' : 'translate(-50%, -100%)';
 

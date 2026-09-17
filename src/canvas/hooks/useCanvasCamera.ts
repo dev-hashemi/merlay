@@ -18,6 +18,14 @@ export function useCanvasCamera({
 
   const zoomRef = useRef<number>(1);
   const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const pinchRef = useRef<{
+    startDist: number;
+    startMidX: number;
+    startMidY: number;
+    startZoom: number;
+    startPanX: number;
+    startPanY: number;
+  } | null>(null);
   const pendingCameraPinRef = useRef<{
     nodeId: string;
     screenX: number;
@@ -226,6 +234,41 @@ export function useCanvasCamera({
     setIsPanning(false);
   }, []);
 
+  /**
+   * Two-finger pinch-zoom for touchscreens. Zoom is centered so the world
+   * point under the gesture midpoint stays put, then follows the fingers.
+   */
+  const startPinch = useCallback(
+    (dist: number, midX: number, midY: number) => {
+      pinchRef.current = {
+        startDist: Math.max(dist, 1),
+        startMidX: midX,
+        startMidY: midY,
+        startZoom: zoomRef.current,
+        startPanX: pan.x,
+        startPanY: pan.y,
+      };
+    },
+    [pan]
+  );
+
+  const updatePinch = useCallback((dist: number, midX: number, midY: number) => {
+    const s = pinchRef.current;
+    if (!s || s.startDist <= 0) return;
+    const newZoom = Math.min(Math.max(s.startZoom * (dist / s.startDist), 0.2), 3);
+    zoomRef.current = newZoom;
+    setZoom(newZoom);
+    const scale = newZoom / s.startZoom;
+    setPan({
+      x: midX - (s.startMidX - s.startPanX) * scale,
+      y: midY - (s.startMidY - s.startPanY) * scale,
+    });
+  }, []);
+
+  const endPinch = useCallback(() => {
+    pinchRef.current = null;
+  }, []);
+
   return {
     zoom,
     setZoom,
@@ -245,5 +288,9 @@ export function useCanvasCamera({
     startPan,
     updatePan,
     endPan,
+    startPinch,
+    updatePinch,
+    endPinch,
+    pinchRef,
   };
 }

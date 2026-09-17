@@ -28,6 +28,7 @@ export interface NodeOverlaysProps {
   onStartEditingNode: (nodeId: string) => void;
   onToggleNodePopover: (popover: 'shape' | 'style' | 'subgraph') => void;
   onDeleteNode: () => void;
+  onDuplicateNode?: () => void;
   canRenameNode?: boolean;
   nodeLinkUrl?: string;
   onOpenNodeLink?: () => void;
@@ -62,6 +63,7 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
   onStartEditingNode,
   onToggleNodePopover,
   onDeleteNode,
+  onDuplicateNode,
   canRenameNode,
   nodeLinkUrl,
   onOpenNodeLink,
@@ -99,6 +101,7 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
               : undefined
           }
           onDelete={onDeleteNode}
+          onDuplicate={onDuplicateNode}
           canRename={canRenameNode}
           nodeLinkUrl={nodeLinkUrl}
           onOpenNodeLink={onOpenNodeLink}

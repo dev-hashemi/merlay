@@ -7,6 +7,7 @@
 import { MermaidNodeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
 import { SvgDomAdapter } from '../../diagrams/types';
 import { Rect } from '../types';
+import { attachTapGestures, guardClickAfterLongPress } from './touchGestures';
 
 export type StartEndKind = 'start' | 'end' | null;
 
@@ -120,6 +121,10 @@ export function setupNodeInteractivity({
             e.stopPropagation();
             onStartEditingSubgraph(targetSubId, htmlEl);
           };
+          // Touch: double-tap renames (no hover/keyboard on mobile).
+          attachTapGestures(htmlEl, {
+            onDoubleTap: () => onStartEditingSubgraph(targetSubId, htmlEl),
+          });
           return;
         }
       }
@@ -186,6 +191,14 @@ export function setupNodeInteractivity({
       e.stopPropagation();
       onStartEditingNode(targetNodeId, htmlEl);
     };
+
+    // Touch: single-tap selects via click; double-tap renames; long-press
+    // multi-selects (mirrors Shift+click). Mouse pointers are ignored.
+    const nodeTap = attachTapGestures(htmlEl, {
+      onDoubleTap: () => onStartEditingNode(targetNodeId, htmlEl),
+      onLongPress: () => onSelectNode(targetNodeId, true, htmlEl),
+    });
+    guardClickAfterLongPress(htmlEl, nodeTap);
 
     if (!isLifeline) {
       const handleHeaderHover = () => {
@@ -260,6 +273,11 @@ export function setupNodeInteractivity({
         e.stopPropagation();
         onStartEditingNode(targetNodeId, htmlEl);
       };
+      const lifelineTap = attachTapGestures(hitArea, {
+        onDoubleTap: () => onStartEditingNode(targetNodeId, htmlEl),
+        onLongPress: () => onSelectNode(targetNodeId, true, htmlEl),
+      });
+      guardClickAfterLongPress(hitArea, lifelineTap);
 
       hitArea.onmouseenter = updateLifelineHover;
       hitArea.onmousemove = updateLifelineHover;
@@ -303,6 +321,10 @@ export function setupNodeInteractivity({
         e.stopPropagation();
         onStartEditingNode(targetAnchorId, container);
       };
+      // Touch: double-tap renames. Anchors are single-select only, so no long-press.
+      attachTapGestures(container, {
+        onDoubleTap: () => onStartEditingNode(targetAnchorId, container),
+      });
 
       container.onmouseenter = () => {
         const rect = getLocalRect(container);

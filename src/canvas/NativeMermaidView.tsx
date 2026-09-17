@@ -78,7 +78,29 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     startPan,
     updatePan,
     endPan,
+    startPinch,
+    updatePinch,
+    endPinch,
+    pinchRef,
   } = useCanvasCamera({ containerRef, worldRef, svgMountRef });
+
+  // Active touch pointers for pinch-zoom. Single-pointer gestures keep flowing
+  // to the pointer-interaction hook; the moment a second finger lands, the
+  // in-progress single gesture is cancelled and the pair drives the camera.
+  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(
+    new Map()
+  );
+
+  const pinchStats = (
+    points: Map<number, { x: number; y: number }>
+  ): { dist: number; midX: number; midY: number } => {
+    const [p1, p2] = Array.from(points.values());
+    return {
+      dist: Math.hypot(p2.x - p1.x, p2.y - p1.y),
+      midX: (p1.x + p2.x) / 2,
+      midY: (p1.y + p2.y) / 2,
+    };
+  };
 
   // 2. AST State & Driver Projections (single active AST owned by the driver)
   const astHook = useDiagramAst({
@@ -91,6 +113,11 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
   });
   const driver = astHook.driver;
   const isEditable = driver.capabilities.editable !== false;
+  // Touch devices get tap/double-tap/long-press copy and gestures (no hover).
+  const isCoarsePointer =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(pointer: coarse)').matches;
 
   // 3. Selection & Halos
   const selection = useCanvasSelection({
@@ -365,10 +392,57 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
       } ${connectBlocked ? 'is-drop-blocked' : ''}`}
       ref={containerRef}
       onWheel={handleWheel}
-      onMouseDown={mouse.handleMouseDown}
-      onMouseMove={mouse.handleMouseMove}
-      onMouseUp={mouse.handleMouseUp}
-      onMouseLeave={() => {
+      onPointerDown={(e) => {
+        // Keep finger-drag routed to the canvas even if the pointer slides
+        // off the original target (required for reliable touch connect/pan).
+        try {
+          e.currentTarget.setPointerCapture?.(e.pointerId);
+        } catch {
+          /* ignore */
+        }
+        activePointersRef.current.set(e.pointerId, {
+          x: e.clientX,
+          y: e.clientY,
+        });
+        if (activePointersRef.current.size === 2) {
+          // Second finger lands: abort the single-pointer gesture and pinch.
+          mouse.handlePointerCancel();
+          const s = pinchStats(activePointersRef.current);
+          startPinch(s.dist, s.midX, s.midY);
+          return;
+        }
+        mouse.handlePointerDown(e);
+      }}
+      onPointerMove={(e) => {
+        if (activePointersRef.current.has(e.pointerId)) {
+          activePointersRef.current.set(e.pointerId, {
+            x: e.clientX,
+            y: e.clientY,
+          });
+        }
+        if (activePointersRef.current.size >= 2) {
+          const s = pinchStats(activePointersRef.current);
+          updatePinch(s.dist, s.midX, s.midY);
+          return;
+        }
+        mouse.handlePointerMove(e);
+      }}
+      onPointerUp={(e) => {
+        activePointersRef.current.delete(e.pointerId);
+        if (pinchRef.current) {
+          // Pinch just ended: the released finger's gesture was already
+          // cancelled at pinch start, so there is nothing to commit.
+          if (activePointersRef.current.size === 0) endPinch();
+          return;
+        }
+        mouse.handlePointerUp(e);
+      }}
+      onPointerCancel={(e) => {
+        activePointersRef.current.delete(e.pointerId);
+        endPinch();
+        mouse.handlePointerCancel();
+      }}
+      onPointerLeave={() => {
         if (!mouse.connectingSourceId) {
           useCanvasStore.getState().setHoveredNode(null, null, null);
         } else {
@@ -456,7 +530,11 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
       {/* Sequence Diagram Affordance Guide */}
       {isEditable && driver.type === 'sequenceDiagram' && (
         <div className="mermaid-canvas-hint-bar nodrag">
-          <span>💡 <strong>Tip:</strong> Drag from a participant handle to connect &bull; Click message to edit &bull; Double-click to rename</span>
+          {isCoarsePointer ? (
+            <span>💡 <strong>Tip:</strong> Drag from a participant to connect &bull; Tap message to edit &bull; Double-tap to rename</span>
+          ) : (
+            <span>💡 <strong>Tip:</strong> Drag from a participant handle to connect &bull; Click message to edit &bull; Double-click to rename</span>
+          )}
         </div>
       )}
 

@@ -8,6 +8,7 @@ import {
   FolderIcon,
   TrashIcon,
   UngroupIcon,
+  CopyIcon,
   LinkIcon,
   ShapeIcons,
   StateTypeIcons,
@@ -40,6 +41,8 @@ export interface NodeActionHudProps {
   onTogglePopover: (popover: 'shape' | 'style' | 'subgraph') => void;
   onRemoveFromGroup?: () => void;
   onDelete: () => void;
+  /** Duplicate without a keyboard (Ctrl+D on desktop). */
+  onDuplicate?: () => void;
   canRename?: boolean;
   hideSprout?: boolean;
   hideDelete?: boolean;
@@ -62,6 +65,7 @@ export const NodeActionHud: React.FC<NodeActionHudProps> = ({
   onTogglePopover,
   onRemoveFromGroup,
   onDelete,
+  onDuplicate,
   canRename,
   hideSprout = false,
   hideDelete = false,
@@ -185,6 +189,18 @@ export const NodeActionHud: React.FC<NodeActionHudProps> = ({
           title={`Open link: ${nodeLinkUrl}`}
         >
           <LinkIcon size={13} />
+        </button>
+      )}
+
+      {/* Duplicate Button (keyboard-free Ctrl+D; hidden for anchors) */}
+      {!isAnchor && onDuplicate && (
+        <button
+          type="button"
+          className="mermaid-hud-btn icon-only"
+          onClick={onDuplicate}
+          title={`Duplicate ${labels.node}`}
+        >
+          <CopyIcon size={13} />
         </button>
       )}
 

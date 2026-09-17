@@ -11,6 +11,7 @@ import {
   EDGE_HOVERED_CLONE_CLS,
   showEdgeHoverHalo,
 } from '../renderer/selectionHalo';
+import { attachTapGestures, guardClickAfterLongPress } from './touchGestures';
 
 export interface SetupEdgeInteractivityOptions {
   mountEl: HTMLElement;
@@ -154,6 +155,14 @@ export function setupEdgeInteractivity({
       onEdgeClick(e, targetEdge, pathEl);
     };
 
+    // Touch: double-tap edits the label; long-press multi-selects.
+    const edgeTap = attachTapGestures(hitArea, {
+      onDoubleTap: () => onStartEditingEdge(targetEdgeId, pathEl),
+      onLongPress: () => onSelectEdge(targetEdge, pathEl, true),
+    });
+    guardClickAfterLongPress(hitArea, edgeTap);
+    guardClickAfterLongPress(pathEl, edgeTap);
+
     hitArea.onmouseenter = () => {
       showEdgeHoverHalo(mountEl, pathEl, targetEdgeId);
     };
@@ -200,5 +209,10 @@ export function setupEdgeInteractivity({
       e.preventDefault();
       onStartEditingEdge(targetEdgeId, htmlEl);
     };
+
+    // Touch: double-tap renames the label.
+    attachTapGestures(htmlEl, {
+      onDoubleTap: () => onStartEditingEdge(targetEdgeId, htmlEl),
+    });
   });
 }

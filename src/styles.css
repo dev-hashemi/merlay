@@ -189,6 +189,10 @@ pre.language-mermaid {
   position: relative;
   overflow: hidden;
   user-select: none;
+  -webkit-user-select: none;
+  /* Custom pointer handling (drag-connect, pan, marquee) owns all touches
+     on the canvas. Popovers/drawer re-enable panning via their own rules. */
+  touch-action: none;
   background-color: var(--mermaid-bg);
   background-image: radial-gradient(var(--mermaid-grid-dot) 1.2px, transparent 1.2px);
   background-size: 20px 20px;
@@ -366,6 +370,7 @@ pre.language-mermaid {
   width: 100%;
   height: 100%;
   will-change: transform;
+  touch-action: none;
 }
 
 .mermaid-native-svg-mount.mermaid-native-svg-mount,
@@ -773,6 +778,7 @@ pre.language-mermaid {
   flex-direction: column;
   z-index: 600;
   pointer-events: all;
+  touch-action: pan-y;
 }
 
 .mermaid-code-drawer-header {
@@ -832,6 +838,7 @@ pre.language-mermaid {
   padding: 8px;
   z-index: 200;
   pointer-events: all;
+  touch-action: pan-y;
   animation: mermaidFadeIn 0.15s ease-out;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -1534,6 +1541,95 @@ pre.language-mermaid {
 .merlay-settings-subtitle {
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+/* ==========================================================================
+   7. Touch / small-screen layout (mobile best practices)
+   ========================================================================== */
+
+/* No hover on touch: the Visual-Mode entry button is always visible. */
+@media (pointer: coarse) {
+  .merlay-edit-btn.merlay-edit-btn,
+  .mermaid-studio-edit-btn.mermaid-studio-edit-btn {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Wider edge hit-areas for fingertips (desktop keeps 14px precision). */
+  #merlay-svg-mount.mermaid-native-svg-mount path.mermaid-edge-hit-area,
+  #merlay-svg-mount.mermaid-native-svg-mount line.mermaid-edge-hit-area {
+    stroke-width: 22px;
+  }
+
+  /* Thumb-sized controls (desktop keeps compact mouse sizing). */
+  .mermaid-hud-btn {
+    min-height: 36px;
+  }
+
+  .mermaid-hud-btn.icon-only {
+    min-width: 36px;
+  }
+
+  .mermaid-tool-btn,
+  .mermaid-mode-btn {
+    min-height: 36px;
+  }
+
+  .mermaid-subgraph-item,
+  .mermaid-shape-item-btn,
+  .mermaid-export-btn {
+    min-height: 40px;
+  }
+
+  /* Respect phone notches / gesture bars. */
+  .mermaid-native-top-bar {
+    top: calc(8px + env(safe-area-inset-top, 0px));
+  }
+
+  .mermaid-canvas-hint-bar {
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Narrow phones: wrap the top bar instead of clipping, sheet the drawer. */
+@media (max-width: 640px) {
+  .mermaid-native-top-bar {
+    left: 8px;
+    right: 8px;
+    top: 8px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .mermaid-top-bar-left,
+  .mermaid-top-bar-right {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  .mermaid-tool-btn {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .mermaid-canvas-hint-bar {
+    max-width: 92vw;
+    white-space: normal;
+    text-align: center;
+    font-size: 11px;
+  }
+
+  .mermaid-side-code-drawer {
+    width: 100%;
+  }
+
+  /* 16px+ inputs stop Android from zooming on focus. */
+  .mermaid-inline-node-input,
+  .mermaid-inline-edge-input,
+  .mermaid-edge-input,
+  .mermaid-code-drawer-textarea {
+    font-size: 16px;
+  }
 }
 
 

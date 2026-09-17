@@ -1,5 +1,6 @@
 /**
- * Hook for Canvas mouse interactions: panning, connection dragging, node hover proximity, and marquee triggering.
+ * Hook for canvas pointer interactions: panning, connection dragging, node hover proximity, and marquee triggering.
+ * Uses Pointer Events so mouse, touch, and pen share one code path (fixes finger-drag on touchscreens).
  */
 
 import React, { useCallback, useRef } from 'react';
@@ -165,9 +166,29 @@ export function useCanvasMouseInteractions({
   } | null>(null);
 
   const DRAG_THRESHOLD = 6; // px movement deadband to protect clicks & double-clicks
+  /** Hold-still delay before an empty-canvas touch becomes a marquee (otherwise it pans). */
+  const EMPTY_HOLD_FOR_MARQUEE_MS = 400;
+  /** Movement that commits an undecided empty-canvas touch to panning. */
+  const EMPTY_PAN_TOLERANCE_PX = 10;
+
+  /**
+   * Undecided empty-canvas touch: finger is down but hasn't moved yet.
+   * Hold still → marquee selection; move → pan (mobile best practice).
+   */
+  const touchEmptyRef = useRef<{
+    startClientX: number;
+    startClientY: number;
+    timer: ReturnType<typeof setTimeout> | null;
+    marqueeArmed: boolean;
+  } | null>(null);
+
+  const clearTouchEmpty = (): void => {
+    if (touchEmptyRef.current?.timer) clearTimeout(touchEmptyRef.current.timer);
+    touchEmptyRef.current = null;
+  };
 
   const handleStartConnect = (
-    e: React.MouseEvent,
+    e: React.PointerEvent,
     startX: number,
     startY: number
   ) => {
@@ -188,7 +209,9 @@ export function useCanvasMouseInteractions({
     });
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handlePointerDown = (e: React.PointerEvent) => {
+    // Multi-touch second fingers belong to pinch-zoom (camera layer), never to connect/marquee.
+    if (e.isPrimary === false) return;
     if (
       (e.target as HTMLElement).closest('.nodrag') ||
       (e.target as HTMLElement).closest('.mermaid-action-hud') ||
@@ -198,7 +221,8 @@ export function useCanvasMouseInteractions({
       return;
     }
 
-    const isMiddleClick = e.button === 1;
+    const isMouse = e.pointerType === 'mouse';
+    const isMiddleClick = isMouse && e.button === 1;
     const isHandModeActive =
       cursorMode === 'hand' ||
       isSpacePressed ||
@@ -209,7 +233,7 @@ export function useCanvasMouseInteractions({
       return;
     }
 
-    if (e.button !== 0) return;
+    if (isMouse && e.button !== 0) return;
 
     // Check if clicking on an interactive node, anchor, lifeline, or cluster
     const nodeEl = (e.target as HTMLElement).closest('[data-mermaid-node-id]');
@@ -236,17 +260,60 @@ export function useCanvasMouseInteractions({
         sourceRect,
         isLifeline,
       };
+      // Touch has no hover: seed the hovered-node store so the drag can start
+      // and the connection hint pill has geometry to render from.
+      if (e.pointerType !== 'mouse') {
+        useCanvasStore.getState().setHoveredNode(sourceNodeId, sourceRect, sourceKind);
+      }
       // Do not start marquee when clicking on a node!
       return;
     }
 
-    // Empty canvas click starts marquee selection
+    // Empty canvas press starts marquee selection on mouse. On touch, a
+    // one-finger drag pans (mobile best practice) — marquee needs a hold first.
+    if (e.pointerType !== 'mouse' && !isHandModeActive) {
+      touchEmptyRef.current = {
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        timer: null,
+        marqueeArmed: false,
+      };
+      touchEmptyRef.current.timer = setTimeout(() => {
+        const t = touchEmptyRef.current;
+        if (!t) return;
+        t.timer = null;
+        t.marqueeArmed = true;
+        marquee.startMarquee(t.startClientX, t.startClientY);
+      }, EMPTY_HOLD_FOR_MARQUEE_MS);
+      return;
+    }
     marquee.startMarquee(e.clientX, e.clientY);
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (e.isPrimary === false) return;
     if (isPanning) {
       updatePan(e.clientX, e.clientY);
+      return;
+    }
+
+    // Resolve an undecided empty-canvas touch: move wins → pan, hold won → marquee.
+    if (touchEmptyRef.current) {
+      const t = touchEmptyRef.current;
+      if (!t.marqueeArmed) {
+        const dist = Math.hypot(
+          e.clientX - t.startClientX,
+          e.clientY - t.startClientY
+        );
+        if (dist > EMPTY_PAN_TOLERANCE_PX) {
+          clearTouchEmpty();
+          // Anchor the pan at the gesture origin so the canvas doesn't jump.
+          startPan(t.startClientX, t.startClientY);
+          updatePan(e.clientX, e.clientY);
+        }
+        return;
+      }
+      marquee.updateMarquee(e.clientX, e.clientY, displayNodes, displayEdges);
       return;
     }
 
@@ -401,11 +468,14 @@ export function useCanvasMouseInteractions({
     }
   };
 
-  const handleMouseUp = (e: React.MouseEvent) => {
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (e.isPrimary === false) return;
     endPan();
 
     // Discard pending connection if it never exceeded the threshold (it was just a click or dblclick)
     pendingConnectRef.current = null;
+    // A quick empty-canvas tap never armed anything; a held one armed marquee above.
+    clearTouchEmpty();
 
     if (marquee.dragBoxStartRef.current) {
       marquee.endMarquee(displayNodes, displayEdges);
@@ -584,6 +654,18 @@ export function useCanvasMouseInteractions({
     }
   };
 
+  /**
+   * A cancelled pointer (palm rejection, gesture taken over by the OS/browser)
+   * must never commit a mutation — just release transient drag state.
+   */
+  const handlePointerCancel = () => {
+    endPan();
+    pendingConnectRef.current = null;
+    clearTouchEmpty();
+    marquee.dragBoxStartRef.current = null;
+    useCanvasStore.getState().setConnecting(null, null, null);
+  };
+
   return {
     connectingSourceId,
     setConnectingSourceId,
@@ -601,8 +683,15 @@ export function useCanvasMouseInteractions({
     setHoveredNodeKind,
     setHoveredNode,
     handleStartConnect,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    handlePointerCancel,
+    /** @deprecated Use handlePointerDown (kept for backward compat). */
+    handleMouseDown: handlePointerDown,
+    /** @deprecated Use handlePointerMove (kept for backward compat). */
+    handleMouseMove: handlePointerMove,
+    /** @deprecated Use handlePointerUp (kept for backward compat). */
+    handleMouseUp: handlePointerUp,
   };
 }

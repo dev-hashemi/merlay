@@ -48,6 +48,16 @@ export class MermaidBlockModal extends Modal {
   onOpen(): void {
     const { contentEl, modalEl } = this;
     modalEl.addClass('mod-mermaid-block-modal');
+    // Phones have no room for a windowed modal: start fullscreen on coarse
+    // pointers or narrow viewports (user can still exit via the toggle).
+    if (!this.isFullscreen && typeof window !== 'undefined') {
+      const coarse =
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(pointer: coarse)').matches;
+      if (coarse || window.innerWidth < 700) {
+        this.toggleFullscreen();
+      }
+    }
     contentEl.empty();
     contentEl.addClass('mermaid-block-modal-root');
 

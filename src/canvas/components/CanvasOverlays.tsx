@@ -7,7 +7,7 @@
 import React from 'react';
 import { CursorMode, SelectionBox } from '../types';
 import { useCanvasSelection } from '../hooks/useCanvasSelection';
-import { useDiagramMutations } from '../hooks/useDiagramMutations';
+import { useCanvasStore } from '../store/canvasStore';import { useDiagramMutations } from '../hooks/useDiagramMutations';
 import { useInlineEditing } from '../hooks/useInlineEditing';
 import { useCanvasMouseInteractions } from '../hooks/useCanvasMouseInteractions';
 
@@ -47,6 +47,8 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
 }) => {
   const { selectedNodeId, selectedEdgeId, selectedSubgraphId } = selection;
   const driver = mutations.driver;
+  // Anchor kind for the tap-selected node (hides the hint pill on end anchors).
+  const selectedStarKind = useCanvasStore((s) => s.selectedStarKind);
 
   const canUngroup = Array.from(selection.selectedNodeIds).some(
     (nid) => !!mutations.displayNodes.get(nid)?.subgraphId
@@ -84,6 +86,9 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         hoveredNodeRect={mouse.hoveredNodeRect}
         hoveredNodeId={mouse.hoveredNodeId}
         hoveredNodeKind={mouse.hoveredNodeKind}
+        selectedNodeRect={selection.selectedNodeRect}
+        selectedNodeId={selectedNodeId}
+        selectedNodeKind={selectedNodeId ? selectedStarKind : null}
         isLR={selection.isLR}
         cursorMode={cursorMode}
         isSpacePressed={isSpacePressed}
@@ -148,6 +153,7 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
           selection.setActiveNodePopover((prev) => (prev === popover ? null : popover))
         }
         onDeleteNode={mutations.handleDeleteSelectedNode}
+        onDuplicateNode={mutations.handleDuplicateSelected}
         canRenameNode={canRenameSelectedNode}
         nodeLinkUrl={selectedNodeLink}
         onOpenNodeLink={

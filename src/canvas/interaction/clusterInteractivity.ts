@@ -7,6 +7,7 @@
 
 import { MermaidSubgraphDef } from '../../diagrams/viewModel';
 import { Rect } from '../types';
+import { attachTapGestures } from './touchGestures';
 
 export interface SetupClusterInteractivityOptions {
   mountEl: HTMLElement;
@@ -114,6 +115,10 @@ export function setupClusterInteractivity({
       e.stopPropagation();
       onStartEditingSubgraph(targetSubId, htmlEl);
     };
+    // Touch: double-tap renames. Subgraphs are single-select only, so no long-press.
+    attachTapGestures(htmlEl, {
+      onDoubleTap: () => onStartEditingSubgraph(targetSubId, htmlEl),
+    });
     if (onHoverSubgraph) {
       htmlEl.onmouseenter = () => {
         onHoverSubgraph(targetSubId, getLocalRect(htmlEl));
