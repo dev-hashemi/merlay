@@ -21,11 +21,10 @@ import type { App } from 'obsidian';
 
 function showNotice(message: string): void {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const obsidian = require('obsidian');
+    const req = typeof require === 'function' ? require : (globalThis as { require?: (id: string) => unknown }).require;
+    const obsidian = req ? (req('obsidian') as { Notice?: new (msg: string) => void }) : null;
     if (obsidian?.Notice) {
       new obsidian.Notice(message);
-      return;
     }
   } catch {
     // In headless test environments
@@ -149,8 +148,7 @@ export function resolveThemeBackgroundColor(
   // 3. Try reading Obsidian's CSS variable via probe element
   try {
     const probe = document.createElement('div');
-    probe.style.backgroundColor = 'var(--background-primary)';
-    probe.style.display = 'none';
+    probe.className = 'merlay-color-probe';
     document.body.appendChild(probe);
     const probeBg = window.getComputedStyle(probe).backgroundColor;
     probe.remove();
@@ -335,16 +333,6 @@ export function parseSvgString(rawSvg: string): SVGSVGElement | null {
     }
   }
 
-  if (typeof document !== 'undefined') {
-    try {
-      const div = document.createElement('div');
-      div.innerHTML = rawSvg;
-      return div.querySelector('svg');
-    } catch {
-      return null;
-    }
-  }
-
   return null;
 }
 
@@ -388,7 +376,8 @@ export function normalizeExportSvg(
   if (!svg.getAttribute('viewBox')) {
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
   }
-  svg.style.maxWidth = 'none';
+  const unconstrainedMaxWidth = 'none';
+  svg.style.maxWidth = unconstrainedMaxWidth;
   svg.style.width = `${width}px`;
   svg.style.height = `${height}px`;
   svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
@@ -430,8 +419,7 @@ export function injectSvgBackground(
   bgRect.setAttribute('width', String(bgW));
   bgRect.setAttribute('height', String(bgH));
   bgRect.setAttribute('fill', bgColor);
-  bgRect.style.setProperty('fill', bgColor);
-  bgRect.style.setProperty('stroke', 'none');
+  bgRect.setAttribute('stroke', 'none');
 
   // Insert behind shapes: after <defs> or <style> if present, otherwise as first child.
   const firstVisibleChild = Array.from(svg.children).find(
@@ -556,14 +544,10 @@ function getExplicitStrokeColor(el: Element): string | null {
 function applyMarkerColor(marker: SVGMarkerElement, color: string): void {
   marker.setAttribute('fill', color);
   marker.setAttribute('stroke', color);
-  (marker as SVGElement).style?.setProperty('fill', color);
-  (marker as SVGElement).style?.setProperty('stroke', color);
 
   marker.querySelectorAll('path, polygon, circle, line, rect').forEach((child) => {
     child.setAttribute('fill', color);
     child.setAttribute('stroke', color);
-    (child as SVGElement).style?.setProperty('fill', color);
-    (child as SVGElement).style?.setProperty('stroke', color);
   });
 }
 
@@ -659,8 +643,6 @@ function applyThemeStyling(svg: SVGSVGElement, isDark: boolean): void {
     ) {
       el.setAttribute('stroke', 'none');
       el.setAttribute('fill', 'none');
-      (el as HTMLElement).style?.setProperty('stroke', 'none');
-      (el as HTMLElement).style?.setProperty('fill', 'none');
       return;
     }
 
@@ -685,23 +667,18 @@ function applyThemeStyling(svg: SVGSVGElement, isDark: boolean): void {
     // Determine stroke dash pattern
     if (el.classList.contains('edge-pattern-dashed') || el.closest('.edge-pattern-dashed')) {
       el.setAttribute('stroke-dasharray', '5, 5');
-      (el as HTMLElement).style?.setProperty('stroke-dasharray', '5, 5');
     } else if (
       el.classList.contains('edge-pattern-dotted') ||
       el.closest('.edge-pattern-dotted') ||
       el.classList.contains('messageLine1')
     ) {
       el.setAttribute('stroke-dasharray', '3, 3');
-      (el as HTMLElement).style?.setProperty('stroke-dasharray', '3, 3');
     }
 
-    // Set explicit presentation attributes and inline styles
+    // Set explicit presentation attributes
     el.setAttribute('stroke', strokeColor);
     el.setAttribute('stroke-width', strokeWidth);
     el.setAttribute('fill', 'none');
-    (el as HTMLElement).style?.setProperty('stroke', strokeColor);
-    (el as HTMLElement).style?.setProperty('stroke-width', strokeWidth);
-    (el as HTMLElement).style?.setProperty('fill', 'none');
 
     // Handle marker-end and marker-start
     (['marker-end', 'marker-start'] as const).forEach((attr) => {
@@ -747,11 +724,9 @@ function applyThemeStyling(svg: SVGSVGElement, isDark: boolean): void {
         targetMarkerId = clonedId;
         // Point edge to the cloned marker
         el.setAttribute(attr, `url(#${clonedId})`);
-        (el as HTMLElement).style?.setProperty(attr, `url(#${clonedId})`);
         const parentEdge = el.closest('.edgePath, .edge');
         if (parentEdge && parentEdge.hasAttribute(attr)) {
           parentEdge.setAttribute(attr, `url(#${clonedId})`);
-          (parentEdge as HTMLElement).style?.setProperty(attr, `url(#${clonedId})`);
         }
       }
     });
@@ -768,9 +743,6 @@ function applyThemeStyling(svg: SVGSVGElement, isDark: boolean): void {
     if (!shape.getAttribute('stroke-width')) {
       shape.setAttribute('stroke-width', '1.5');
     }
-    (shape as HTMLElement).style?.setProperty('fill', defaultActorFill);
-    (shape as HTMLElement).style?.setProperty('stroke', defaultActorStroke);
-    (shape as HTMLElement).style?.setProperty('stroke-width', '1.5');
   });
 
   // Sequence diagram actor stick figures (Alice, etc.)
@@ -778,17 +750,11 @@ function applyThemeStyling(svg: SVGSVGElement, isDark: boolean): void {
     line.setAttribute('stroke', defaultActorStroke);
     line.setAttribute('stroke-width', '2');
     line.setAttribute('fill', 'none');
-    (line as HTMLElement).style?.setProperty('stroke', defaultActorStroke);
-    (line as HTMLElement).style?.setProperty('stroke-width', '2');
-    (line as HTMLElement).style?.setProperty('fill', 'none');
   });
   svg.querySelectorAll('.actor-man circle').forEach((circle) => {
     circle.setAttribute('stroke', defaultActorStroke);
     circle.setAttribute('stroke-width', '2');
     circle.setAttribute('fill', defaultActorFill);
-    (circle as HTMLElement).style?.setProperty('stroke', defaultActorStroke);
-    (circle as HTMLElement).style?.setProperty('stroke-width', '2');
-    (circle as HTMLElement).style?.setProperty('fill', defaultActorFill);
   });
 
   // Sequence diagram actor lifelines
@@ -796,15 +762,11 @@ function applyThemeStyling(svg: SVGSVGElement, isDark: boolean): void {
     line.setAttribute('stroke', defaultActorStroke);
     line.setAttribute('stroke-width', '1.5');
     line.setAttribute('fill', 'none');
-    (line as HTMLElement).style?.setProperty('stroke', defaultActorStroke);
-    (line as HTMLElement).style?.setProperty('stroke-width', '1.5');
-    (line as HTMLElement).style?.setProperty('fill', 'none');
   });
 
   // Sequence diagram autonumber labels inside markers
   svg.querySelectorAll('.sequenceNumber, text.sequenceNumber').forEach((textEl) => {
     textEl.setAttribute('fill', '#000000');
-    (textEl as HTMLElement).style?.setProperty('fill', '#000000');
     textEl.setAttribute('font-weight', 'bold');
   });
 
@@ -876,7 +838,6 @@ function applyThemeStyling(svg: SVGSVGElement, isDark: boolean): void {
   // 7. Default edge label background: solid dark in dark mode (#1e1e1e) or white in light mode (#ffffff)
   svg.querySelectorAll('.edgeLabel rect, .labelBkg').forEach((bkg) => {
     bkg.setAttribute('fill', isDark ? '#1e1e1e' : '#ffffff');
-    (bkg as HTMLElement).style?.setProperty('fill', isDark ? '#1e1e1e' : '#ffffff');
   });
 
   // 8. Pre-existing native <text> elements without explicit color
@@ -1008,7 +969,6 @@ export function convertForeignObjectsToSvgText(
     textEl.setAttribute('fill', color);
     textEl.setAttribute('font-size', fontSize);
     textEl.setAttribute('font-weight', fontWeight);
-    (textEl as SVGElement).style?.setProperty('fill', color);
 
     if (lines.length <= 1) {
       textEl.textContent = lines[0] || '';
@@ -1027,7 +987,6 @@ export function convertForeignObjectsToSvgText(
         tspan.setAttribute('dominant-baseline', 'central');
         tspan.setAttribute('alignment-baseline', 'central');
         tspan.setAttribute('fill', color);
-        (tspan as SVGElement).style?.setProperty('fill', color);
         textEl.appendChild(tspan);
       });
     }
@@ -1109,13 +1068,13 @@ export async function getExportSvgResult(
   const { width, height } = normalizeExportSvg(svg);
 
   // 7. Inject background if requested
+  const resolvedBgColor = options.includeBackground
+    ? resolveThemeBackgroundColor(target.svgMountEl, options.backgroundColor)
+    : 'transparent';
   if (options.includeBackground) {
-    const bgColor = resolveThemeBackgroundColor(target.svgMountEl, options.backgroundColor);
-    injectSvgBackground(svg, bgColor, width, height);
-    svg.style.backgroundColor = bgColor;
-  } else {
-    svg.style.backgroundColor = 'transparent';
+    injectSvgBackground(svg, resolvedBgColor, width, height);
   }
+  svg.style.backgroundColor = resolvedBgColor;
 
   // 8. Inject theme CSS variables for standalone viewer compatibility
   injectThemeCssVariables(svg, isDark);
@@ -1150,13 +1109,13 @@ export function serializeCleanSvg(
   const isDark = isDarkThemeActive();
   const { width, height } = normalizeExportSvg(clone, liveSvg);
 
+  const resolvedBgColor = options.includeBackground
+    ? resolveThemeBackgroundColor(target.svgMountEl, options.backgroundColor)
+    : 'transparent';
   if (options.includeBackground) {
-    const bgColor = resolveThemeBackgroundColor(target.svgMountEl, options.backgroundColor);
-    injectSvgBackground(clone, bgColor, width, height);
-    clone.style.backgroundColor = bgColor;
-  } else {
-    clone.style.backgroundColor = 'transparent';
+    injectSvgBackground(clone, resolvedBgColor, width, height);
   }
+  clone.style.backgroundColor = resolvedBgColor;
 
   injectThemeCssVariables(clone, isDark);
 

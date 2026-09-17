@@ -43,6 +43,12 @@
   --mermaid-grid-dot: var(--background-modifier-border, rgba(255, 255, 255, 0.12));
 }
 
+/* Utility probe element for measuring Obsidian's computed theme variables */
+.merlay-color-probe {
+  background-color: var(--background-primary);
+  display: none;
+}
+
 /* 1. Inline "Visual Mode" Button on ```mermaid blocks in Notes */
 .block-language-mermaid,
 pre.language-mermaid {

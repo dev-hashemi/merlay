@@ -148,20 +148,52 @@ test('Obsidian compliance: no Node/Electron imports (isDesktopOnly is false)', (
   );
 });
 
-test('Obsidian compliance: no innerHTML/outerHTML setters in new code', () => {
-  // exportDiagram.ts parses our own renderer-produced SVG (not user text);
-  // every other .innerHTML = assignment is a suspected XSS hole.
+test('Obsidian compliance: no innerHTML/outerHTML setters in code', () => {
   assertNoMatch(
     srcFiles(),
     /\.(innerHTML|outerHTML)\s*=/,
-    'use DOMParser / createEl / createDiv instead of innerHTML',
-    ['src/canvas/utils/exportDiagram.ts']
+    'use DOMParser / createEl / createDiv instead of innerHTML'
   );
   assertNoMatch(
     srcFiles(),
     /\.insertAdjacentHTML\s*\(/,
     'use DOMParser / createEl / createDiv instead of insertAdjacentHTML'
   );
+});
+
+test('Obsidian compliance: no static style assignments (obsidianmd/no-static-styles-assignment)', () => {
+  assertNoMatch(
+    srcFiles(),
+    /\.style\.[a-zA-Z]+\s*=\s*['"][^'"]*['"]/,
+    'use CSS classes or dynamic variables instead of static style assignments'
+  );
+  assertNoMatch(
+    srcFiles(),
+    /\.style(?:\??\.)?setProperty\(\s*['"][^'"]+['"]\s*,\s*['"][^'"]*['"]\s*\)/,
+    'use CSS classes or dynamic variables instead of static setProperty calls'
+  );
+  assertNoMatch(
+    srcFiles(),
+    /\.setAttribute\(\s*['"]style['"]\s*,\s*['"][^'"]*['"]\s*\)/,
+    'use CSS classes or dynamic variables instead of setAttribute("style", ...)'
+  );
+});
+
+test('Obsidian compliance: no undescribed directive comments (eslint-comments/require-description)', () => {
+  const files = srcFiles();
+  const hits: string[] = [];
+  for (const f of files) {
+    const lines = f.code.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (/\/\/\s*eslint-disable(?:-next-line|-line)?(?:\s|$)/.test(line)) {
+        if (!line.includes('--')) {
+          hits.push(`${f.rel}:${i + 1}`);
+        }
+      }
+    }
+  }
+  assert.deepStrictEqual(hits, [], `undescribed eslint directive comments: ${hits.join(', ')}`);
 });
 
 test('Obsidian compliance: no hardcoded text colors in TS', () => {
