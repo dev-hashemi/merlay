@@ -8,6 +8,7 @@ import {
   FolderIcon,
   TrashIcon,
   UngroupIcon,
+  LinkIcon,
   ShapeIcons,
   StateTypeIcons,
   UserIcon,
@@ -42,6 +43,9 @@ export interface NodeActionHudProps {
   canRename?: boolean;
   hideSprout?: boolean;
   hideDelete?: boolean;
+  /** External hyperlink from a preserved click/link statement (edit-mode clicks select, so the link opens from here). */
+  nodeLinkUrl?: string;
+  onOpenNodeLink?: () => void;
 }
 
 export const NodeActionHud: React.FC<NodeActionHudProps> = ({
@@ -61,6 +65,8 @@ export const NodeActionHud: React.FC<NodeActionHudProps> = ({
   canRename,
   hideSprout = false,
   hideDelete = false,
+  nodeLinkUrl,
+  onOpenNodeLink,
 }) => {
   const { labels, capabilities } = driver;
   const isAnchor = !!driver.mutations.anchors?.isAnchor(selectedNodeId);
@@ -169,6 +175,18 @@ export const NodeActionHud: React.FC<NodeActionHudProps> = ({
             <UngroupIcon size={14} />
           </button>
         )}
+
+      {/* Open Link Button (only when a click/link statement attaches a URL) */}
+      {nodeLinkUrl && onOpenNodeLink && (
+        <button
+          type="button"
+          className="mermaid-hud-btn icon-only"
+          onClick={onOpenNodeLink}
+          title={`Open link: ${nodeLinkUrl}`}
+        >
+          <LinkIcon size={13} />
+        </button>
+      )}
 
       {!hideDelete && (
         <>

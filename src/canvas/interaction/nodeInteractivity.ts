@@ -147,6 +147,9 @@ export function setupNodeInteractivity({
     // Bottom mirrored actors in sequence diagrams should only allow click selection, no hover handles
     if (htmlEl.classList.contains('actor-bottom') || htmlEl.closest('.actor-bottom')) {
       htmlEl.onclick = (e) => {
+        // Edit mode owns clicks: a linked node (<a> wrapper from mermaid's
+        // click/link statements) must select, never navigate away.
+        e.preventDefault();
         e.stopPropagation();
         const isMulti = e.shiftKey || e.metaKey || e.ctrlKey;
         onSelectNode(targetNodeId, isMulti, htmlEl);
@@ -170,6 +173,10 @@ export function setupNodeInteractivity({
     };
 
     htmlEl.onclick = (e) => {
+      // Edit mode owns clicks: a linked node (<a> wrapper from mermaid's
+      // click/link statements) must select, never navigate away. The link
+      // stays reachable via the HUD "Open link" action (driver.getNodeLink).
+      e.preventDefault();
       e.stopPropagation();
       const isMulti = e.shiftKey || e.metaKey || e.ctrlKey;
       onSelectNode(targetNodeId, isMulti, htmlEl);
@@ -244,6 +251,7 @@ export function setupNodeInteractivity({
       };
 
       hitArea.onclick = (e) => {
+        e.preventDefault();
         e.stopPropagation();
         const isMulti = e.shiftKey || e.metaKey || e.ctrlKey;
         onSelectNode(targetNodeId, isMulti, htmlEl);
@@ -284,6 +292,7 @@ export function setupNodeInteractivity({
       container.setCssStyles({ cursor: 'pointer' });
 
       container.onclick = (e) => {
+        e.preventDefault();
         e.stopPropagation();
         const isMulti =
           (e as MouseEvent).shiftKey || (e as MouseEvent).metaKey || (e as MouseEvent).ctrlKey;

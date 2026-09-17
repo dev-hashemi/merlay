@@ -128,3 +128,29 @@ test('Sequence Preservation: links and custom annotations survive edits', () => 
   assert.ok(serialized.includes('Alice->>Bob: Ping'));
   assert.ok(serialized.includes('Bob->>'));
 });
+
+test('Sequence Preservation: link statements survive visual edits verbatim', () => {
+  const code = `sequenceDiagram
+    participant Alice
+    participant Bob
+    Alice->>Bob: Hello Bob
+    link Alice: Dashboard @ https://example.com
+`;
+  const ast = driver.parse(code);
+
+  // No phantom participants from the link statement
+  assert.ok(!ast.participants.has('link'));
+  assert.ok(!ast.participants.has('Dashboard'));
+
+  // Visual edit: relabel the message
+  const msg = ast.messages[0];
+  driver.mutations.updateEdgeLabel(ast, msg.id, 'Good morning Bob');
+
+  const serialized = driver.serialize(ast);
+  assert.ok(serialized.includes('link Alice: Dashboard @ https://example.com'));
+  assert.ok(serialized.includes('Alice->>Bob: Good morning Bob'));
+
+  // Stable across repeated round-trips
+  const reparsed = driver.parse(serialized);
+  assert.strictEqual(driver.serialize(reparsed), serialized);
+});

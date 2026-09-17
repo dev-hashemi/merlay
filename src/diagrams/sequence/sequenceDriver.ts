@@ -21,6 +21,7 @@ import {
 } from './types';
 import { parseMermaidSequenceDiagram } from './parser';
 import { serializeMermaidSequenceDiagram } from './serializer';
+import { findNodeLinkUrl } from '../nodeLinks';
 import * as seq from './mutations';
 
 const SEQUENCE_KIND_OPTIONS = [
@@ -179,6 +180,12 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
       subgraphs,
       direction: undefined,
     };
+  },
+  getNodeLink(ast: MermaidSequenceAST, nodeId: string): string | undefined {
+    return findNodeLinkUrl(
+      ast.rawLines.map((r) => r.text),
+      nodeId
+    );
   },
 
   capabilities: {

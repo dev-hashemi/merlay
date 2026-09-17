@@ -13,6 +13,7 @@ import {
 import { MermaidStateAST, MermaidStateType, StateDirection } from './types';
 import { parseMermaidStateDiagram } from './parser';
 import { serializeMermaidStateDiagram } from './serializer';
+import { findNodeLinkUrl } from '../nodeLinks';
 import * as st from './mutations';
 
 const STATE_KIND_OPTIONS = [
@@ -171,6 +172,12 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
       subgraphs,
       direction: ast.direction,
     };
+  },
+  getNodeLink(ast: MermaidStateAST, nodeId: string): string | undefined {
+    return findNodeLinkUrl(
+      ast.rawLines.map((r) => r.text),
+      nodeId
+    );
   },
 
   capabilities: {

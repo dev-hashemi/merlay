@@ -145,6 +145,15 @@ export function serializeMermaidFlowchart(ast: MermaidFlowchartAST): string {
     }
   }
 
+  // 8. Preserved statements (click, accTitle/accDescr, comments) — emitted
+  // verbatim so visual edits never corrupt or drop hand-written code.
+  if (ast.rawLines.length > 0) {
+    lines.push('');
+    for (const raw of ast.rawLines) {
+      lines.push(`    ${raw.text}`);
+    }
+  }
+
   return lines.join('\n').trim() + '\n';
 }
 

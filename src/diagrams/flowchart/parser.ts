@@ -22,6 +22,7 @@ export { parseStyleDeclarations };
 
 export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
   const tokens = tokenize(input);
+  const inputLines = input.split('\n');
   let cursor = 0;
 
   const ast: MermaidFlowchartAST = {
@@ -72,9 +73,10 @@ export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
 
     const token = currentToken();
 
-    // 1. Comments
+    // 1. Comments — preserved verbatim so visual edits never drop them
     if (token.type === 'COMMENT') {
-      advance();
+      const t = advance();
+      ast.rawLines.push({ type: 'raw', text: t.value });
       continue;
     }
 
@@ -326,7 +328,14 @@ export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
       continue;
     }
 
-    // 7. Node / Edge statements
+    // 7. Interaction / metadata statements the editor does not model
+    // (click, accTitle, accDescr, title) — preserved verbatim so visual
+    // edits never corrupt or drop hand-written code.
+    if (token.type === 'IDENTIFIER' && tryConsumeRawStatement()) {
+      continue;
+    }
+
+    // 8. Node / Edge statements
     if (token.type === 'IDENTIFIER') {
       parseNodeOrEdgeStatement();
       continue;
@@ -340,6 +349,89 @@ export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
   resolveStylesOntoAst(ast, pendingLinkStyles);
 
   return ast;
+
+  function tryConsumeRawStatement(): boolean {
+    const tok = currentToken();
+    if (tok.type !== 'IDENTIFIER') return false;
+    const first = tok.value;
+    const isClick = /^click$/i.test(first);
+    const isMeta =
+      /^(accTitle|accDescr|title)$/i.test(first) ||
+      /^acc(Title|Descr)/i.test(first);
+    if (!isClick && !isMeta) return false;
+
+    const lineNo = tok.line;
+    const srcTrim = (inputLines[lineNo - 1] ?? '').trim();
+    // Multiline accDescr { ... } block: the lexer drops the bare `{`, so
+    // detect it from the source line before the token-count guard below.
+    const isAccDescrBlock =
+      /^accDescr\s*\{/i.test(srcTrim) && !/\}\s*$/.test(srcTrim);
+
+    // Peek at every token on this source line.
+    const lineTokens: Token[] = [];
+    let peek = cursor;
+    while (
+      peek < tokens.length &&
+      tokens[peek].type !== 'NEWLINE' &&
+      tokens[peek].type !== 'EOF' &&
+      tokens[peek].line === lineNo
+    ) {
+      lineTokens.push(tokens[peek]);
+      peek++;
+    }
+
+    // A genuine node/edge statement always carries an arrow, an edge label,
+    // or a node shape with a label (a node literally named "click" can still
+    // sprout edges: `click --> X`). Interaction statements never do — the
+    // only shape-like text they contain is the empty `()` of a `call fn()`.
+    const hasStructure = lineTokens.some(
+      (t) =>
+        t.type === 'ARROW' ||
+        t.type === 'ARROW_LABEL' ||
+        (t.type === 'NODE_SHAPE' && (t.labelText ?? '').trim() !== '')
+    );
+    if (hasStructure) return false;
+    // `click <target> <action>` needs at least 3 words; a lone `click` or
+    // `click B` stays a normal node definition.
+    if (!isAccDescrBlock && isClick && lineTokens.length < 3) return false;
+    if (!isAccDescrBlock && !isClick && lineTokens.length < 2) return false;
+
+    let rawText = srcTrim;
+    // Consume the rest of this source line.
+    while (
+      currentToken().type !== 'NEWLINE' &&
+      currentToken().type !== 'EOF'
+    ) {
+      advance();
+    }
+
+    // Multiline accDescr { ... } block: consume verbatim until the closing }.
+    // Driven off source lines (not tokens) because lines like `}` produce
+    // no tokens in the flowchart lexer.
+    if (isAccDescrBlock) {
+      const block = [rawText];
+      let idx = lineNo; // 0-based index of the source line after the opener
+      while (idx < inputLines.length) {
+        const src = (inputLines[idx] ?? '').trim();
+        idx++;
+        block.push(src === '' ? '' : '    ' + src);
+        if (/^\}/.test(src)) break;
+      }
+      // Advance the cursor past every token on the consumed source lines.
+      // Consumed 1-based lines are lineNo..idx, so drop tokens with line <= idx.
+      while (
+        cursor < tokens.length &&
+        currentToken().type !== 'EOF' &&
+        currentToken().line <= idx
+      ) {
+        advance();
+      }
+      rawText = block.join('\n');
+    }
+
+    ast.rawLines.push({ type: 'raw', text: rawText });
+    return true;
+  }
 
   function parseNodeOrEdgeStatement() {
     let leftNode = parseSingleNode();

@@ -233,6 +233,14 @@ export interface DiagramDriver<TAst = unknown> {
   /** Read-only projection to the shared canvas view-model. */
   project(ast: TAst): ViewProjection;
 
+  /**
+   * External hyperlink attached to a node via a verbatim-preserved
+   * `click`/`link` statement. Edit-mode clicks are reserved for selection,
+   * so the UI offers this through an "Open link" affordance instead.
+   * Absent = this diagram kind has no openable node links.
+   */
+  getNodeLink?(ast: TAst, nodeId: string): string | undefined;
+
   capabilities: DiagramCapabilities;
   labels: DiagramLabels;
   /** Options for the node-kind picker (empty when !supportsNodeKinds). */

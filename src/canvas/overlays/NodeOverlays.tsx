@@ -29,6 +29,8 @@ export interface NodeOverlaysProps {
   onToggleNodePopover: (popover: 'shape' | 'style' | 'subgraph') => void;
   onDeleteNode: () => void;
   canRenameNode?: boolean;
+  nodeLinkUrl?: string;
+  onOpenNodeLink?: () => void;
 
   popoverPos: PopoverPos | null;
   onSelectNodeKind: (kind: string) => void;
@@ -61,6 +63,8 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
   onToggleNodePopover,
   onDeleteNode,
   canRenameNode,
+  nodeLinkUrl,
+  onOpenNodeLink,
   popoverPos,
   onSelectNodeKind,
   onApplyNodePreset,
@@ -96,6 +100,8 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
           }
           onDelete={onDeleteNode}
           canRename={canRenameNode}
+          nodeLinkUrl={nodeLinkUrl}
+          onOpenNodeLink={onOpenNodeLink}
           hideSprout={
             !!driver.mutations.anchors?.isAnchor(selectedNodeId)
           }

@@ -12,6 +12,7 @@ import {
 } from './types';
 import { parseMermaidFlowchart } from './parser';
 import { serializeMermaidFlowchart } from './serializer';
+import { findNodeLinkUrl } from '../nodeLinks';
 import * as fc from './mutations';
 
 export const FLOWCHART_KIND_OPTIONS = [
@@ -87,6 +88,12 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
       subgraphs: ast.subgraphs,
       direction: ast.direction,
     };
+  },
+  getNodeLink(ast: MermaidFlowchartAST, nodeId: string): string | undefined {
+    return findNodeLinkUrl(
+      ast.rawLines.map((r) => r.text),
+      nodeId
+    );
   },
 
   capabilities: {

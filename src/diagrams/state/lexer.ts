@@ -146,9 +146,14 @@ export function tokenizeStateDiagram(input: string): StateToken[] {
     }
 
     // Statements the editor does not model are preserved verbatim so visual
-    // edits never corrupt or drop hand-written code (accTitle, accDescr, notes, classDefs, --, :::)
+    // edits never corrupt or drop hand-written code (accTitle, accDescr, notes, classDefs, --, :::).
+    // Click interaction statements (click <id> href|call|...) are preserved too —
+    // but only when the line carries no transition arrow (a state literally
+    // named "click" still uses `click --> X`) and has an action (a lone
+    // `click` stays a normal state declaration).
     if (
       /^(note|classdef|class|acctitle|accdescr|title)\b/i.test(trimmed) ||
+      (/^click\s+\S+\s+\S/i.test(trimmed) && !trimmed.includes('-->')) ||
       /^--(\s.*)?$/.test(trimmed) ||
       containsInlineClassShorthand(trimmed)
     ) {

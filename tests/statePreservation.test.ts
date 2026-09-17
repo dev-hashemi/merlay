@@ -256,3 +256,43 @@ test('Composite transitions: connect via driver mutation', () => {
   assert.ok(reparsed.compositeStates.has('Active'));
   assert.ok(!reparsed.states.has('Active'));
 });
+
+test('State preservation: click interaction lines survive visual edits verbatim', () => {
+  const code = [
+    'stateDiagram-v2',
+    '    [*] --> Idle',
+    '    Idle --> Processing : Submit',
+    '    click Idle href "https://example.com" "tip"',
+    '',
+  ].join('\n');
+
+  const ast = driver.parse(code);
+  // No junk states from the click statement
+  assert.ok(!ast.states.has('click'));
+  assert.ok(!ast.states.has('href'));
+  assert.ok(!ast.states.has('https://example.com'));
+  assert.ok(!ast.states.has('tip'));
+  assert.strictEqual(ast.states.size, 3); // [*], Idle, Processing
+
+  // Visual edit: sprout a child state off Idle
+  driver.mutations.addChildNode(ast, 'Idle', 'Next State');
+  const out = driver.serialize(ast);
+  assert.ok(out.includes('click Idle href "https://example.com" "tip"'));
+  assert.ok(!out.includes('    click\n'));
+  // Stable across repeated round-trips
+  assert.strictEqual(roundTrip(out), out);
+});
+
+test('State preservation: a state literally named click still works', () => {
+  const code = [
+    'stateDiagram-v2',
+    '    click --> Idle',
+    '    Idle --> [*]',
+    '',
+  ].join('\n');
+
+  const ast = driver.parse(code);
+  assert.ok(ast.states.has('click'), 'state named click must still parse');
+  assert.strictEqual(ast.transitions.length, 2);
+  assert.strictEqual(ast.rawLines.length, 0);
+});

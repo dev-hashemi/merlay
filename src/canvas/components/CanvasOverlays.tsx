@@ -64,6 +64,13 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
     ? mutations.displaySubgraphs.get(selectedSubgraphId)?.style
     : undefined;
 
+  // External hyperlink preserved via click/link statements. Edit-mode clicks
+  // select (navigation is suppressed), so the HUD offers "Open link" instead.
+  const selectedNodeLink =
+    selectedNodeId && !selection.isMultiSelect
+      ? driver.getNodeLink?.(mutations.ast, selectedNodeId)
+      : undefined;
+
   return (
     <div className="mermaid-native-overlay">
       {/* Connection Dragging SVG Line (red when the driver refuses the drop) */}
@@ -142,6 +149,12 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         }
         onDeleteNode={mutations.handleDeleteSelectedNode}
         canRenameNode={canRenameSelectedNode}
+        nodeLinkUrl={selectedNodeLink}
+        onOpenNodeLink={
+          selectedNodeLink
+            ? () => window.open(selectedNodeLink, '_blank', 'noopener')
+            : undefined
+        }
         popoverPos={selection.popoverPos}
         onSelectNodeKind={mutations.handleUpdateNodeKind}
         onApplyNodePreset={mutations.handleApplyNodePreset}
