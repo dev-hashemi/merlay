@@ -16,6 +16,8 @@ export interface UseCanvasShortcutsOptions {
   clearActivePopovers: () => void;
   hasSelectedElements: boolean;
   canCopy: boolean;
+  handleFitView?: () => void;
+  onToggleFullscreen?: () => void;
 }
 
 export function useCanvasShortcuts({
@@ -33,6 +35,8 @@ export function useCanvasShortcuts({
   clearActivePopovers,
   hasSelectedElements,
   canCopy,
+  handleFitView,
+  onToggleFullscreen,
 }: UseCanvasShortcutsOptions) {
   const [isSpacePressed, setIsSpacePressed] = useState<boolean>(false);
 
@@ -132,6 +136,32 @@ export function useCanvasShortcuts({
           e.preventDefault();
           handleBatchDeleteSelected();
         }
+        return;
+      }
+
+      // Hotkey Shift+1 or Ctrl+0 (Fit View)
+      if (
+        ((e.shiftKey && e.key === '!') || ((e.ctrlKey || e.metaKey) && e.key === '0')) &&
+        !isInputActive &&
+        handleFitView
+      ) {
+        e.preventDefault();
+        handleFitView();
+        return;
+      }
+
+      // Hotkey Shift+F (Toggle Fullscreen)
+      if (
+        e.shiftKey &&
+        (e.key === 'f' || e.key === 'F') &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !isInputActive &&
+        onToggleFullscreen
+      ) {
+        e.preventDefault();
+        onToggleFullscreen();
+        return;
       }
     };
 
@@ -161,6 +191,8 @@ export function useCanvasShortcuts({
     clearActivePopovers,
     hasSelectedElements,
     canCopy,
+    handleFitView,
+    onToggleFullscreen,
   ]);
 
   return {

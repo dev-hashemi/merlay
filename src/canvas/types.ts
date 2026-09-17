@@ -46,4 +46,6 @@ export interface NativeMermaidViewProps {
   initialCode: string;
   onCodeChange: (newCode: string) => void;
   onClose?: () => void;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
 }

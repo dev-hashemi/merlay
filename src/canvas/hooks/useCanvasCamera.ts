@@ -2,11 +2,16 @@ import { useState, useRef, useCallback } from 'react';
 import { Rect } from '../types';
 
 export interface UseCanvasCameraOptions {
+  containerRef?: React.RefObject<HTMLDivElement>;
   worldRef: React.RefObject<HTMLDivElement>;
   svgMountRef: React.RefObject<HTMLDivElement>;
 }
 
-export function useCanvasCamera({ worldRef, svgMountRef }: UseCanvasCameraOptions) {
+export function useCanvasCamera({
+  containerRef,
+  worldRef,
+  svgMountRef,
+}: UseCanvasCameraOptions) {
   const [zoom, setZoom] = useState<number>(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState<boolean>(false);
@@ -110,10 +115,97 @@ export function useCanvasCamera({ worldRef, svgMountRef }: UseCanvasCameraOption
   }, []);
 
   const handleFitView = useCallback(() => {
-    setZoom(1);
-    zoomRef.current = 1;
-    setPan({ x: 0, y: 0 });
-  }, []);
+    const container = containerRef?.current || worldRef.current?.parentElement;
+    const svg = svgMountRef.current?.querySelector('svg');
+    if (!container || !svg) {
+      setZoom(1);
+      zoomRef.current = 1;
+      setPan({ x: 0, y: 0 });
+      return;
+    }
+
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    if (containerWidth === 0 || containerHeight === 0) {
+      setZoom(1);
+      zoomRef.current = 1;
+      setPan({ x: 0, y: 0 });
+      return;
+    }
+
+    // Determine the natural (unzoomed) dimensions and world position of the SVG
+    let svgWidth = 0;
+    let svgHeight = 0;
+    let svgWorldX = 0;
+    let svgWorldY = 0;
+
+    const localRect = getLocalRect(svg);
+    if (localRect && localRect.width > 0 && localRect.height > 0) {
+      svgWidth = localRect.width;
+      svgHeight = localRect.height;
+      svgWorldX = localRect.x;
+      svgWorldY = localRect.y;
+    } else {
+      // Fallback: Try viewBox (Mermaid SVGs define natural dimensions in viewBox)
+      const viewBox = svg.getAttribute('viewBox');
+      if (viewBox) {
+        const parts = viewBox.trim().split(/[\s,]+/);
+        if (parts.length === 4) {
+          const w = parseFloat(parts[2]);
+          const h = parseFloat(parts[3]);
+          if (!isNaN(w) && w > 0 && !isNaN(h) && h > 0) {
+            svgWidth = w;
+            svgHeight = h;
+          }
+        }
+      }
+
+      if (!svgWidth) {
+        svgWidth = parseFloat(svg.getAttribute('width') || '') || svg.clientWidth;
+      }
+      if (!svgHeight) {
+        svgHeight = parseFloat(svg.getAttribute('height') || '') || svg.clientHeight;
+      }
+
+      const mount = svgMountRef.current;
+      svgWorldX = mount?.offsetLeft ?? 80;
+      svgWorldY = mount?.offsetTop ?? 80;
+    }
+
+    if (svgWidth <= 0 || svgHeight <= 0) {
+      setZoom(1);
+      zoomRef.current = 1;
+      setPan({ x: 0, y: 0 });
+      return;
+    }
+
+    // Margins: account for the top bar (~60px) and comfortable border padding
+    const padX = 80;
+    const topBarHeight = 60;
+    const padBottom = 40;
+
+    const availWidth = Math.max(containerWidth - padX, 100);
+    const availHeight = Math.max(containerHeight - (topBarHeight + padBottom), 100);
+
+    // Compute fit scale, bounded between 0.15 and 1.15 to avoid over-magnifying small diagrams
+    const fitScale = Math.min(availWidth / svgWidth, availHeight / svgHeight);
+    const newZoom = Math.min(Math.max(fitScale, 0.15), 1.15);
+
+    // Exact geometric centering:
+    // Screen X of diagram center = panX + (svgWorldX + svgWidth / 2) * newZoom
+    // Desired Screen X of diagram center = containerWidth / 2
+    const diagramCenterX = svgWorldX + svgWidth / 2;
+    const panX = containerWidth / 2 - diagramCenterX * newZoom;
+
+    // Desired Screen Y of diagram center = topBarHeight + availHeight / 2
+    const diagramCenterY = svgWorldY + svgHeight / 2;
+    const targetCenterY = topBarHeight + availHeight / 2;
+    const panY = targetCenterY - diagramCenterY * newZoom;
+
+    setZoom(newZoom);
+    zoomRef.current = newZoom;
+    setPan({ x: Math.round(panX), y: Math.round(panY) });
+  }, [containerRef, worldRef, svgMountRef, getLocalRect]);
 
   const startPan = useCallback((clientX: number, clientY: number) => {
     setIsPanning(true);

@@ -19,6 +19,7 @@ export class MermaidBlockModal extends Modal {
   private latestCode: string;
   private plugin: MerlayPlugin;
   private saveTimeout: number | null = null;
+  private isFullscreen: boolean = false;
 
   constructor(
     app: App,
@@ -34,6 +35,15 @@ export class MermaidBlockModal extends Modal {
     this.initialCode = initialCode.trim();
     this.latestCode = this.initialCode;
   }
+
+  private toggleFullscreen = (): void => {
+    this.isFullscreen = !this.isFullscreen;
+    if (this.isFullscreen) {
+      this.modalEl.addClass('is-fullscreen');
+    } else {
+      this.modalEl.removeClass('is-fullscreen');
+    }
+  };
 
   onOpen(): void {
     const { contentEl, modalEl } = this;
@@ -51,6 +61,8 @@ export class MermaidBlockModal extends Modal {
           this.scheduleSave();
         }}
         onClose={() => this.close()}
+        isFullscreen={this.isFullscreen}
+        onToggleFullscreen={this.toggleFullscreen}
       />
     );
   }

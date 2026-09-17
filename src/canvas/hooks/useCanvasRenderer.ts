@@ -35,6 +35,7 @@ export interface UseCanvasRendererOptions {
   handleStartEditingNode: (nodeId: string, el: Element) => void;
   stabilizeCamera: () => void;
   setSyntaxError: (err: string | null) => void;
+  onInitialRender?: () => void;
 }
 
 export function useCanvasRenderer({
@@ -54,6 +55,7 @@ export function useCanvasRenderer({
   handleStartEditingNode,
   stabilizeCamera,
   setSyntaxError,
+  onInitialRender,
 }: UseCanvasRendererOptions) {
   const renderTicketRef = useRef<number>(0);
   const anchors = driver.mutations.anchors;
@@ -226,6 +228,9 @@ export function useCanvasRenderer({
   haloEdgeRef.current = updateSelectedEdgeHalo;
   const subgraphsRef = useRef(displaySubgraphs);
   subgraphsRef.current = displaySubgraphs;
+  const onInitialRenderRef = useRef(onInitialRender);
+  onInitialRenderRef.current = onInitialRender;
+  const hasRenderedOnceRef = useRef<boolean>(false);
 
   // Render effect
   // NOTE: displayNodes/displayEdges/displaySubgraphs are intentionally part
@@ -254,6 +259,11 @@ export function useCanvasRenderer({
         rectRef.current();
         haloNodeRef.current();
         haloEdgeRef.current();
+
+        if (!hasRenderedOnceRef.current) {
+          hasRenderedOnceRef.current = true;
+          onInitialRenderRef.current?.();
+        }
 
         try {
           const rendered = new Set<string>();

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CursorMode } from '../types';
 import {
   SelectModeIcon,
@@ -10,8 +10,11 @@ import {
   FitViewIcon,
   CodeIcon,
   MerlayLogoIcon,
+  MaximizeIcon,
+  MinimizeIcon,
+  ExportIcon,
 } from '../icons/Icons';
-
+import { ExportPopover } from './ExportPopover';
 import { DiagramDriver } from '../../diagrams/types';
 
 export interface CanvasTopBarProps {
@@ -33,6 +36,9 @@ export interface CanvasTopBarProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
+  svgMountRef?: React.RefObject<HTMLDivElement>;
 }
 
 export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
@@ -54,26 +60,32 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
   canRedo,
   onUndo,
   onRedo,
+  isFullscreen = false,
+  onToggleFullscreen,
+  svgMountRef,
 }) => {
   const { labels, capabilities } = driver;
   const isEditable = capabilities.editable !== false;
+  const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
 
   return (
     <div className="mermaid-native-top-bar nodrag">
       <div className="mermaid-top-bar-left">
         {/* Brand Mark */}
-        <div className="merlay-top-bar-brand" title="Merlay - Mermaid, your way">
+        <div className="merlay-top-bar-brand" title="Merlay - Mermaid, your way" aria-label="Merlay">
           <MerlayLogoIcon size={16} />
         </div>
         <div className="mermaid-bar-divider" />
 
         {/* Mode Switcher: Select (V) vs Hand (H) */}
-        <div className="mermaid-mode-segmented">
+        <div className="mermaid-mode-segmented" role="group" aria-label="Tool selection">
           <button
             type="button"
             className={`mermaid-mode-btn ${cursorMode === 'select' ? 'is-active' : ''}`}
             onClick={() => onSetCursorMode('select')}
             title={!isEditable ? 'Select & Highlight Tool (V)' : 'Select & Marquee Tool (V)'}
+            aria-label="Select tool"
+            aria-pressed={cursorMode === 'select'}
           >
             <SelectModeIcon size={13} />
             <span>Select</span>
@@ -83,6 +95,8 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
             className={`mermaid-mode-btn ${cursorMode === 'hand' ? 'is-active' : ''}`}
             onClick={() => onSetCursorMode('hand')}
             title="Hand / Pan Tool (H) - or hold Space"
+            aria-label="Hand / Pan tool"
+            aria-pressed={cursorMode === 'hand'}
           >
             <HandModeIcon size={13} />
             <span>Hand</span>
@@ -100,6 +114,7 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
               onClick={onUndo}
               disabled={!canUndo}
               title="Undo (Ctrl+Z)"
+              aria-label="Undo"
             >
               <UndoIcon size={14} />
             </button>
@@ -109,6 +124,7 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
               onClick={onRedo}
               disabled={!canRedo}
               title="Redo (Ctrl+Y or Ctrl+Shift+Z)"
+              aria-label="Redo"
             >
               <RedoIcon size={14} />
             </button>
@@ -122,6 +138,7 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
             className="mermaid-tool-btn mod-cta"
             onClick={onAddStep}
             title={`Add new ${labels.node.toLowerCase()}`}
+            aria-label={labels.addNode}
           >
             <PlusIcon size={14} />
             <span>{labels.addNode}</span>
@@ -135,6 +152,7 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
             onClick={onAddStart}
             disabled={!canAddStart}
             title={canAddStart ? 'Add Start point ([*]) with first state' : 'Start point already exists'}
+            aria-label="Add Start point"
           >
             <span>＋Start</span>
           </button>
@@ -147,6 +165,7 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
             onClick={onAddEnd}
             disabled={!canAddEnd}
             title={canAddEnd ? 'Add End point ([*]) with final state' : 'End point already exists'}
+            aria-label="Add End point"
           >
             <span>＋End</span>
           </button>
@@ -158,6 +177,7 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
             className="mermaid-tool-btn"
             onClick={onAddGroup}
             title={`Add new ${labels.group}`}
+            aria-label={labels.addGroup}
           >
             <FolderIcon size={14} />
             <span>{labels.addGroup}</span>
@@ -170,6 +190,7 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
             className="mermaid-tool-btn"
             onClick={onToggleDirection}
             title={`Toggle Flow Direction (Current: ${direction})`}
+            aria-label={`Toggle Flow Direction (Current: ${direction})`}
           >
             <span>Flow: {direction}</span>
           </button>
@@ -181,7 +202,8 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
           type="button"
           className="mermaid-tool-btn"
           onClick={onFitView}
-          title="Reset Zoom & Center (Fit View)"
+          title="Reset Zoom & Center (Fit View) — Shift+1 / Ctrl+0"
+          aria-label="Reset Zoom and Center Diagram"
         >
           <FitViewIcon size={14} />
         </button>
@@ -194,15 +216,58 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
         >
           {driver.displayName} {!isEditable ? '(View Only)' : ''}
         </span>
+
+        {/* Syntax Drawer Toggle */}
         <button
           type="button"
           className={`mermaid-tool-btn ${showCodeDrawer ? 'is-active' : ''}`}
           onClick={onToggleCodeDrawer}
           title="Toggle Mermaid Syntax Drawer"
+          aria-label="Toggle Mermaid Syntax Drawer"
+          aria-pressed={showCodeDrawer}
         >
           <CodeIcon size={14} />
           <span>Syntax</span>
         </button>
+
+        <div className="mermaid-bar-divider" />
+
+        {/* Export Popover Trigger */}
+        {svgMountRef && (
+          <div className="mermaid-export-wrapper" style={{ position: 'relative' }}>
+            <button
+              type="button"
+              className={`mermaid-tool-btn ${isExportOpen ? 'is-active' : ''}`}
+              onClick={() => setIsExportOpen(!isExportOpen)}
+              title="Export Diagram (PNG / SVG)"
+              aria-label="Export Diagram as PNG or SVG"
+              aria-haspopup="dialog"
+              aria-expanded={isExportOpen}
+            >
+              <ExportIcon size={14} />
+              <span>Export</span>
+            </button>
+            <ExportPopover
+              isOpen={isExportOpen}
+              onClose={() => setIsExportOpen(false)}
+              svgMountRef={svgMountRef}
+            />
+          </div>
+        )}
+
+        {/* Fullscreen / Maximize Toggle */}
+        {onToggleFullscreen && (
+          <button
+            type="button"
+            className={`mermaid-tool-btn icon-only ${isFullscreen ? 'is-active' : ''}`}
+            onClick={onToggleFullscreen}
+            title={isFullscreen ? 'Exit Fullscreen (Restore) — Shift+F' : 'Fullscreen (Maximize) — Shift+F'}
+            aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+            aria-pressed={isFullscreen}
+          >
+            {isFullscreen ? <MinimizeIcon size={14} /> : <MaximizeIcon size={14} />}
+          </button>
+        )}
       </div>
     </div>
   );

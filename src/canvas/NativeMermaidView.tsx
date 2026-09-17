@@ -33,6 +33,8 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
   app,
   initialCode,
   onCodeChange,
+  isFullscreen: externalIsFullscreen,
+  onToggleFullscreen,
 }) => {
   const [code, setCode] = useState<string>(
     initialCode || 'flowchart LR\n    A["Start"] --> B["Process"]\n    B --> C["End"]'
@@ -41,6 +43,14 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     () => detectDiagramType(code),
     [code]
   );
+
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(externalIsFullscreen ?? false);
+  const handleToggleFullscreen = onToggleFullscreen
+    ? () => {
+        onToggleFullscreen();
+        setIsFullscreen((prev) => !prev);
+      }
+    : undefined;
 
   // History Stack
   const history = useHistory(code);
@@ -68,7 +78,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     startPan,
     updatePan,
     endPan,
-  } = useCanvasCamera({ worldRef, svgMountRef });
+  } = useCanvasCamera({ containerRef, worldRef, svgMountRef });
 
   // 2. AST State & Driver Projections (single active AST owned by the driver)
   const astHook = useDiagramAst({
@@ -261,6 +271,8 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     },
     hasSelectedElements,
     canCopy: selection.selectedNodeIds.size > 0,
+    handleFitView,
+    onToggleFullscreen: handleToggleFullscreen,
   });
 
   // 9. Mouse Interactions (Panning, Connecting, Hover)
@@ -302,6 +314,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     handleStartEditingNode,
     stabilizeCamera,
     setSyntaxError: mutations.setSyntaxError,
+    onInitialRender: handleFitView,
   });
 
   // 11. Drop-target highlight while drag-connecting
@@ -352,6 +365,16 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
           useCanvasStore.getState().setConnectingTargetId(null);
         }
       }}
+      onDoubleClick={(e) => {
+        if (
+          e.target === containerRef.current ||
+          e.target === worldRef.current ||
+          (e.target as HTMLElement).classList?.contains('mermaid-native-world') ||
+          (e.target as Element).tagName === 'svg'
+        ) {
+          handleFitView();
+        }
+      }}
       onClick={() => {
         if (marquee.isMarqueeActiveRef.current) return;
         resetTransientUiState();
@@ -377,6 +400,9 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
         canRedo={history.canRedo}
         onUndo={handleUndo}
         onRedo={handleRedo}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={handleToggleFullscreen}
+        svgMountRef={svgMountRef}
       />
 
       {/* Interactive World Canvas */}
