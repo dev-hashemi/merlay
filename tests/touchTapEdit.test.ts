@@ -153,3 +153,46 @@ test('Touch gestures: hint pill falls back to tap selection (no hover on touch)'
     'overlays must feed selection into the pill'
   );
 });
+
+test('Touch gestures: window pointerup cancels pending long-press timer', async () => {
+  const el = document.createElement('div');
+  let presses = 0;
+  const handle = attachTapGestures(el, {
+    onLongPress: () => presses++,
+    longPressDelay: 30,
+  });
+
+  // Pointerdown on el starts long-press timer
+  el.dispatchEvent(pointerEvent('pointerdown', {}));
+
+  // Finger lifts before delay, but pointerup occurs on window/document
+  window.dispatchEvent(pointerEvent('pointerup', {}));
+
+  // Wait past the longPressDelay
+  await tick(50);
+  assert.strictEqual(
+    presses,
+    0,
+    'long-press timer must be cancelled when finger lifts on window'
+  );
+  handle.detach();
+});
+
+test('Touch tap: canvas root protects shape click and uses lazy pointer capture', () => {
+  const view = read('src/canvas/NativeMermaidView.tsx');
+  // Root onClick ignores interactive elements
+  assert.ok(
+    view.includes('[data-mermaid-node-id]'),
+    'root onClick must guard against deselecting when nodes are clicked'
+  );
+  assert.ok(
+    view.includes('.nodrag'),
+    'root onClick must guard against deselecting when HUDs are clicked'
+  );
+  // Pointer capture is deferred to drag movement
+  assert.ok(
+    view.includes('Math.hypot') && view.includes('setPointerCapture'),
+    'pointer capture must be deferred until movement threshold is reached'
+  );
+});
+

@@ -393,16 +393,6 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
       ref={containerRef}
       onWheel={handleWheel}
       onPointerDown={(e) => {
-        // Keep finger-drag routed to the canvas even if the pointer slides
-        // off the original target (required for reliable touch connect/pan).
-        // Mouse pointers do not use pointer capture so native clicks and hit-testing pass through.
-        if (e.pointerType !== 'mouse') {
-          try {
-            e.currentTarget.setPointerCapture?.(e.pointerId);
-          } catch {
-            /* ignore */
-          }
-        }
         activePointersRef.current.set(e.pointerId, {
           x: e.clientX,
           y: e.clientY,
@@ -427,6 +417,25 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
           const s = pinchStats(activePointersRef.current);
           updatePinch(s.dist, s.midX, s.midY);
           return;
+        }
+        // Lazy pointer capture: capture finger drags only once movement exceeds
+        // the click threshold so that taps pass through as native clicks to shapes.
+        // Mouse pointers do not use pointer capture so native clicks and hit-testing pass through.
+        if (
+          e.pointerType !== 'mouse' &&
+          !e.currentTarget.hasPointerCapture?.(e.pointerId)
+        ) {
+          const start = activePointersRef.current.get(e.pointerId);
+          if (
+            start &&
+            Math.hypot(e.clientX - start.x, e.clientY - start.y) > 4
+          ) {
+            try {
+              e.currentTarget.setPointerCapture?.(e.pointerId);
+            } catch {
+              /* ignore */
+            }
+          }
         }
         mouse.handlePointerMove(e);
       }}
@@ -476,8 +485,17 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
           handleFitView();
         }
       }}
-      onClick={() => {
+      onClick={(e) => {
         if (marquee.isMarqueeActiveRef.current) return;
+        const target = e.target as HTMLElement | SVGElement | null;
+        if (
+          target &&
+          target.closest?.(
+            '[data-mermaid-node-id], [data-mermaid-edge-id], [data-mermaid-subgraph-id], .nodrag, .mermaid-tool-btn, .mermaid-popover'
+          )
+        ) {
+          return;
+        }
         resetTransientUiState();
       }}
     >

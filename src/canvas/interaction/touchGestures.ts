@@ -42,10 +42,25 @@ export function attachTapGestures(
   let startX = 0;
   let startY = 0;
 
+  const removeWindowListeners = (): void => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('pointerup', onWindowUp, true);
+      window.removeEventListener('pointercancel', onWindowUp, true);
+    }
+  };
+
   const clearTimer = (): void => {
     if (longPressTimer !== null) {
       clearTimeout(longPressTimer);
       longPressTimer = null;
+    }
+  };
+
+  const onWindowUp = (ev: Event): void => {
+    const e = ev as PointerEvent;
+    if (e.pointerId === activePointerId) {
+      clearTimer();
+      removeWindowListeners();
     }
   };
 
@@ -56,6 +71,11 @@ export function attachTapGestures(
     startX = e.clientX;
     startY = e.clientY;
     clearTimer();
+    removeWindowListeners();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pointerup', onWindowUp, true);
+      window.addEventListener('pointercancel', onWindowUp, true);
+    }
     if (handlers.onLongPress) {
       const delay = handlers.longPressDelay ?? LONG_PRESS_DELAY_MS;
       longPressTimer = setTimeout(() => {
@@ -73,6 +93,7 @@ export function attachTapGestures(
     if (Math.hypot(e.clientX - startX, e.clientY - startY) > tol) {
       // It's a drag (connect / pan), not a press.
       clearTimer();
+      removeWindowListeners();
     }
   };
 
@@ -81,6 +102,7 @@ export function attachTapGestures(
     if (e.pointerId !== activePointerId) return;
     activePointerId = null;
     clearTimer();
+    removeWindowListeners();
     if (!isTouchPointer(e)) return;
     // A release right after a long-press is not a tap.
     if (Date.now() - longPressFiredAt < LONG_PRESS_CLICK_SUPPRESS_MS) return;
@@ -99,6 +121,7 @@ export function attachTapGestures(
     if (e.pointerId !== undefined && e.pointerId !== activePointerId) return;
     activePointerId = null;
     clearTimer();
+    removeWindowListeners();
   };
 
   const shouldSuppressClick = (): boolean =>
@@ -117,6 +140,7 @@ export function attachTapGestures(
       el.removeEventListener('pointerup', onPointerUp);
       el.removeEventListener('pointercancel', onCancel);
       clearTimer();
+      removeWindowListeners();
     },
   };
 }
