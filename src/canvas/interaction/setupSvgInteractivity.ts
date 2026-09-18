@@ -67,6 +67,7 @@ export function setupSvgInteractivity(options: SetupSvgInteractivityOptions): vo
   setupEdgeInteractivity({
     mountEl,
     displayEdges,
+    displaySubgraphs,
     onSelectEdge,
     onStartEditingEdge,
   });

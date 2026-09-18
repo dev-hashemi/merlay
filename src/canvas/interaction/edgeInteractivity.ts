@@ -3,7 +3,7 @@
  * Handles edge path hit-areas, stroke hovering, and edge label click/editing.
  */
 
-import { MermaidEdgeDef } from '../../diagrams/viewModel';
+import { MermaidEdgeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
 import { matchSvgEdgeToAst } from '../../utils/edgeMatching';
 import { getDistanceToSvgPath } from '../../utils/edgeGeometry';
 import {
@@ -16,6 +16,7 @@ import { attachTapGestures, guardClickAfterLongPress } from './touchGestures';
 export interface SetupEdgeInteractivityOptions {
   mountEl: HTMLElement;
   displayEdges: MermaidEdgeDef[];
+  displaySubgraphs?: Map<string, MermaidSubgraphDef>;
   onSelectEdge: (targetEdge: MermaidEdgeDef, resolvedPath: Element, isMulti: boolean) => void;
   onStartEditingEdge: (edgeId: string, anchorEl: Element) => void;
 }
@@ -23,9 +24,56 @@ export interface SetupEdgeInteractivityOptions {
 export function setupEdgeInteractivity({
   mountEl,
   displayEdges,
+  displaySubgraphs,
   onSelectEdge,
   onStartEditingEdge,
 }: SetupEdgeInteractivityOptions): void {
+  // Precompute which edges are internal to each subgraph cluster so edge
+  // hit-areas inside a cluster still select the edge, while edges that merely
+  // pass *through* a cluster defer pointer events to the cluster.
+  const internalEdgeClusters = new Map<string, Set<string>>();
+  if (displaySubgraphs) {
+    for (const [subId, subDef] of displaySubgraphs.entries()) {
+      const members = new Set(subDef.nodeIds);
+      if (subDef.subgraphIds) {
+        for (const sid of subDef.subgraphIds) members.add(sid);
+      }
+      for (const edge of displayEdges) {
+        if (members.has(edge.from) && members.has(edge.to)) {
+          let s = internalEdgeClusters.get(edge.id);
+          if (!s) { s = new Set(); internalEdgeClusters.set(edge.id, s); }
+          s.add(subId);
+        }
+      }
+    }
+  }
+
+  /**
+   * If the pointer is inside a bound cluster that the given edge is NOT
+   * internal to, return that cluster element so the edge handler can defer.
+   * Runs at event-time so pan/zoom shifts are reflected in client rects.
+   */
+  const findDeferCluster = (
+    clientX: number,
+    clientY: number,
+    edgeId: string,
+  ): Element | null => {
+    const clusters = mountEl.querySelectorAll('[data-mermaid-subgraph-id]');
+    for (const cluster of Array.from(clusters)) {
+      const rect = cluster.querySelector(':scope > rect');
+      if (!rect) continue;
+      const r = rect.getBoundingClientRect();
+      if (
+        clientX >= r.left && clientX <= r.right &&
+        clientY >= r.top && clientY <= r.bottom
+      ) {
+        const cid = cluster.getAttribute('data-mermaid-subgraph-id')!;
+        if (!internalEdgeClusters.get(edgeId)?.has(cid)) return cluster;
+      }
+    }
+    return null;
+  };
+
   const findEdgeForElement = (
     el: Element,
     fallbackIdx?: number
@@ -148,10 +196,32 @@ export function setupEdgeInteractivity({
     };
 
     hitArea.onclick = (e) => {
+      const dc = findDeferCluster(e.clientX, e.clientY, targetEdgeId);
+      if (dc) {
+        e.stopPropagation();
+        e.preventDefault();
+        dc.dispatchEvent(new MouseEvent('click', {
+          bubbles: true, cancelable: true,
+          clientX: e.clientX, clientY: e.clientY,
+          shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey,
+        }));
+        return;
+      }
       onEdgeClick(e, targetEdge, hitArea);
     };
 
     pathEl.onclick = (e) => {
+      const dc = findDeferCluster(e.clientX, e.clientY, targetEdgeId);
+      if (dc) {
+        e.stopPropagation();
+        e.preventDefault();
+        dc.dispatchEvent(new MouseEvent('click', {
+          bubbles: true, cancelable: true,
+          clientX: e.clientX, clientY: e.clientY,
+          shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey,
+        }));
+        return;
+      }
       onEdgeClick(e, targetEdge, pathEl);
     };
 
@@ -163,11 +233,16 @@ export function setupEdgeInteractivity({
     guardClickAfterLongPress(hitArea, edgeTap);
     guardClickAfterLongPress(pathEl, edgeTap);
 
-    hitArea.onmouseenter = () => {
+    hitArea.onmouseenter = (e) => {
+      if (findDeferCluster(e.clientX, e.clientY, targetEdgeId)) return;
       showEdgeHoverHalo(mountEl, pathEl, targetEdgeId);
     };
 
-    hitArea.onmousemove = () => {
+    hitArea.onmousemove = (e) => {
+      if (findDeferCluster(e.clientX, e.clientY, targetEdgeId)) {
+        clearEdgeHoverHalos(mountEl, targetEdgeId);
+        return;
+      }
       if (!mountEl.querySelector(`.${EDGE_HOVERED_CLONE_CLS}[data-mermaid-edge-id="${targetEdgeId}"]`)) {
         clearEdgeHoverHalos(mountEl);
         showEdgeHoverHalo(mountEl, pathEl, targetEdgeId);

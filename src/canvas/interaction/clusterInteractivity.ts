@@ -92,8 +92,9 @@ export function setupClusterInteractivity({
     htmlEl.setAttribute('data-mermaid-node-id', targetSubId);
     htmlEl.setCssStyles({ cursor: 'pointer' });
 
-    // Ensure all child rects and texts receive clicks and have pointer cursor
-    htmlEl.querySelectorAll('rect, text').forEach((child) => {
+    // Ensure all interactive children receive clicks.  Flowchart HTML labels
+    // use foreignObject, not <text>, so we include it explicitly.
+    htmlEl.querySelectorAll('rect, text, foreignObject, .cluster-label, .nodeLabel').forEach((child) => {
       const childEl = child as SVGGraphicsElement;
       childEl.setCssStyles({ cursor: 'pointer' });
       childEl.setAttribute('pointer-events', 'all');
