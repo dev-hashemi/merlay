@@ -30,9 +30,13 @@ export function matchSvgEdgeToAst(
   const classAttr = (el.className || '').trim();
   const textContent = (el.textContent || '').trim();
 
-  // 1. Try matching by SVG id attribute (e.g. L_A_B_0 or L-A-B-0)
+  // 1. Try matching by SVG id attribute (e.g. L_A_B_0 or L-A-B-0).
+  // Mermaid numbers parallel edges between the same nodes with a trailing
+  // index (L_A_B_0, L_A_B_1, ...), so collect every from/to match and use
+  // the suffix to pick the right one instead of always returning the first.
   if (idAttr) {
     const normId = idAttr.replace(/[-_]/g, '_');
+    const candidates: MermaidEdgeDef[] = [];
     for (const edge of edges) {
       const normFrom = edge.from.replace(/[-_]/g, '_');
       const normTo = edge.to.replace(/[-_]/g, '_');
@@ -43,8 +47,17 @@ export function matchSvgEdgeToAst(
         normId.endsWith(`_${normFrom}_${normTo}`) ||
         normId === `${normFrom}_${normTo}`
       ) {
-        return edge;
+        candidates.push(edge);
       }
+    }
+    if (candidates.length === 1) return candidates[0];
+    if (candidates.length > 1) {
+      const suffix = normId.match(/_(\d+)$/);
+      if (suffix) {
+        const idx = parseInt(suffix[1], 10);
+        if (idx < candidates.length) return candidates[idx];
+      }
+      return candidates[0];
     }
   }
 

@@ -57,6 +57,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
   const pushHistoryState = history.pushState;
   const undoHistory = history.undo;
   const redoHistory = history.redo;
+  const resetHistory = history.reset;
 
   // Primary Canvas DOM Refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -181,6 +182,24 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     useCanvasStore.getState().setShowCodeDrawer(show);
   }, []);
 
+  // SyntaxDrawer edits bypass applyMutation, so record a single history
+  // entry when the drawer closes instead of flooding the stack per keystroke.
+  // Without this, undo after a drawer edit jumps to the pre-drawer state
+  // and silently discards the drawer text.
+  const drawerOpenCodeRef = useRef<string | null>(null);
+  const wasDrawerOpenRef = useRef(showCodeDrawer);
+  useEffect(() => {
+    if (showCodeDrawer && !wasDrawerOpenRef.current) {
+      drawerOpenCodeRef.current = code;
+    } else if (!showCodeDrawer && wasDrawerOpenRef.current) {
+      if (drawerOpenCodeRef.current !== null && drawerOpenCodeRef.current !== code) {
+        pushHistoryState(code);
+      }
+      drawerOpenCodeRef.current = null;
+    }
+    wasDrawerOpenRef.current = showCodeDrawer;
+  });
+
   const handleStartEditingNode = useCallback(
     (nodeId: string, nodeEl: Element) => {
       if (!isEditable || !driver.mutations.isNodeTextEditable(astHook.ast, nodeId)) {
@@ -208,6 +227,25 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
         });
     }
   }, [selection, svgMountRef]);
+
+  // File switches reuse this component with a new initialCode prop, but
+  // useState/useHistory seed once. Without this sync the view keeps showing
+  // the old diagram and undo replays the old file's code into the new file.
+  const lastInitialCodeRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (lastInitialCodeRef.current === null) {
+      lastInitialCodeRef.current = initialCode;
+      return;
+    }
+    if (initialCode !== lastInitialCodeRef.current) {
+      lastInitialCodeRef.current = initialCode;
+      const next =
+        initialCode || 'flowchart LR\n    A["Start"] --> B["Process"]\n    B --> C["End"]';
+      resetHistory(next);
+      setCode(next);
+      resetTransientUiState();
+    }
+  }, [initialCode, resetHistory, resetTransientUiState]);
 
   const handleUndo = useCallback(() => {
     const prevCode = undoHistory();

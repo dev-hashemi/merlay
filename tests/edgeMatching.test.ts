@@ -278,3 +278,26 @@ test('Edge Geometry: getDistanceToSvgPath calculates proximity correctly', async
   assert.ok(Math.abs(distToLong - 13) < 0.5);
 });
 
+
+test('Edge Matching: parallel edges between same nodes resolve via numeric suffix', () => {
+  const parallel: MermaidEdgeDef[] = [
+    { type: 'edge', id: 'e0', from: 'A', to: 'B', arrowType: 'arrow' },
+    { type: 'edge', id: 'e1', from: 'A', to: 'B', arrowType: 'arrow' },
+    { type: 'edge', id: 'e2', from: 'A', to: 'B', arrowType: 'arrow' },
+  ];
+
+  // Regression: L_A_B_1 used to return the first edge (e0), making the
+  // second parallel edge unselectable and label edits hit the wrong edge.
+  assert.strictEqual(matchSvgEdgeToAst({ id: 'L_A_B_0' }, parallel)?.id, 'e0');
+  assert.strictEqual(matchSvgEdgeToAst({ id: 'L_A_B_1' }, parallel)?.id, 'e1');
+  assert.strictEqual(matchSvgEdgeToAst({ id: 'L_A_B_2' }, parallel)?.id, 'e2');
+
+  // Mermaid v9 hyphenated ids normalize the same way.
+  assert.strictEqual(matchSvgEdgeToAst({ id: 'L-A-B-1' }, parallel)?.id, 'e1');
+
+  // Stale suffix beyond the edge list falls back to the first match.
+  assert.strictEqual(matchSvgEdgeToAst({ id: 'L_A_B_9' }, parallel)?.id, 'e0');
+
+  // Unsuffixed ids still match the single/first edge.
+  assert.strictEqual(matchSvgEdgeToAst({ id: 'L_A_B' }, parallel)?.id, 'e0');
+});

@@ -58,6 +58,7 @@ export function useCanvasRenderer({
   onInitialRender,
 }: UseCanvasRendererOptions) {
   const renderTicketRef = useRef<number>(0);
+  const viewOnlyCleanupRef = useRef<(() => void) | null>(null);
   const anchors = driver.mutations.anchors;
   const isAnchorId = (id: string | null | undefined): id is string =>
     !!anchors && !!id && anchors.isAnchor(id);
@@ -69,7 +70,12 @@ export function useCanvasRenderer({
     if (!mountEl) return;
 
     if (!isEditable) {
-      setupViewOnlyInteractivity({ mountEl });
+      // The listener lives on mountEl itself, so mountEl.empty() on the next
+      // render would NOT remove it — dispose the previous one first or every
+      // re-render stacks another click handler (shift-click toggles twice and
+      // appears to do nothing).
+      viewOnlyCleanupRef.current?.();
+      viewOnlyCleanupRef.current = setupViewOnlyInteractivity({ mountEl });
       return;
     }
 
@@ -290,5 +296,13 @@ export function useCanvasRenderer({
         console.error('Mermaid render error:', err);
         setSyntaxError(err instanceof Error ? err.message : 'Diagram syntax error');
       });
+
+    return () => {
+      viewOnlyCleanupRef.current?.();
+      viewOnlyCleanupRef.current = null;
+      // Invalidate in-flight renders so a late resolution never touches an
+      // unmounted or re-rendered view.
+      renderTicketRef.current++;
+    };
   }, [code, app, setSyntaxError, svgMountRef, displayNodes, displayEdges, displaySubgraphs]);
 }

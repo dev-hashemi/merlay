@@ -1,7 +1,8 @@
 import { App, MarkdownRenderer, Component, loadMermaid, sanitizeHTMLToDom } from 'obsidian';
 import { normalizeSvgDimensions } from './svgDimensions';
+import { scrubSvgForMount } from './svgSanitize';
 
-export { normalizeSvgDimensions };
+export { normalizeSvgDimensions, scrubSvgForMount };
 
 let cachedMermaidApi: MermaidApi | null = null;
 export interface MermaidRenderResult {
@@ -70,16 +71,7 @@ export function mountMermaidSvg(mountEl: HTMLElement, svgHtml: string): void {
     return;
   }
 
-  const scrubHandlers = (el: Element): void => {
-    for (const attr of Array.from(el.attributes)) {
-      if (attr.name.toLowerCase().startsWith('on')) {
-        el.removeAttribute(attr.name);
-      }
-    }
-  };
-  scrubHandlers(svg);
-  svg.querySelectorAll('script').forEach((s) => s.remove());
-  svg.querySelectorAll('*').forEach(scrubHandlers);
+  scrubSvgForMount(svg);
 
   normalizeSvgDimensions(svg);
 
@@ -115,13 +107,17 @@ export async function renderMermaidSvg(app: App, code: string): Promise<string> 
   const tempContainer = createDiv();
   const comp = new Component();
   comp.load();
-  await MarkdownRenderer.render(
-    app,
-    `\`\`\`mermaid\n${code}\n\`\`\``,
-    tempContainer,
-    '',
-    comp
-  );
-  comp.unload();
-  return tempContainer.innerHTML;
+  try {
+    await MarkdownRenderer.render(
+      app,
+      `\`\`\`mermaid\n${code}\n\`\`\``,
+      tempContainer,
+      '',
+      comp
+    );
+    return tempContainer.innerHTML;
+  } finally {
+    comp.unload();
+    tempContainer.remove();
+  }
 }

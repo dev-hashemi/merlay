@@ -19,6 +19,7 @@ export class MermaidBlockModal extends Modal {
   private latestCode: string;
   private plugin: MerlayPlugin;
   private saveTimeout: number | null = null;
+  private saveChain: Promise<void> = Promise.resolve();
   private isFullscreen: boolean = false;
 
   constructor(
@@ -84,7 +85,7 @@ export class MermaidBlockModal extends Modal {
     }
 
     if (this.latestCode !== this.initialCode) {
-      void this.saveToNote();
+      this.enqueueSave();
     }
 
     if (this.root) {
@@ -99,11 +100,19 @@ export class MermaidBlockModal extends Modal {
     }
     this.saveTimeout = window.setTimeout(() => {
       this.saveTimeout = null;
-      void this.saveToNote();
+      this.enqueueSave();
     }, 250);
   }
 
-  private async saveToNote(): Promise<void> {
+  // Serializes vault writes: a debounced save already awaiting vault.process
+  // must finish before onClose's final save starts, otherwise the two
+  // concurrent writes race and one edit is lost (last-writer-wins).
+  private enqueueSave(): void {
+    const codeToSave = this.latestCode;
+    this.saveChain = this.saveChain.then(() => this.writeCodeToNote(codeToSave));
+  }
+
+  private async writeCodeToNote(codeToSave: string): Promise<void> {
     const file = this.app.vault.getAbstractFileByPath(this.filePath);
     if (!(file instanceof TFile)) return;
 
@@ -111,15 +120,15 @@ export class MermaidBlockModal extends Modal {
       await this.app.vault.process(file, (data) => {
         const res = replaceMermaidBlock(
           data,
-          this.latestCode,
+          codeToSave,
           this.sectionInfo.lineStart,
           this.initialCode,
-          this.latestCode
+          codeToSave
         );
 
         this.sectionInfo.lineStart = res.newStartLine;
         this.sectionInfo.lineEnd = res.newEndLine;
-        this.initialCode = this.latestCode.trim();
+        if (this.latestCode === codeToSave) this.initialCode = codeToSave.trim();
 
         return res.updatedText;
       });

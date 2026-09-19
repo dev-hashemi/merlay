@@ -281,3 +281,85 @@ test('findTargetMermaidBlock: correctly distinguishes back-to-back diagrams with
   assert.equal(replaceResult2.newStartLine, 4);
 });
 
+
+test('auto-heal: unclosed state diagram keeps code lines and trailing prose', () => {
+  // Regression: the healer only recognized flowchart syntax, so the closing
+  // fence was injected after line 1 and old state lines leaked as stray text.
+  const doc = [
+    '```mermaid',
+    'stateDiagram-v2',
+    '[*] --> Active',
+    'Active --> [*]',
+    '',
+    'Some trailing text',
+  ].join('\n');
+
+  const out = replaceMermaidBlock(doc, 'stateDiagram-v2\n[*] --> X');
+  assert.ok(!out.updatedText.includes('Active --> [*]\n'), out.updatedText);
+  assert.ok(out.updatedText.endsWith('Some trailing text'), out.updatedText);
+});
+
+test('auto-heal: unclosed sequence diagram keeps messages and notes', () => {
+  const doc = [
+    '```mermaid',
+    'sequenceDiagram',
+    'Alice->>Bob: hi',
+    'Note over Bob: yo',
+    '',
+    'After text',
+  ].join('\n');
+
+  const out = replaceMermaidBlock(doc, 'sequenceDiagram\nA->>B: x');
+  assert.ok(!out.updatedText.includes('Alice->>Bob: hi\n'), out.updatedText);
+  assert.ok(out.updatedText.endsWith('After text'), out.updatedText);
+});
+
+test('auto-heal: prose with colons is not swallowed into the block', () => {
+  const doc = [
+    '```mermaid',
+    'flowchart LR',
+    'A-->B',
+    'Warning: check this',
+    'More prose',
+  ].join('\n');
+
+  const out = replaceMermaidBlock(doc, 'flowchart LR\nA-->B');
+  assert.ok(out.updatedText.includes('Warning: check this\nMore prose'), out.updatedText);
+});
+
+test('findTargetMermaidBlock: opening fence with info string is found', () => {
+  // Regression: ```mermaid theme-dark returned null and the opener fell
+  // back to a distance guess, risking edits to the wrong block.
+  const content = 'intro\n```mermaid theme-dark\nflowchart LR\nA-->B\n```\n';
+  const res = findTargetMermaidBlock({ content });
+  assert.ok(res !== null);
+  assert.ok(res.rawCode.includes('A-->B'));
+});
+
+test('findTargetMermaidBlock + isCursorInMermaidBlock: CRLF and params fences', () => {
+  const crlf = 'a\n```mermaid\r\nflowchart LR\nA-->B\n```\n';
+  assert.ok(findTargetMermaidBlock({ content: crlf }) !== null);
+  assert.ok(isCursorInMermaidBlock('x\n```mermaid dark\nflowchart LR\nA-->B\n```\n', 3) !== null);
+});
+
+test('auto-heal: unsupported diagram header is recognized, prose still survives', () => {
+  // The visual editor cannot parse pie/gitGraph yet, but the healer must not
+  // mistake their headers for prose. Unknown statement lines fail safe
+  // toward truncation (visible) rather than swallowing document text.
+  const pieDoc = [
+    '```mermaid',
+    'pie title Pets',
+    '"Dogs" : 386',
+    '"Cats" : 85',
+    '',
+    'Tail text',
+  ].join('\n');
+
+  const pieOut = replaceMermaidBlock(pieDoc, 'pie title X');
+  assert.ok(pieOut.updatedText.includes('pie title X'), pieOut.updatedText);
+  assert.ok(pieOut.updatedText.endsWith('Tail text'), pieOut.updatedText);
+
+  const gitDoc = ['```mermaid', 'gitGraph', 'commit', 'branch dev', '', 'Tail'].join('\n');
+  const gitOut = replaceMermaidBlock(gitDoc, 'gitGraph\ncommit');
+  assert.ok(gitOut.updatedText.endsWith('Tail'), gitOut.updatedText);
+});
