@@ -3,6 +3,7 @@
  */
 
 import { tokenizeSequenceDiagram } from './lexer';
+import { splitFrontmatter } from '../common/diagramHeader';
 import {
   MermaidSequenceAST,
   SequenceBoxDef,
@@ -11,10 +12,12 @@ import {
 } from './types';
 
 export function parseMermaidSequenceDiagram(input: string): MermaidSequenceAST {
-  const tokens = tokenizeSequenceDiagram(input);
+  const { frontmatter, body } = splitFrontmatter(input);
+  const tokens = tokenizeSequenceDiagram(body);
 
   const ast: MermaidSequenceAST = {
     diagramType: 'sequenceDiagram',
+    frontmatter,
     directives: [],
     participants: new Map(),
     messages: [],
@@ -33,9 +36,6 @@ export function parseMermaidSequenceDiagram(input: string): MermaidSequenceAST {
     if (token.type === 'EOF') break;
 
     switch (token.type) {
-      case 'FRONTMATTER':
-        ast.frontmatter = token.value;
-        break;
 
       case 'HEADER':
         ast.diagramType = 'sequenceDiagram';

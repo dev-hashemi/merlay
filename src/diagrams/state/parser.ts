@@ -3,6 +3,7 @@
  */
 
 import { StateToken, tokenizeStateDiagram } from './lexer';
+import { splitFrontmatter } from '../common/diagramHeader';
 import {
   MermaidCompositeStateDef,
   MermaidStateAST,
@@ -14,11 +15,13 @@ import {
 import { getDefaultStateStyle } from './mutations/styleMutations';
 
 export function parseMermaidStateDiagram(input: string): MermaidStateAST {
-  const tokens = tokenizeStateDiagram(input);
+  const { frontmatter, body } = splitFrontmatter(input);
+  const tokens = tokenizeStateDiagram(body);
   let cursor = 0;
 
   const ast: MermaidStateAST = {
     diagramType: 'stateDiagram-v2',
+    frontmatter,
     states: new Map(),
     transitions: [],
     compositeStates: new Map(),
@@ -45,14 +48,8 @@ export function parseMermaidStateDiagram(input: string): MermaidStateAST {
     }
   }
 
-  // Parse Frontmatter & Header
+  // Parse Header
   skipNewlines();
-  if (currentToken().type === 'FRONTMATTER') {
-    const fmToken = advance();
-    ast.frontmatter = fmToken.value;
-    skipNewlines();
-  }
-
   if (currentToken().type === 'DIRECTIVE') {
     const dirToken = advance();
     ast.diagramType = dirToken.value.toLowerCase() === 'statediagram'

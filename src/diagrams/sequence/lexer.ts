@@ -40,7 +40,6 @@ export interface ParsedBox {
 }
 
 export type SequenceTokenType =
-  | 'FRONTMATTER'
   | 'HEADER'
   | 'AUTONUMBER'
   | 'DIRECTIVE'
@@ -239,8 +238,6 @@ export function parseMessageLine(line: string): ParsedMessage | null {
 export function tokenizeSequenceDiagram(input: string): SequenceToken[] {
   const tokens: SequenceToken[] = [];
   const lines = input.split('\n');
-  let inFrontmatter = false;
-  let frontmatterLines: string[] = [];
   let inAccDescrBlock = false;
   let accDescrLines: string[] = [];
   let inBox = false;
@@ -248,26 +245,6 @@ export function tokenizeSequenceDiagram(input: string): SequenceToken[] {
   for (let idx = 0; idx < lines.length; idx++) {
     const rawLine = lines[idx];
     const trimmed = rawLine.trim();
-
-    // 1. Frontmatter
-    if (!inFrontmatter && trimmed === '---' && tokens.length === 0) {
-      inFrontmatter = true;
-      frontmatterLines = [];
-      continue;
-    }
-    if (inFrontmatter) {
-      if (trimmed === '---') {
-        inFrontmatter = false;
-        tokens.push({
-          type: 'FRONTMATTER',
-          value: frontmatterLines.join('\n'),
-          line: idx,
-        });
-      } else {
-        frontmatterLines.push(rawLine);
-      }
-      continue;
-    }
 
     if (!trimmed) continue;
 

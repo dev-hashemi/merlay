@@ -3,7 +3,6 @@
  */
 
 export type StateTokenType =
-  | 'FRONTMATTER'       // --- ... ---
   | 'DIRECTIVE'         // stateDiagram-v2, stateDiagram
   | 'DIRECTION_KEYWORD' // direction
   | 'DIRECTION'         // TB, TD, BT, RL, LR
@@ -56,42 +55,8 @@ export function tokenizeStateDiagram(input: string): StateToken[] {
   const lines = input.split('\n');
 
   let inMultiLineNote = false;
-  let lineIdx = 0;
 
-  // 1. Check for YAML frontmatter at start of diagram (--- ... ---)
-  while (lineIdx < lines.length && (!lines[lineIdx].trim() || lines[lineIdx].trim().startsWith('%%'))) {
-    const raw = lines[lineIdx];
-    const tr = raw.trim();
-    if (!tr) {
-      tokens.push({ type: 'NEWLINE', value: '\n', line: lineIdx + 1, col: 1 });
-    } else {
-      tokens.push({ type: 'COMMENT', value: tr, line: lineIdx + 1, col: raw.indexOf('%') + 1 });
-      tokens.push({ type: 'NEWLINE', value: '\n', line: lineIdx + 1, col: raw.length + 1 });
-    }
-    lineIdx++;
-  }
-
-  if (lineIdx < lines.length && lines[lineIdx].trim() === '---') {
-    const startLine = lineIdx + 1;
-    lineIdx++; // skip opening ---
-    const fmLines: string[] = [];
-    while (lineIdx < lines.length && lines[lineIdx].trim() !== '---') {
-      fmLines.push(lines[lineIdx]);
-      lineIdx++;
-    }
-    if (lineIdx < lines.length && lines[lineIdx].trim() === '---') {
-      lineIdx++; // skip closing ---
-    }
-    tokens.push({
-      type: 'FRONTMATTER',
-      value: fmLines.join('\n'),
-      line: startLine,
-      col: 1,
-    });
-    tokens.push({ type: 'NEWLINE', value: '\n', line: lineIdx, col: 1 });
-  }
-
-  for (; lineIdx < lines.length; lineIdx++) {
+  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
     const rawLine = lines[lineIdx];
     const trimmed = rawLine.trim();
 
