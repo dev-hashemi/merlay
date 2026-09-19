@@ -70,6 +70,17 @@ Merlay provides interactive visual editing for 4 major Mermaid diagram types:
 
 ---
 
+## 💡 Why Merlay? (Structural, Not Spatial)
+
+Mermaid is a declarative, code-first diagramming language that computes its own layout. Traditional visual editors often attempt to impose arbitrary spatial coordinates onto diagrams, leading to broken round-trips, syntax corruption, and layout drift.
+
+**Merlay takes a structural approach:**
+- **1:1 Native Parity:** Controls are overlaid directly on Obsidian's exact Mermaid SVG rendering — what you see is what you get.
+- **Topological Operations:** You edit structure and relationships (elements and connections), while Mermaid computes clean, natural layouts automatically.
+- **Ultra-Lean Footprint:** Zero heavy canvas framework dependencies. Bundled at just ~170 KB.
+
+---
+
 ## 🚀 Installation
 
 ### Via BRAT (Beta)
