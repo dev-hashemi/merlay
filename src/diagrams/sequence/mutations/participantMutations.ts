@@ -7,18 +7,16 @@ import {
   SequenceParticipantDef,
   SequenceParticipantKind,
 } from '../types';
+import { generateUniqueId } from '../../common/diagramHeader';
 import { connectParticipants } from './messageMutations';
 
 export function generateParticipantId(prefix = 'p', ast?: MermaidSequenceAST): string {
-  let counter = (ast ? ast.participants.size + ast.boxes.size : 0) + 1;
-  let candidate = `${prefix}_${Date.now().toString(36).slice(-4)}_${counter}`;
+  const existing = new Set<string>();
   if (ast) {
-    while (ast.participants.has(candidate) || ast.boxes.has(candidate)) {
-      counter++;
-      candidate = `${prefix}_${Date.now().toString(36).slice(-4)}_${counter}`;
-    }
+    for (const id of ast.participants.keys()) existing.add(id);
+    for (const id of ast.boxes.keys()) existing.add(id);
   }
-  return candidate;
+  return generateUniqueId(existing, prefix);
 }
 
 export function addParticipant(

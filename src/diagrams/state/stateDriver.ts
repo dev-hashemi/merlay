@@ -14,6 +14,7 @@ import { MermaidStateAST, MermaidStateType, StateDirection } from './types';
 import { parseMermaidStateDiagram } from './parser';
 import { serializeMermaidStateDiagram } from './serializer';
 import { findNodeLinkUrl } from '../nodeLinks';
+import { matchesHeader } from '../common/diagramHeader';
 import * as st from './mutations';
 
 const STATE_KIND_OPTIONS = [
@@ -68,22 +69,7 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
   displayName: 'State Diagram',
   supportsDirection: true,
   canHandle(code: string): boolean {
-    const lines = code.split('\n');
-    let inFrontmatter = false;
-    for (const rawLine of lines) {
-      const trimmed = rawLine.trim();
-      if (!trimmed || trimmed.startsWith('%%')) continue;
-      if (!inFrontmatter && trimmed === '---') {
-        inFrontmatter = true;
-        continue;
-      }
-      if (inFrontmatter) {
-        if (trimmed === '---') inFrontmatter = false;
-        continue;
-      }
-      return /^stateDiagram(-v2)?\b/i.test(trimmed);
-    }
-    return false;
+    return matchesHeader(code, /^stateDiagram(-v2)?\b/i);
   },
   parse(code: string): MermaidStateAST {
     return parseMermaidStateDiagram(code);

@@ -223,7 +223,7 @@ export interface RawLineEntry {
 ```
 
 ### Step 3.3: Lexer & Parser Implementation (`lexer.ts`, `parser.ts`)
-1. **Frontmatter Stripping**: Extract YAML frontmatter (`--- ... ---`) and store in `ast.frontmatter`.
+1. **Frontmatter Stripping**: Use the shared `splitFrontmatter(input)` from `src/diagrams/common/diagramHeader.ts` — do not write your own `---` scanning loop. Store the result in `ast.frontmatter`. For header detection in `canHandle`, use `matchesHeader(code, /.../i)` from the same module.
 2. **Diagram Declaration**: Parse and record header (e.g. `classDiagram` or `classDiagram-v2`).
 3. **Direction Declaration**: Parse `direction TB | LR | RL | BT`.
 4. **Statement Classification**:
@@ -239,7 +239,8 @@ export interface RawLineEntry {
 > **Tolerant Parsing**: Never allow an unrecognized syntax token to crash the parser. If a user writes advanced features (e.g. `callback`, `click`, or custom annotations), capture the line in `rawLines` so it round-trips untouched.
 
 ### Step 3.4: Serializer Implementation (`serializer.ts`)
-Emit standard, clean, readable Mermaid code.
+Emit standard, clean, readable Mermaid code. Emit frontmatter with the shared
+`emitFrontmatter(lines, ast.frontmatter)` from `src/diagrams/common/diagramHeader.ts`.
 Preserve predictable section ordering:
 1. YAML frontmatter (if present)
 2. Diagram type header
@@ -287,7 +288,7 @@ Mermaid generates unique SVG structures for each diagram type. Implement [`SvgDo
 ### Step 3.8: Driver Registration (`registry.ts`)
 Register the new driver in [`src/diagrams/registry.ts`](../src/diagrams/registry.ts):
 1. Import driver and add `registerDriver(<Name>Driver)`.
-2. Update `detectDiagramType(code)` with regex detecting the diagram header (ignoring frontmatter and comments).
+2. Add one header-regex branch in `detectDiagramType` (it matches against the shared `findFirstCodeLine`, which already skips frontmatter and comments — no new scanning loop needed). For ID generation in mutations, use `generateUniqueId` from `src/diagrams/common/diagramHeader.ts`.
 3. Add a template entry to `DIAGRAM_TEMPLATES` with a sensible, minimal default code snippet.
 
 ---

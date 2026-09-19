@@ -43,6 +43,8 @@ export type ASTElement =
 
 export interface MermaidFlowchartAST {
   diagramType: 'flowchart' | 'graph';
+  /** Raw YAML lines between leading `--- ... ---` (without delimiters). */
+  frontmatter?: string;
   direction: FlowchartDirection;
   nodes: Map<string, MermaidNodeDef>;
   edges: MermaidEdgeDef[];

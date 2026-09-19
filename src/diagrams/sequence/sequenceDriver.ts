@@ -22,6 +22,7 @@ import {
 import { parseMermaidSequenceDiagram } from './parser';
 import { serializeMermaidSequenceDiagram } from './serializer';
 import { findNodeLinkUrl } from '../nodeLinks';
+import { matchesHeader } from '../common/diagramHeader';
 import * as seq from './mutations';
 
 const SEQUENCE_KIND_OPTIONS = [
@@ -110,22 +111,7 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
   displayName: 'Sequence Diagram',
   supportsDirection: false,
   canHandle(code: string): boolean {
-    const lines = code.split('\n');
-    let inFrontmatter = false;
-    for (const rawLine of lines) {
-      const trimmed = rawLine.trim();
-      if (!trimmed || trimmed.startsWith('%%')) continue;
-      if (!inFrontmatter && trimmed === '---') {
-        inFrontmatter = true;
-        continue;
-      }
-      if (inFrontmatter) {
-        if (trimmed === '---') inFrontmatter = false;
-        continue;
-      }
-      return /^sequenceDiagram\b/i.test(trimmed);
-    }
-    return false;
+    return matchesHeader(code, /^sequenceDiagram\b/i);
   },
   parse(code: string): MermaidSequenceAST {
     return parseMermaidSequenceDiagram(code);

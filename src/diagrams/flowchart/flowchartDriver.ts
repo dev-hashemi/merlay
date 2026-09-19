@@ -13,6 +13,7 @@ import {
 import { parseMermaidFlowchart } from './parser';
 import { serializeMermaidFlowchart } from './serializer';
 import { findNodeLinkUrl } from '../nodeLinks';
+import { matchesHeader } from '../common/diagramHeader';
 import * as fc from './mutations';
 
 export const FLOWCHART_KIND_OPTIONS = [
@@ -35,6 +36,7 @@ export const FLOWCHART_KIND_OPTIONS = [
 function cloneFlowchartAst(ast: MermaidFlowchartAST): MermaidFlowchartAST {
   return {
     ...ast,
+    frontmatter: ast.frontmatter,
     nodes: new Map(Array.from(ast.nodes, ([id, n]) => [id, { ...n }])),
     edges: ast.edges.map((e) => ({ ...e })),
     subgraphs: new Map(
@@ -52,6 +54,7 @@ function cloneFlowchartAst(ast: MermaidFlowchartAST): MermaidFlowchartAST {
 function createEmptyFlowchartAst(): MermaidFlowchartAST {
   return {
     diagramType: 'flowchart',
+    frontmatter: undefined,
     direction: 'TD',
     nodes: new Map(),
     edges: [],
@@ -67,8 +70,7 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
   displayName: 'Flowchart',
   supportsDirection: true,
   canHandle(code: string): boolean {
-    const trimmed = code.trim();
-    return /^(flowchart|graph)\b/i.test(trimmed);
+    return matchesHeader(code, /^(flowchart|graph)\b/i);
   },
   parse(code: string): MermaidFlowchartAST {
     return parseMermaidFlowchart(code);

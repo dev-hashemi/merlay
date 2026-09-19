@@ -9,18 +9,13 @@ import {
   MermaidNodeDef,
   MermaidShapeType,
 } from '../types';
+import { generateUniqueId } from '../../common/diagramHeader';
 
 export function generateUniqueNodeId(
   ast: MermaidFlowchartAST,
   base = 'node'
 ): string {
-  let counter = ast.nodes.size + 1;
-  let candidate = `${base}_${counter}`;
-  while (ast.nodes.has(candidate)) {
-    counter++;
-    candidate = `${base}_${counter}`;
-  }
-  return candidate;
+  return generateUniqueId(new Set(ast.nodes.keys()), base);
 }
 
 export function addNode(

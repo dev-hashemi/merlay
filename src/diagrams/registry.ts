@@ -3,6 +3,7 @@ import { FlowchartDriver } from './flowchart/flowchartDriver';
 import { StateDiagramDriver } from './state/stateDriver';
 import { SequenceDiagramDriver } from './sequence/sequenceDriver';
 import { createUnsupportedDiagramDriver } from './unsupported/unsupportedDriver';
+import { findFirstCodeLine } from './common/diagramHeader';
 
 const drivers = new Map<SupportedDiagramType, DiagramDriver>();
 
@@ -51,143 +52,127 @@ export function isDiagramSupported(type: string): boolean {
 }
 
 /**
- * Detect the Mermaid diagram type from code by inspecting directives and comments
+ * Detect the Mermaid diagram type from code by inspecting the first
+ * substantive line (shared helper skips blanks, `%%` comments, and a
+ * leading `--- ... ---` frontmatter block).
  */
 export function detectDiagramType(code: string): SupportedDiagramType {
-  const lines = code.split('\n');
-  let inFrontmatter = false;
-  for (const rawLine of lines) {
-    const trimmed = rawLine.trim();
-    if (!trimmed || trimmed.startsWith('%%')) continue;
+  const trimmed = findFirstCodeLine(code);
+  if (!trimmed) return 'unknown';
 
-    if (!inFrontmatter && trimmed === '---') {
-      inFrontmatter = true;
-      continue;
-    }
-    if (inFrontmatter) {
-      if (trimmed === '---') {
-        inFrontmatter = false;
-      }
-      continue;
-    }
+  // Flowchart / Graph
+  if (/^(flowchart|graph)\b/i.test(trimmed)) {
+    return 'flowchart';
+  }
 
-    // Flowchart / Graph
-    if (/^(flowchart|graph)\b/i.test(trimmed)) {
-      return 'flowchart';
-    }
+  // State Diagram
+  if (/^stateDiagram(-v2)?\b/i.test(trimmed)) {
+    return 'stateDiagram';
+  }
 
-    // State Diagram
-    if (/^stateDiagram(-v2)?\b/i.test(trimmed)) {
-      return 'stateDiagram';
-    }
+  // Sequence Diagram
+  if (/^sequenceDiagram\b/i.test(trimmed)) {
+    return 'sequenceDiagram';
+  }
 
-    // Sequence Diagram
-    if (/^sequenceDiagram\b/i.test(trimmed)) {
-      return 'sequenceDiagram';
-    }
+  // Class Diagram
+  if (/^classDiagram(-v2)?\b/i.test(trimmed)) {
+    return 'classDiagram';
+  }
 
-    // Class Diagram
-    if (/^classDiagram(-v2)?\b/i.test(trimmed)) {
-      return 'classDiagram';
-    }
+  // Entity Relationship Diagram
+  if (/^erDiagram\b/i.test(trimmed)) {
+    return 'erDiagram';
+  }
 
-    // Entity Relationship Diagram
-    if (/^erDiagram\b/i.test(trimmed)) {
-      return 'erDiagram';
-    }
+  // User Journey
+  if (/^journey\b/i.test(trimmed)) {
+    return 'journey';
+  }
 
-    // User Journey
-    if (/^journey\b/i.test(trimmed)) {
-      return 'journey';
-    }
+  // Gantt Chart
+  if (/^gantt\b/i.test(trimmed)) {
+    return 'gantt';
+  }
 
-    // Gantt Chart
-    if (/^gantt\b/i.test(trimmed)) {
-      return 'gantt';
-    }
+  // Pie Chart
+  if (/^pie\b/i.test(trimmed)) {
+    return 'pie';
+  }
 
-    // Pie Chart
-    if (/^pie\b/i.test(trimmed)) {
-      return 'pie';
-    }
+  // Quadrant Chart
+  if (/^quadrantChart\b/i.test(trimmed)) {
+    return 'quadrantChart';
+  }
 
-    // Quadrant Chart
-    if (/^quadrantChart\b/i.test(trimmed)) {
-      return 'quadrantChart';
-    }
+  // Requirement Diagram
+  if (/^requirementDiagram\b/i.test(trimmed)) {
+    return 'requirementDiagram';
+  }
 
-    // Requirement Diagram
-    if (/^requirementDiagram\b/i.test(trimmed)) {
-      return 'requirementDiagram';
-    }
+  // Git Graph
+  if (/^gitGraph\b/i.test(trimmed)) {
+    return 'gitGraph';
+  }
 
-    // Git Graph
-    if (/^gitGraph\b/i.test(trimmed)) {
-      return 'gitGraph';
-    }
+  // C4 Diagram
+  if (/^C4(Context|Container|Component|Dynamic|Deployment)\b/i.test(trimmed)) {
+    return 'c4';
+  }
 
-    // C4 Diagram
-    if (/^C4(Context|Container|Component|Dynamic|Deployment)\b/i.test(trimmed)) {
-      return 'c4';
-    }
+  // Mindmap
+  if (/^mindmap\b/i.test(trimmed)) {
+    return 'mindmap';
+  }
 
-    // Mindmap
-    if (/^mindmap\b/i.test(trimmed)) {
-      return 'mindmap';
-    }
+  // Timeline
+  if (/^timeline\b/i.test(trimmed)) {
+    return 'timeline';
+  }
 
-    // Timeline
-    if (/^timeline\b/i.test(trimmed)) {
-      return 'timeline';
-    }
+  // Sankey Diagram
+  if (/^sankey(-beta)?\b/i.test(trimmed)) {
+    return 'sankey';
+  }
 
-    // Sankey Diagram
-    if (/^sankey(-beta)?\b/i.test(trimmed)) {
-      return 'sankey';
-    }
+  // XY Chart
+  if (/^xychart(-beta)?\b/i.test(trimmed)) {
+    return 'xychart';
+  }
 
-    // XY Chart
-    if (/^xychart(-beta)?\b/i.test(trimmed)) {
-      return 'xychart';
-    }
+  // Block Diagram
+  if (/^block(-beta)?\b/i.test(trimmed)) {
+    return 'block';
+  }
 
-    // Block Diagram
-    if (/^block(-beta)?\b/i.test(trimmed)) {
-      return 'block';
-    }
+  // Packet Diagram
+  if (/^packet(-beta)?\b/i.test(trimmed)) {
+    return 'packet';
+  }
 
-    // Packet Diagram
-    if (/^packet(-beta)?\b/i.test(trimmed)) {
-      return 'packet';
-    }
+  // Kanban
+  if (/^kanban\b/i.test(trimmed)) {
+    return 'kanban';
+  }
 
-    // Kanban
-    if (/^kanban\b/i.test(trimmed)) {
-      return 'kanban';
-    }
+  // Architecture Diagram
+  if (/^architecture(-beta)?\b/i.test(trimmed)) {
+    return 'architecture';
+  }
 
-    // Architecture Diagram
-    if (/^architecture(-beta)?\b/i.test(trimmed)) {
-      return 'architecture';
-    }
+  // ZenUML
+  if (/^zenuml\b/i.test(trimmed)) {
+    return 'zenuml';
+  }
 
-    // ZenUML
-    if (/^zenuml\b/i.test(trimmed)) {
-      return 'zenuml';
-    }
+  // Use Case Diagram
+  if (/^useCaseDiagram\b/i.test(trimmed)) {
+    return 'useCaseDiagram';
+  }
 
-    // Use Case Diagram
-    if (/^useCaseDiagram\b/i.test(trimmed)) {
-      return 'useCaseDiagram';
-    }
-
-    // Agentflow
-    if (/^agentflow\b/i.test(trimmed)) {
-      return 'agentflow';
-    }
-
-    // Stop at the first substantive line
-    break;
+  // Agentflow
+  if (/^agentflow\b/i.test(trimmed)) {
+    return 'agentflow';
   }
 
   return 'unknown';

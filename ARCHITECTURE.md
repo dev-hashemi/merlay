@@ -41,6 +41,10 @@ src/
 │   │                           # MermaidSubgraphDef, shapes, arrows, directions) — every driver
 │   │                           # projects onto these; the canvas never sees a native AST
 │   ├── registry.ts             # Driver registry + diagram detection + templates
+│   ├── common/                 # Shared plumbing — identical across every diagram kind
+│   │   ├── diagramHeader.ts    # splitFrontmatter, findFirstCodeLine, matchesHeader,
+│   │   │                       # emitFrontmatter, generateUniqueId (frontmatter/header/ids)
+│   │   └── index.ts            # Barrel export
 │   ├── flowchart/              # Flowchart package
 │   │   ├── types.ts            # Flowchart AST definitions (re-exports the view-model types)
 │   │   ├── lexer.ts            # Tokenizer for flowchart syntax

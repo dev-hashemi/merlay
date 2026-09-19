@@ -4,6 +4,7 @@
 
 import { MermaidStateAST, MermaidStateDef } from '../types';
 import { connectStates } from './transitionMutations';
+import { generateStateId } from './stateMutations';
 
 export function duplicateStates(
   ast: MermaidStateAST,
@@ -19,10 +20,7 @@ export function duplicateStates(
     if (!oldState) continue;
 
     const baseName = oldState.label || sid;
-    let newId = `s_${Date.now().toString(36).slice(-4)}_${Math.floor(Math.random() * 1000)}`;
-    while (ast.states.has(newId) || ast.compositeStates.has(newId)) {
-      newId = `s_${Date.now().toString(36).slice(-4)}_${Math.floor(Math.random() * 10000)}`;
-    }
+    const newId = generateStateId('s', ast);
     idMap.set(sid, newId);
     newCreatedStateIds.push(newId);
 

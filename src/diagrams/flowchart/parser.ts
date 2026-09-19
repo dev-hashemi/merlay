@@ -3,6 +3,7 @@
  */
 
 import { Token, tokenize } from './lexer';
+import { splitFrontmatter } from '../common/diagramHeader';
 import {
   ArrowType,
   FlowchartDirection,
@@ -21,12 +22,14 @@ import {
 export { parseStyleDeclarations };
 
 export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
-  const tokens = tokenize(input);
-  const inputLines = input.split('\n');
+  const { frontmatter, body } = splitFrontmatter(input);
+  const tokens = tokenize(body);
+  const inputLines = body.split('\n');
   let cursor = 0;
 
   const ast: MermaidFlowchartAST = {
     diagramType: 'flowchart',
+    frontmatter,
     direction: 'TD',
     nodes: new Map(),
     edges: [],

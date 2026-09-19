@@ -4,16 +4,13 @@
 
 import { MermaidStateAST, MermaidStateDef, MermaidTransitionDef } from './types';
 import { isNodeInsideComposite } from './mutations/transitionMutations';
+import { emitFrontmatter } from '../common/diagramHeader';
 
 export function serializeMermaidStateDiagram(ast: MermaidStateAST): string {
   const lines: string[] = [];
 
-  // 0. Frontmatter
-  if (ast.frontmatter) {
-    lines.push('---');
-    lines.push(ast.frontmatter);
-    lines.push('---');
-  }
+  // 0. Frontmatter (shared YAML block, same as every diagram kind)
+  emitFrontmatter(lines, ast.frontmatter);
 
   // 1. Header
   lines.push(ast.diagramType || 'stateDiagram-v2');

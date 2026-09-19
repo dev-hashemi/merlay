@@ -7,21 +7,19 @@ import {
   MermaidStateDef,
   MermaidStateType,
 } from '../types';
+import { generateUniqueId } from '../../common/diagramHeader';
 import {
   connectStates,
   ensureStartEndEntry,
 } from './transitionMutations';
 
 export function generateStateId(prefix = 'state', ast?: MermaidStateAST): string {
-  let counter = (ast ? ast.states.size + ast.compositeStates.size : 0) + 1;
-  let candidate = `${prefix}_${Date.now().toString(36).slice(-4)}_${counter}`;
+  const existing = new Set<string>();
   if (ast) {
-    while (ast.states.has(candidate) || ast.compositeStates.has(candidate)) {
-      counter++;
-      candidate = `${prefix}_${Date.now().toString(36).slice(-4)}_${counter}`;
-    }
+    for (const id of ast.states.keys()) existing.add(id);
+    for (const id of ast.compositeStates.keys()) existing.add(id);
   }
-  return candidate;
+  return generateUniqueId(existing, prefix);
 }
 
 export function addState(

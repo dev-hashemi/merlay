@@ -7,9 +7,13 @@ import {
   MermaidFlowchartAST,
   MermaidShapeType,
 } from './types';
+import { emitFrontmatter } from '../common/diagramHeader';
 
 export function serializeMermaidFlowchart(ast: MermaidFlowchartAST): string {
   const lines: string[] = [];
+
+  // 0. Frontmatter (shared YAML block, same as state/sequence diagrams)
+  emitFrontmatter(lines, ast.frontmatter);
 
   // 1. Header
   lines.push(`${ast.diagramType || 'flowchart'} ${ast.direction || 'TD'}`);

@@ -7,6 +7,7 @@ import {
   SequenceArrowType,
   SequenceParticipantDef,
 } from './types';
+import { emitFrontmatter } from '../common/diagramHeader';
 
 export function arrowToToken(arrow: SequenceArrowType): string {
   switch (arrow) {
@@ -60,12 +61,8 @@ function escapeBoxLabel(label: string, wasQuoted?: boolean): string {
 export function serializeMermaidSequenceDiagram(ast: MermaidSequenceAST): string {
   const lines: string[] = [];
 
-  // 1. Frontmatter
-  if (ast.frontmatter) {
-    lines.push('---');
-    lines.push(ast.frontmatter);
-    lines.push('---');
-  }
+  // 1. Frontmatter (shared YAML block, same as every diagram kind)
+  emitFrontmatter(lines, ast.frontmatter);
 
   // 2. Header
   lines.push('sequenceDiagram');
