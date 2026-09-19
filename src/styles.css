@@ -1040,6 +1040,43 @@ pre.language-mermaid {
   color: var(--text-error, #ef4444);
 }
 
+.mermaid-style-footer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--mermaid-border, rgba(255, 255, 255, 0.08));
+}
+
+.mermaid-style-default-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid var(--interactive-accent, #7c3aed);
+  background: var(--interactive-accent, #7c3aed);
+  color: var(--text-on-accent, #ffffff);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mermaid-style-default-action-btn:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.mermaid-style-reset-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .mermaid-hud-color-indicator {
   width: 10px;
   height: 10px;

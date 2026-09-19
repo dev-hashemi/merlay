@@ -12,6 +12,7 @@ import {
   connectStates,
   ensureStartEndEntry,
 } from './transitionMutations';
+import { getDefaultStateStyle } from './styleMutations';
 
 export function generateStateId(prefix = 'state', ast?: MermaidStateAST): string {
   const existing = new Set<string>();
@@ -29,12 +30,14 @@ export function addState(
   compositeId?: string
 ): string {
   const id = generateStateId('s', ast);
+  const defaultStyle = getDefaultStateStyle(ast);
   const newState: MermaidStateDef = {
     type: 'state',
     id,
     label: label || id,
     stateType,
     compositeId,
+    style: defaultStyle ? { ...defaultStyle } : undefined,
   };
 
   ast.states.set(id, newState);

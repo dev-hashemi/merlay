@@ -47,6 +47,7 @@ function cloneFlowchartAst(ast: MermaidFlowchartAST): MermaidFlowchartAST {
     ),
     styles: ast.styles.map((s) => ({ ...s, styles: { ...s.styles } })),
     classDefs: new Map(Array.from(ast.classDefs, ([id, c]) => [id, { ...c }])),
+    defaultLinkStyle: ast.defaultLinkStyle ? { ...ast.defaultLinkStyle } : undefined,
     rawLines: [...ast.rawLines],
   };
 }
@@ -105,6 +106,7 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
     supportsEdgeStyles: true,
     supportsGroups: true,
     hasAnchors: false,
+    supportsDefaultStyles: true,
   },
 
   labels: {
@@ -195,6 +197,21 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
     },
     clearEdgesStyle: (ast, edgeIds) => {
       fc.clearEdgesStyle(ast, edgeIds);
+    },
+
+    getDefaultStyle: (ast) => fc.getDefaultNodeStyle(ast),
+    updateDefaultStyle: (ast, styles) => {
+      fc.updateDefaultNodeStyle(ast, styles);
+    },
+    clearDefaultStyle: (ast) => {
+      fc.clearDefaultNodeStyle(ast);
+    },
+    getDefaultEdgeStyle: (ast) => fc.getDefaultEdgeStyle(ast),
+    updateDefaultEdgeStyle: (ast, styles) => {
+      fc.updateDefaultEdgeStyle(ast, styles);
+    },
+    clearDefaultEdgeStyle: (ast) => {
+      fc.clearDefaultEdgeStyle(ast);
     },
 
     getGroupStyle: (ast, groupId) => fc.getSubgraphStyle(ast, groupId),

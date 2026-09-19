@@ -40,13 +40,22 @@ export function updateStatesStyle(
 }
 
 export function clearStateStyle(ast: MermaidStateAST, stateId: string): void {
+  const defaultStyle = getDefaultStateStyle(ast);
   const state = ast.states.get(stateId);
   if (state) {
-    delete state.style;
+    if (defaultStyle) {
+      state.style = { ...defaultStyle };
+    } else {
+      delete state.style;
+    }
   }
   const comp = ast.compositeStates.get(stateId);
   if (comp) {
-    delete comp.style;
+    if (defaultStyle) {
+      comp.style = { ...defaultStyle };
+    } else {
+      delete comp.style;
+    }
   }
   ast.styles = ast.styles.filter((s) => s.targetId !== stateId);
 }
@@ -112,4 +121,65 @@ export function getCompositeStateStyle(
   compId: string
 ): Record<string, string> | undefined {
   return ast.compositeStates.get(compId)?.style;
+}
+
+export function getDefaultStateStyle(
+  ast: MermaidStateAST
+): Record<string, string> | undefined {
+  const line = ast.rawLines.find(
+    (r) => !r.compositeId && /^classDef\s+default\b/i.test(r.text.trim())
+  );
+  if (!line) return undefined;
+  const match = line.text.trim().match(/^classDef\s+default\s+(.*)$/i);
+  if (!match) return undefined;
+  const pairs = match[1].split(/[,;]/);
+  const styles: Record<string, string> = {};
+  for (const pair of pairs) {
+    const colonIdx = pair.indexOf(':');
+    if (colonIdx > 0) {
+      const k = pair.slice(0, colonIdx).trim();
+      const v = pair.slice(colonIdx + 1).trim();
+      if (k && v) styles[k] = v;
+    }
+  }
+  return Object.keys(styles).length > 0 ? styles : undefined;
+}
+
+export function updateDefaultStateStyle(
+  ast: MermaidStateAST,
+  styles: Record<string, string> | null
+): void {
+  ast.rawLines = ast.rawLines.filter(
+    (r) => r.compositeId || !/^classDef\s+default\b/i.test(r.text.trim())
+  );
+  if (!styles || Object.keys(styles).length === 0) return;
+  const clean: Record<string, string> = {};
+  for (const [k, v] of Object.entries(styles)) {
+    if (typeof v === 'string' && v.trim()) clean[k.trim()] = v.trim();
+  }
+  if (Object.keys(clean).length === 0) return;
+  const stylePairs = Object.entries(clean)
+    .map(([k, v]) => `${k}:${v}`)
+    .join(',');
+  ast.rawLines.unshift({ text: `classDef default ${stylePairs}` });
+
+  // Apply to states that don't have explicit style overrides
+  const explicitTargets = new Set(ast.styles.map((s) => s.targetId));
+  for (const [id, state] of ast.states.entries()) {
+    if (id !== '[*]' && !explicitTargets.has(id)) {
+      state.style = { ...clean };
+    }
+  }
+}
+
+export function clearDefaultStateStyle(ast: MermaidStateAST): void {
+  ast.rawLines = ast.rawLines.filter(
+    (r) => r.compositeId || !/^classDef\s+default\b/i.test(r.text.trim())
+  );
+  const explicitTargets = new Set(ast.styles.map((s) => s.targetId));
+  for (const [id, state] of ast.states.entries()) {
+    if (!explicitTargets.has(id)) {
+      delete state.style;
+    }
+  }
 }

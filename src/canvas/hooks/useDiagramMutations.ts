@@ -153,10 +153,11 @@ export function useDiagramMutations(options: UseDiagramMutationsOptions) {
   );
 
   const handleApplyNodePreset = useCallback(
-    (preset: ThemePreset, specificId?: string) => {
+    (preset: ThemePreset, specificId?: unknown) => {
       const state = useCanvasStore.getState();
-      const targets = specificId
-        ? [specificId]
+      const validSpecificId = typeof specificId === 'string' && specificId ? specificId : null;
+      const targets = validSpecificId
+        ? [validSpecificId]
         : state.selectedNodeIds.size > 0
         ? Array.from(state.selectedNodeIds)
         : getSelectedNodeId()
@@ -173,14 +174,16 @@ export function useDiagramMutations(options: UseDiagramMutationsOptions) {
           if (preset.color) styles['color'] = preset.color;
           m.updateNodesStyle(a, targets, styles);
         }
-      }, specificId || getSelectedNodeId() || undefined);
+      }, validSpecificId || getSelectedNodeId() || undefined);
     },
     [m, applyMutation]
   );
 
   const handleUpdateCustomStyle = useCallback(
-    (property: string, value: string, specificId?: string) => {
-      const target = specificId || getSelectedNodeId();
+    (property: string, value: string, specificId?: unknown) => {
+      const target =
+        (typeof specificId === 'string' && specificId ? specificId : null) ||
+        getSelectedNodeId();
       if (!target) return;
 
       applyMutation((a) => {
@@ -192,22 +195,65 @@ export function useDiagramMutations(options: UseDiagramMutationsOptions) {
           delete updated[property];
         }
         m.updateNodeStyle(a, target, Object.keys(updated).length > 0 ? updated : null);
-      }, specificId || getSelectedNodeId() || undefined);
+      }, target);
     },
     [m, applyMutation]
   );
 
   const handleClearNodeStyle = useCallback(
-    (specificId?: string) => {
-      const target = specificId || getSelectedNodeId();
+    (specificId?: unknown) => {
+      const target =
+        (typeof specificId === 'string' && specificId ? specificId : null) ||
+        getSelectedNodeId();
       if (!target) return;
 
       applyMutation((a) => {
         m.clearNodeStyle(a, target);
-      }, specificId || getSelectedNodeId() || undefined);
+      }, target);
     },
     [m, applyMutation]
   );
+
+  const handleSetDefaultNodeStyle = useCallback(
+    (customStyle?: unknown) => {
+      if (!m.updateDefaultStyle) return;
+      const target = getSelectedNodeId();
+      applyMutation((a) => {
+        const isStyleMap =
+          customStyle &&
+          typeof customStyle === 'object' &&
+          !('nativeEvent' in customStyle) &&
+          !('isTrusted' in customStyle) &&
+          !('bubbles' in customStyle);
+
+        const styleToSet =
+          (isStyleMap ? (customStyle as Record<string, string>) : undefined) ||
+          (target ? m.getNodeStyle(a, target) : undefined);
+
+        if (styleToSet && Object.keys(styleToSet).length > 0) {
+          m.updateDefaultStyle!(a, styleToSet);
+          const state = useCanvasStore.getState();
+          const nodeTargets =
+            state.selectedNodeIds.size > 0
+              ? Array.from(state.selectedNodeIds)
+              : target
+              ? [target]
+              : [];
+          if (nodeTargets.length > 0) {
+            m.clearNodesStyle(a, nodeTargets);
+          }
+        }
+      });
+    },
+    [m, applyMutation]
+  );
+
+  const handleClearDefaultNodeStyle = useCallback(() => {
+    if (!m.clearDefaultStyle) return;
+    applyMutation((a) => {
+      m.clearDefaultStyle!(a);
+    });
+  }, [m, applyMutation]);
 
   const handleAddStandaloneStep = useCallback(() => {
     let createdNodeId: string | null = null;
@@ -378,11 +424,59 @@ export function useDiagramMutations(options: UseDiagramMutationsOptions) {
     [m, applyMutation]
   );
 
-  const handleClearEdgeStyle = useCallback(() => {
-    const selectedEdgeId = getSelectedEdgeId();
-    if (!selectedEdgeId || !m.clearEdgeStyle) return;
+  const handleClearEdgeStyle = useCallback(
+    (specificId?: unknown) => {
+      const target =
+        (typeof specificId === 'string' && specificId ? specificId : null) ||
+        getSelectedEdgeId();
+      if (!target || !m.clearEdgeStyle) return;
+      applyMutation((a) => {
+        m.clearEdgeStyle!(a, target);
+      });
+    },
+    [m, applyMutation]
+  );
+
+  const handleSetDefaultEdgeStyle = useCallback(
+    (customStyle?: unknown) => {
+      if (!m.updateDefaultEdgeStyle) return;
+      const target = getSelectedEdgeId();
+      applyMutation((a) => {
+        const isStyleMap =
+          customStyle &&
+          typeof customStyle === 'object' &&
+          !('nativeEvent' in customStyle) &&
+          !('isTrusted' in customStyle) &&
+          !('bubbles' in customStyle);
+
+        const styleToSet =
+          (isStyleMap ? (customStyle as Record<string, string>) : undefined) ||
+          (target && m.getEdgeStyle ? m.getEdgeStyle(a, target) : undefined);
+
+        if (styleToSet && Object.keys(styleToSet).length > 0) {
+          m.updateDefaultEdgeStyle!(a, styleToSet);
+          const state = useCanvasStore.getState();
+          const edgeTargets =
+            state.selectedEdgeIds.size > 0
+              ? Array.from(state.selectedEdgeIds)
+              : target
+              ? [target]
+              : [];
+          if (edgeTargets.length > 0 && m.clearEdgesStyle) {
+            m.clearEdgesStyle(a, edgeTargets);
+          } else if (target && m.clearEdgeStyle) {
+            m.clearEdgeStyle(a, target);
+          }
+        }
+      });
+    },
+    [m, applyMutation]
+  );
+
+  const handleClearDefaultEdgeStyle = useCallback(() => {
+    if (!m.clearDefaultEdgeStyle) return;
     applyMutation((a) => {
-      m.clearEdgeStyle!(a, selectedEdgeId);
+      m.clearDefaultEdgeStyle!(a);
     });
   }, [m, applyMutation]);
 
@@ -742,6 +836,9 @@ export function useDiagramMutations(options: UseDiagramMutationsOptions) {
     handleApplyNodePreset,
     handleUpdateCustomStyle,
     handleClearNodeStyle,
+    handleSetDefaultNodeStyle,
+    handleClearDefaultNodeStyle,
+    hasDefaultNodeStyle: Boolean(m.getDefaultStyle?.(ast)),
     handleAddStandaloneStep,
     handleToggleDirection,
     handleAddStartState,
@@ -759,6 +856,9 @@ export function useDiagramMutations(options: UseDiagramMutationsOptions) {
     handleApplyEdgePreset,
     handleUpdateEdgeCustomStyle,
     handleClearEdgeStyle,
+    handleSetDefaultEdgeStyle,
+    handleClearDefaultEdgeStyle,
+    hasDefaultEdgeStyle: Boolean(m.getDefaultEdgeStyle?.(ast)),
 
     // Group operations
     handleAddGroup,

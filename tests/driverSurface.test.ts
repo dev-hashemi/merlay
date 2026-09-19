@@ -20,6 +20,7 @@ test('Driver surface: flowchart capabilities, labels, and projection', () => {
     supportsEdgeStyles: true,
     supportsGroups: true,
     hasAnchors: false,
+    supportsDefaultStyles: true,
   });
   assert.strictEqual(flowchartDriver.labels.node, 'Step');
   assert.strictEqual(flowchartDriver.mutations.anchors, undefined);
@@ -44,6 +45,7 @@ test('Driver surface: state capabilities, labels, and projection', () => {
     supportsEdgeStyles: false,
     supportsGroups: true,
     hasAnchors: true,
+    supportsDefaultStyles: true,
   });
   assert.strictEqual(stateDriver.labels.node, 'State');
   assert.strictEqual(stateDriver.mutations.updateEdgeType, undefined);

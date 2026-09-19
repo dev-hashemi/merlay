@@ -75,6 +75,8 @@ export interface DiagramCapabilities {
   supportsGroups: boolean;
   /** Pseudo-node start/end anchors (e.g. [*] in state diagrams). */
   hasAnchors: boolean;
+  /** Diagram-level default theme/style (e.g. classDef default / linkStyle default). */
+  supportsDefaultStyles?: boolean;
 }
 
 /** UI vocabulary so components never hard-code diagram-specific nouns. */
@@ -167,6 +169,14 @@ export interface DiagramMutations<TAst = unknown> {
   updateEdgesStyle?(ast: TAst, edgeIds: Iterable<string>, styles: Record<string, string> | null): void;
   clearEdgeStyle?(ast: TAst, edgeId: string): void;
   clearEdgesStyle?(ast: TAst, edgeIds: Iterable<string>): void;
+
+  // Default diagram styles (optional — supportsDefaultStyles)
+  getDefaultStyle?(ast: TAst): Record<string, string> | undefined;
+  updateDefaultStyle?(ast: TAst, styles: Record<string, string> | null): void;
+  clearDefaultStyle?(ast: TAst): void;
+  getDefaultEdgeStyle?(ast: TAst): Record<string, string> | undefined;
+  updateDefaultEdgeStyle?(ast: TAst, styles: Record<string, string> | null): void;
+  clearDefaultEdgeStyle?(ast: TAst): void;
 
   // Groups (subgraphs / composite states)
   getGroupStyle(ast: TAst, groupId: string): Record<string, string> | undefined;

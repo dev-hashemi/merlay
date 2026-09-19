@@ -39,6 +39,9 @@ export interface MultiSelectOverlaysProps {
   onApplyPreset: (preset: ThemePreset) => void;
   onUpdateCustomStyle: (prop: string, val: string) => void;
   onClearStyle: () => void;
+  onSetDefaultStyle?: () => void;
+  onClearDefaultStyle?: () => void;
+  hasDefaultStyle?: boolean;
 }
 
 export const MultiSelectOverlays: React.FC<MultiSelectOverlaysProps> = ({
@@ -60,6 +63,9 @@ export const MultiSelectOverlays: React.FC<MultiSelectOverlaysProps> = ({
   onApplyPreset,
   onUpdateCustomStyle,
   onClearStyle,
+  onSetDefaultStyle,
+  onClearDefaultStyle,
+  hasDefaultStyle,
 }) => {
   if (!isMultiSelect) return null;
 
@@ -115,6 +121,9 @@ export const MultiSelectOverlays: React.FC<MultiSelectOverlaysProps> = ({
           onApplyPreset={onApplyPreset}
           onUpdateCustomStyle={onUpdateCustomStyle}
           onClearStyle={onClearStyle}
+          onSetDefaultStyle={onSetDefaultStyle}
+          onClearDefaultStyle={onClearDefaultStyle}
+          hasDefaultStyle={hasDefaultStyle}
         />
       )}
     </>

@@ -29,6 +29,7 @@ export function connectNodes(
     to: toId,
     arrowType,
     label: label?.trim() || undefined,
+    style: ast.defaultLinkStyle ? { ...ast.defaultLinkStyle } : undefined,
   };
   ast.edges.push(newEdge);
   return edgeId;
@@ -125,6 +126,7 @@ export function insertNodeOnEdge(
   const childNode = ast.nodes.get(toId);
   const subgraphId = parentNode?.subgraphId || childNode?.subgraphId;
 
+  const defaultClass = ast.classDefs.get('default');
   const newNodeId = generateUniqueNodeId(ast, 'step');
   const newNode: MermaidNodeDef = {
     type: 'node',
@@ -132,6 +134,7 @@ export function insertNodeOnEdge(
     label: label.trim() || newNodeId,
     shape,
     subgraphId,
+    style: defaultClass?.styles ? { ...defaultClass.styles } : undefined,
   };
   ast.nodes.set(newNodeId, newNode);
 
@@ -154,6 +157,7 @@ export function insertNodeOnEdge(
     to: newNodeId,
     arrowType,
     label: edgeLabel,
+    style: ast.defaultLinkStyle ? { ...ast.defaultLinkStyle } : undefined,
   };
 
   // Add edge 2: newNodeId -> toId
@@ -164,6 +168,7 @@ export function insertNodeOnEdge(
     from: newNodeId,
     to: toId,
     arrowType,
+    style: ast.defaultLinkStyle ? { ...ast.defaultLinkStyle } : undefined,
   };
 
   ast.edges.push(edge1, edge2);
@@ -191,6 +196,7 @@ export function insertNodeBetween(
   const childNode = ast.nodes.get(toId);
   const subgraphId = parentNode?.subgraphId || childNode?.subgraphId;
 
+  const defaultClass = ast.classDefs.get('default');
   const newNodeId = generateUniqueNodeId(ast, 'step');
   const newNode: MermaidNodeDef = {
     type: 'node',
@@ -198,6 +204,7 @@ export function insertNodeBetween(
     label: label.trim() || newNodeId,
     shape,
     subgraphId,
+    style: defaultClass?.styles ? { ...defaultClass.styles } : undefined,
   };
   ast.nodes.set(newNodeId, newNode);
 
@@ -215,6 +222,7 @@ export function insertNodeBetween(
     from: fromId,
     to: newNodeId,
     arrowType: 'arrow',
+    style: ast.defaultLinkStyle ? { ...ast.defaultLinkStyle } : undefined,
   };
 
   const edge2Id = `e_${newNodeId}_${toId}_${Date.now() + 1}`;
@@ -224,6 +232,7 @@ export function insertNodeBetween(
     from: newNodeId,
     to: toId,
     arrowType: 'arrow',
+    style: ast.defaultLinkStyle ? { ...ast.defaultLinkStyle } : undefined,
   };
 
   ast.edges.push(edge1, edge2);

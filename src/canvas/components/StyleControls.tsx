@@ -164,7 +164,7 @@ export const ResetStyleButton: React.FC<ResetStyleButtonProps> = ({
   label,
   onReset,
 }) => (
-  <button type="button" className="mermaid-style-reset-btn" onClick={onReset}>
+  <button type="button" className="mermaid-style-reset-btn" onClick={() => onReset()}>
     {label}
   </button>
 );

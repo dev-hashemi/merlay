@@ -16,6 +16,9 @@ export interface NodeStylePopoverProps {
   onUpdateCustomStyle: (property: string, value: string) => void;
   onClearStyle: () => void;
   defaultDash?: 'solid' | 'dashed';
+  onSetDefaultStyle?: (style?: Record<string, string>) => void;
+  onClearDefaultStyle?: () => void;
+  hasDefaultStyle?: boolean;
 }
 
 export const NodeStylePopover: React.FC<NodeStylePopoverProps> = ({
@@ -25,6 +28,9 @@ export const NodeStylePopover: React.FC<NodeStylePopoverProps> = ({
   onUpdateCustomStyle,
   onClearStyle,
   defaultDash = 'solid',
+  onSetDefaultStyle,
+  onClearDefaultStyle,
+  hasDefaultStyle = false,
 }) => {
   if (!popoverPos) return null;
 
@@ -84,7 +90,32 @@ export const NodeStylePopover: React.FC<NodeStylePopoverProps> = ({
         onChange={(v) => onUpdateCustomStyle('color', v)}
       />
 
-      <ResetStyleButton label="Reset to Default Theme" onReset={onClearStyle} />
+      <div className="mermaid-style-footer-actions">
+        {onSetDefaultStyle && (
+          <button
+            type="button"
+            className="mermaid-style-default-action-btn"
+            onClick={() => onSetDefaultStyle(currentStyle)}
+            title="Make this style the default theme for all current and future steps"
+          >
+            Set as Diagram Default
+          </button>
+        )}
+
+        <div className="mermaid-style-reset-row">
+          <ResetStyleButton label="Reset to Default Theme" onReset={() => onClearStyle()} />
+          {hasDefaultStyle && onClearDefaultStyle && (
+            <button
+              type="button"
+              className="mermaid-style-reset-btn"
+              onClick={() => onClearDefaultStyle()}
+              title="Remove diagram default theme and revert to clean unstyled Mermaid"
+            >
+              Clear Diagram Default
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

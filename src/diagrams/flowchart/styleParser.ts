@@ -110,6 +110,7 @@ export function resolveStylesOntoAst(
   // 4. Link styles to edges (linkStyle <indices> <styles>)
   for (const { targetSpec, styleMap } of pendingLinkStyles) {
     if (targetSpec.toLowerCase() === 'default') {
+      ast.defaultLinkStyle = { ...(ast.defaultLinkStyle || {}), ...styleMap };
       for (const edge of ast.edges) {
         edge.style = { ...(edge.style || {}), ...styleMap };
       }

@@ -38,6 +38,9 @@ export interface NodeOverlaysProps {
   onApplyNodePreset: (preset: ThemePreset) => void;
   onUpdateCustomStyle: (prop: string, val: string) => void;
   onClearNodeStyle: () => void;
+  onSetDefaultStyle?: () => void;
+  onClearDefaultStyle?: () => void;
+  hasDefaultStyle?: boolean;
 
   currentSubgraphId: string | undefined;
   displaySubgraphs: Map<string, MermaidSubgraphDef>;
@@ -72,6 +75,9 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
   onApplyNodePreset,
   onUpdateCustomStyle,
   onClearNodeStyle,
+  onSetDefaultStyle,
+  onClearDefaultStyle,
+  hasDefaultStyle,
   currentSubgraphId,
   displaySubgraphs,
   onSelectSubgraphMembership,
@@ -135,6 +141,9 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
           onApplyPreset={onApplyNodePreset}
           onUpdateCustomStyle={onUpdateCustomStyle}
           onClearStyle={onClearNodeStyle}
+          onSetDefaultStyle={onSetDefaultStyle}
+          onClearDefaultStyle={onClearDefaultStyle}
+          hasDefaultStyle={hasDefaultStyle}
         />
       )}
 

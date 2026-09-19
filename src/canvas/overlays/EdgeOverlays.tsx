@@ -25,6 +25,9 @@ export interface EdgeOverlaysProps {
   onApplyEdgePreset: (preset: EdgeThemePreset) => void;
   onUpdateEdgeCustomStyle: (prop: string, val: string) => void;
   onClearEdgeStyle: () => void;
+  onSetDefaultStyle?: () => void;
+  onClearDefaultStyle?: () => void;
+  hasDefaultStyle?: boolean;
 }
 
 export const EdgeOverlays: React.FC<EdgeOverlaysProps> = ({
@@ -43,6 +46,9 @@ export const EdgeOverlays: React.FC<EdgeOverlaysProps> = ({
   onApplyEdgePreset,
   onUpdateEdgeCustomStyle,
   onClearEdgeStyle,
+  onSetDefaultStyle,
+  onClearDefaultStyle,
+  hasDefaultStyle,
 }) => {
   return (
     <>
@@ -75,6 +81,9 @@ export const EdgeOverlays: React.FC<EdgeOverlaysProps> = ({
             onApplyPreset={onApplyEdgePreset}
             onUpdateCustomStyle={onUpdateEdgeCustomStyle}
             onClearStyle={onClearEdgeStyle}
+            onSetDefaultStyle={onSetDefaultStyle}
+            onClearDefaultStyle={onClearDefaultStyle}
+            hasDefaultStyle={hasDefaultStyle}
           />
         )}
     </>

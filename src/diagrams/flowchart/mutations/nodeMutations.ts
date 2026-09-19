@@ -24,11 +24,13 @@ export function addNode(
   shape: MermaidShapeType = 'rectangle'
 ): string {
   const id = generateUniqueNodeId(ast, 'step');
+  const defaultClass = ast.classDefs.get('default');
   const newNode: MermaidNodeDef = {
     type: 'node',
     id,
     label: label.trim() || id,
     shape,
+    style: defaultClass?.styles ? { ...defaultClass.styles } : undefined,
   };
   ast.nodes.set(id, newNode);
   return id;
@@ -42,6 +44,7 @@ export function addChildNode(
 ): { nodeId: string; edgeId: string } {
   const childId = generateUniqueNodeId(ast, 'step');
   const parentNode = ast.nodes.get(parentId);
+  const defaultClass = ast.classDefs.get('default');
 
   const childNode: MermaidNodeDef = {
     type: 'node',
@@ -49,6 +52,7 @@ export function addChildNode(
     label: label.trim() || childId,
     shape,
     subgraphId: parentNode?.subgraphId,
+    style: defaultClass?.styles ? { ...defaultClass.styles } : undefined,
   };
   ast.nodes.set(childId, childNode);
 
@@ -66,6 +70,7 @@ export function addChildNode(
     from: parentId,
     to: childId,
     arrowType: 'arrow',
+    style: ast.defaultLinkStyle ? { ...ast.defaultLinkStyle } : undefined,
   };
   ast.edges.push(newEdge);
 

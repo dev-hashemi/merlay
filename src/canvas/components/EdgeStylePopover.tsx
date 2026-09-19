@@ -15,6 +15,9 @@ export interface EdgeStylePopoverProps {
   onApplyPreset: (preset: EdgeThemePreset) => void;
   onUpdateCustomStyle: (property: string, value: string) => void;
   onClearStyle: () => void;
+  onSetDefaultStyle?: (style?: Record<string, string>) => void;
+  onClearDefaultStyle?: () => void;
+  hasDefaultStyle?: boolean;
 }
 
 export const EdgeStylePopover: React.FC<EdgeStylePopoverProps> = ({
@@ -23,6 +26,9 @@ export const EdgeStylePopover: React.FC<EdgeStylePopoverProps> = ({
   onApplyPreset,
   onUpdateCustomStyle,
   onClearStyle,
+  onSetDefaultStyle,
+  onClearDefaultStyle,
+  hasDefaultStyle = false,
 }) => {
   if (!selectedEdgePos) return null;
 
@@ -72,7 +78,32 @@ export const EdgeStylePopover: React.FC<EdgeStylePopoverProps> = ({
         onChange={(v) => onUpdateCustomStyle('color', v)}
       />
 
-      <ResetStyleButton label="Reset to Default Arrow Style" onReset={onClearStyle} />
+      <div className="mermaid-style-footer-actions">
+        {onSetDefaultStyle && (
+          <button
+            type="button"
+            className="mermaid-style-default-action-btn"
+            onClick={() => onSetDefaultStyle(currentEdgeStyle)}
+            title="Make this style the default for all current and future connections"
+          >
+            Set as Diagram Default
+          </button>
+        )}
+
+        <div className="mermaid-style-reset-row">
+          <ResetStyleButton label="Reset to Default Arrow Style" onReset={() => onClearStyle()} />
+          {hasDefaultStyle && onClearDefaultStyle && (
+            <button
+              type="button"
+              className="mermaid-style-reset-btn"
+              onClick={() => onClearDefaultStyle()}
+              title="Remove diagram default arrow style"
+            >
+              Clear Diagram Default
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

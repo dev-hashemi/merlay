@@ -126,6 +126,9 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         onApplyPreset={mutations.handleBatchApplyThemePreset}
         onUpdateCustomStyle={mutations.handleBatchUpdateCustomStyle}
         onClearStyle={mutations.handleBatchClearStyle}
+        onSetDefaultStyle={mutations.handleSetDefaultNodeStyle}
+        onClearDefaultStyle={mutations.handleClearDefaultNodeStyle}
+        hasDefaultStyle={mutations.hasDefaultNodeStyle}
       />
 
       {/* Single Node Layer */}
@@ -166,6 +169,9 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         onApplyNodePreset={mutations.handleApplyNodePreset}
         onUpdateCustomStyle={mutations.handleUpdateCustomStyle}
         onClearNodeStyle={mutations.handleClearNodeStyle}
+        onSetDefaultStyle={mutations.handleSetDefaultNodeStyle}
+        onClearDefaultStyle={mutations.handleClearDefaultNodeStyle}
+        hasDefaultStyle={mutations.hasDefaultNodeStyle}
         currentSubgraphId={
           selectedNodeId ? mutations.displayNodes.get(selectedNodeId)?.subgraphId : undefined
         }
@@ -207,6 +213,9 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         onApplyEdgePreset={mutations.handleApplyEdgePreset}
         onUpdateEdgeCustomStyle={mutations.handleUpdateEdgeCustomStyle}
         onClearEdgeStyle={mutations.handleClearEdgeStyle}
+        onSetDefaultStyle={mutations.handleSetDefaultEdgeStyle}
+        onClearDefaultStyle={mutations.handleClearDefaultEdgeStyle}
+        hasDefaultStyle={mutations.hasDefaultEdgeStyle}
       />
 
       {/* Subgraph Layer */}

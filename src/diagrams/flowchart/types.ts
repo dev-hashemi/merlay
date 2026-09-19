@@ -51,5 +51,6 @@ export interface MermaidFlowchartAST {
   subgraphs: Map<string, MermaidSubgraphDef>;
   styles: MermaidStyleDef[];
   classDefs: Map<string, MermaidClassDef>;
+  defaultLinkStyle?: Record<string, string>;
   rawLines: MermaidRawLine[];
 }

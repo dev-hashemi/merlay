@@ -173,6 +173,7 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
     supportsEdgeStyles: false,
     supportsGroups: true,
     hasAnchors: true,
+    supportsDefaultStyles: true,
   },
 
   labels: {
@@ -266,6 +267,14 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
     },
     clearNodesStyle: (ast, nodeIds) => {
       st.clearStatesStyle(ast, nodeIds);
+    },
+
+    getDefaultStyle: (ast) => st.getDefaultStateStyle(ast),
+    updateDefaultStyle: (ast, styles) => {
+      st.updateDefaultStateStyle(ast, styles);
+    },
+    clearDefaultStyle: (ast) => {
+      st.clearDefaultStateStyle(ast);
     },
 
     getGroupStyle: (ast, groupId) => st.getCompositeStateStyle(ast, groupId),

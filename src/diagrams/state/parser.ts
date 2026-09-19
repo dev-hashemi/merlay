@@ -11,6 +11,7 @@ import {
   MermaidTransitionDef,
   StateDirection,
 } from './types';
+import { getDefaultStateStyle } from './mutations/styleMutations';
 
 export function parseMermaidStateDiagram(input: string): MermaidStateAST {
   const tokens = tokenizeStateDiagram(input);
@@ -188,7 +189,21 @@ export function parseMermaidStateDiagram(input: string): MermaidStateAST {
     }
   }
 
-  // 8. Reconcile styles onto states and composites (handles forward style declarations)
+  // 8. Reconcile styles onto states and composites (handles default theme and forward style declarations)
+  const defaultStyle = getDefaultStateStyle(ast);
+  if (defaultStyle) {
+    for (const st of ast.states.values()) {
+      if (!st.style || Object.keys(st.style).length === 0) {
+        st.style = { ...defaultStyle };
+      }
+    }
+    for (const comp of ast.compositeStates.values()) {
+      if (!comp.style || Object.keys(comp.style).length === 0) {
+        comp.style = { ...defaultStyle };
+      }
+    }
+  }
+
   for (const s of ast.styles) {
     if (ast.states.has(s.targetId)) {
       ast.states.get(s.targetId)!.style = {
