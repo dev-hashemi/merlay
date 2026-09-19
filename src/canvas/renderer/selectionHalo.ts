@@ -86,6 +86,7 @@ export function applySelectedNodeHalos(
             el.classList.contains('label-container') ||
             el.classList.contains('outer') ||
             el.classList.contains('basic') ||
+            el.classList.contains('node-bkg') ||
             el.classList.contains('actor-top') ||
             el.classList.contains('actor-bottom') ||
             el.classList.contains('actor')

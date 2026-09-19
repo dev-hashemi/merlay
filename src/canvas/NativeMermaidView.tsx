@@ -562,6 +562,8 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
         svgMountRef={svgMountRef}
         app={app}
         code={code}
+        theme={mutations.currentTheme}
+        onSetTheme={mutations.handleSetTheme}
       />
 
       {/* Interactive World Canvas */}

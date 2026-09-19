@@ -2,6 +2,7 @@ import { DiagramDriver, DiagramTemplate, SupportedDiagramType } from './types';
 import { FlowchartDriver } from './flowchart/flowchartDriver';
 import { StateDiagramDriver } from './state/stateDriver';
 import { SequenceDiagramDriver } from './sequence/sequenceDriver';
+import { MindmapDriver } from './mindmap/mindmapDriver';
 import { createUnsupportedDiagramDriver } from './unsupported/unsupportedDriver';
 import { findFirstCodeLine } from './common/diagramHeader';
 
@@ -15,6 +16,7 @@ export function registerDriver(driver: DiagramDriver): void {
 registerDriver(FlowchartDriver);
 registerDriver(StateDiagramDriver);
 registerDriver(SequenceDiagramDriver);
+registerDriver(MindmapDriver);
 
 export const DIAGRAM_DISPLAY_NAMES: Record<SupportedDiagramType, string> = {
   flowchart: 'Flowchart',
@@ -216,5 +218,11 @@ export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
     label: 'Sequence Diagram',
     description: 'Interactions, actors, synchronous/asynchronous messages, and lifelines.',
     defaultCode: `sequenceDiagram\n    autonumber\n    actor Alice\n    participant Bob\n    Alice->>Bob: Hello Bob, how are you?\n    Bob-->>Alice: I am good thanks!\n`,
+  },
+  {
+    type: 'mindmap',
+    label: 'Mindmap',
+    description: 'Hierarchical idea trees, brainstorms, outlines, and knowledge breakdown.',
+    defaultCode: `mindmap\n  root((Central Topic))\n    Idea 1\n      Detail A\n      Detail B\n    Idea 2\n      Detail C\n`,
   },
 ];

@@ -13,7 +13,7 @@ import {
 import { parseMermaidFlowchart } from './parser';
 import { serializeMermaidFlowchart } from './serializer';
 import { findNodeLinkUrl } from '../nodeLinks';
-import { matchesHeader } from '../common/diagramHeader';
+import { matchesHeader, getDiagramTheme, setDiagramTheme } from '../common/diagramHeader';
 import * as fc from './mutations';
 
 export const FLOWCHART_KIND_OPTIONS = [
@@ -245,6 +245,10 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
     getDirection: (ast) => ast.direction,
     setDirection: (ast, direction) => {
       fc.setDiagramDirection(ast, direction as FlowchartDirection);
+    },
+    getTheme: (ast) => getDiagramTheme(ast.frontmatter),
+    setTheme: (ast, theme) => {
+      ast.frontmatter = setDiagramTheme(ast.frontmatter, theme);
     },
   },
 

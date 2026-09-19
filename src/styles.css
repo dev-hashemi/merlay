@@ -1247,6 +1247,84 @@ pre.language-mermaid {
   border-color: var(--mermaid-accent);
 }
 
+/* Theme Popover */
+.mermaid-theme-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.mermaid-theme-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 1000;
+}
+
+.mermaid-theme-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mermaid-theme-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-normal);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+
+.mermaid-theme-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+.mermaid-theme-item.is-selected {
+  background: var(--mermaid-accent-subtle);
+  border-color: var(--mermaid-accent);
+}
+
+.mermaid-theme-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border-width: 1.5px;
+  border-style: solid;
+  flex-shrink: 0;
+}
+
+.mermaid-theme-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.mermaid-theme-label {
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--mermaid-text);
+}
+
+.mermaid-theme-desc {
+  font-size: 10px;
+  color: var(--mermaid-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Export Popover */
 .mermaid-export-wrapper {
   position: relative;

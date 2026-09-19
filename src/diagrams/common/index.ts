@@ -4,5 +4,9 @@ export {
   matchesHeader,
   emitFrontmatter,
   generateUniqueId,
+  getDiagramTheme,
+  setDiagramTheme,
+  MERMAID_THEMES,
 } from './diagramHeader';
-export type { SplitFrontmatterResult } from './diagramHeader';
+export type { SplitFrontmatterResult, MermaidTheme } from './diagramHeader';
+

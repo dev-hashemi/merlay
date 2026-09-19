@@ -99,16 +99,18 @@ export const MultiSelectHud: React.FC<MultiSelectHudProps> = ({
       )}
 
       {/* Batch Visual Style & Color */}
-      <button
-        type="button"
-        className={`mermaid-hud-btn icon-only ${
-          activePopover === 'style' ? 'is-active' : ''
-        }`}
-        onClick={() => onTogglePopover('style')}
-        title="Themes & Colors (All Selected Items)"
-      >
-        <PaletteIcon size={14} />
-      </button>
+      {capabilities.supportsNodeStyles !== false && (
+        <button
+          type="button"
+          className={`mermaid-hud-btn icon-only ${
+            activePopover === 'style' ? 'is-active' : ''
+          }`}
+          onClick={() => onTogglePopover('style')}
+          title="Themes & Colors (All Selected Items)"
+        >
+          <PaletteIcon size={14} />
+        </button>
+      )}
 
       {/* Group selected nodes into new group */}
       {capabilities.supportsGroups && selectedNodeCount > 0 && onGroupSelected && (

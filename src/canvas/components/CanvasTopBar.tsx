@@ -14,9 +14,13 @@ import {
   MaximizeIcon,
   MinimizeIcon,
   ExportIcon,
+  PaletteIcon,
 } from '../icons/Icons';
 import { ExportPopover } from './ExportPopover';
+import { ThemePopover } from './ThemePopover';
 import { DiagramDriver } from '../../diagrams/types';
+import { MermaidTheme } from '../../diagrams/common';
+
 
 export interface CanvasTopBarProps {
   driver: DiagramDriver;
@@ -42,6 +46,8 @@ export interface CanvasTopBarProps {
   svgMountRef?: React.RefObject<HTMLDivElement>;
   app?: App;
   code?: string;
+  theme?: string;
+  onSetTheme?: (theme: MermaidTheme | null) => void;
 }
 
 export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
@@ -68,10 +74,18 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
   svgMountRef,
   app,
   code,
+  theme,
+  onSetTheme,
 }) => {
   const { labels, capabilities } = driver;
   const isEditable = capabilities.editable !== false;
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
+  const [isThemeOpen, setIsThemeOpen] = useState<boolean>(false);
+
+  const themeLabel = theme
+    ? theme.charAt(0).toUpperCase() + theme.slice(1)
+    : 'Auto';
+
 
   return (
     <div className="mermaid-native-top-bar nodrag">
@@ -199,6 +213,29 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
           >
             <span>Flow: {direction}</span>
           </button>
+        )}
+
+        {isEditable && onSetTheme && (
+          <div className="mermaid-theme-wrapper">
+            <button
+              type="button"
+              className={`mermaid-tool-btn ${isThemeOpen ? 'is-active' : ''}`}
+              onClick={() => setIsThemeOpen(!isThemeOpen)}
+              title={`Diagram Theme (Current: ${themeLabel})`}
+              aria-label={`Diagram Theme (Current: ${themeLabel})`}
+              aria-haspopup="dialog"
+              aria-expanded={isThemeOpen}
+            >
+              <PaletteIcon size={14} />
+              <span>Theme: {themeLabel}</span>
+            </button>
+            <ThemePopover
+              isOpen={isThemeOpen}
+              onClose={() => setIsThemeOpen(false)}
+              currentTheme={theme}
+              onSelectTheme={onSetTheme}
+            />
+          </div>
         )}
 
         {isEditable && <div className="mermaid-bar-divider" />}

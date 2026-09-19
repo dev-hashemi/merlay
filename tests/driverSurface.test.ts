@@ -6,6 +6,7 @@ import { DiagramDriver } from '../src/diagrams/types';
 const flowchartDriver = getDriver('flowchart')!;
 const stateDriver = getDriver('stateDiagram')!;
 const sequenceDriver = getDriver('sequenceDiagram')!;
+const mindmapDriver = getDriver('mindmap')!;
 
 function roundTrip(driver: DiagramDriver, code: string) {
   const ast = driver.parse(code);
@@ -164,8 +165,49 @@ test('Driver surface: sequence mutations work through the unified interface', ()
   assert.strictEqual(reparsed.participants.size, ast.participants.size);
 });
 
+test('Driver surface: mindmap capabilities, labels, and projection', () => {
+  assert.deepEqual(mindmapDriver.capabilities, {
+    supportsDirection: false,
+    supportsNodeKinds: true,
+    supportsEdgeTypes: false,
+    supportsEdgeStyles: false,
+    supportsGroups: false,
+    hasAnchors: false,
+    supportsNodeStyles: false,
+  });
+  assert.strictEqual(mindmapDriver.labels.node, 'Topic');
+  assert.strictEqual(mindmapDriver.labels.edge, 'Branch');
+  assert.strictEqual(mindmapDriver.mutations.anchors, undefined);
+  assert.ok(mindmapDriver.nodeKindOptions.length > 0);
+  assert.ok(mindmapDriver.canvasHint);
+
+  const { ast, code } = roundTrip(
+    mindmapDriver,
+    'mindmap\n  root((Central Topic))\n    Idea 1\n      Detail A\n    Idea 2\n'
+  );
+  const projection = mindmapDriver.project(ast);
+  assert.strictEqual(projection.nodes.size, 4);
+  assert.strictEqual(projection.edges.length, 3);
+  assert.strictEqual(projection.direction, undefined);
+  assert.strictEqual(projection.nodes.get('root')!.shape, 'circle');
+  assert.ok(code.includes('mindmap'));
+});
+
+test('Driver surface: mindmap mutations work through the unified interface', () => {
+  const driver = mindmapDriver;
+  const ast = driver.parse('mindmap\n  root((Root))\n    Idea 1\n');
+
+  const childId = driver.mutations.addChildNode(ast, 'root', 'Idea 2');
+  assert.ok(ast.nodes.has(childId));
+
+  const code = driver.serialize(ast);
+  assert.ok(code.includes('Idea 2'));
+  const reparsed = driver.parse(code);
+  assert.strictEqual(reparsed.nodes.size, ast.nodes.size);
+});
+
 test('Driver surface: clone never aliases committed AST state', () => {
-  for (const driver of [flowchartDriver, stateDriver, sequenceDriver]) {
+  for (const driver of [flowchartDriver, stateDriver, sequenceDriver, mindmapDriver]) {
     const ast = driver.parse(driver.createDefault('TD'));
     const cloned = driver.clone(ast);
     assert.notEqual(cloned, ast);

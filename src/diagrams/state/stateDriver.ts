@@ -14,7 +14,7 @@ import { MermaidStateAST, MermaidStateType, StateDirection } from './types';
 import { parseMermaidStateDiagram } from './parser';
 import { serializeMermaidStateDiagram } from './serializer';
 import { findNodeLinkUrl } from '../nodeLinks';
-import { matchesHeader } from '../common/diagramHeader';
+import { matchesHeader, getDiagramTheme, setDiagramTheme } from '../common/diagramHeader';
 import * as st from './mutations';
 
 const STATE_KIND_OPTIONS = [
@@ -432,6 +432,10 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
     getDirection: (ast) => ast.direction,
     setDirection: (ast, direction) => {
       st.setStateDiagramDirection(ast, direction as StateDirection);
+    },
+    getTheme: (ast) => getDiagramTheme(ast.frontmatter),
+    setTheme: (ast, theme) => {
+      ast.frontmatter = setDiagramTheme(ast.frontmatter, theme);
     },
 
     anchors: {

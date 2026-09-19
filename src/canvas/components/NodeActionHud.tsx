@@ -127,8 +127,8 @@ export const NodeActionHud: React.FC<NodeActionHudProps> = ({
         </button>
       )}
 
-      {/* Visual Style & Color Button (hidden for anchors) */}
-      {!isAnchor && (
+      {/* Visual Style & Color Button (hidden for anchors or when diagram does not support node styles) */}
+      {capabilities.supportsNodeStyles !== false && !isAnchor && (
         <button
           type="button"
           className={`mermaid-hud-btn icon-only ${

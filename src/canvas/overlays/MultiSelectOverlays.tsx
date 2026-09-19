@@ -114,7 +114,9 @@ export const MultiSelectOverlays: React.FC<MultiSelectOverlaysProps> = ({
         )}
 
       {/* Multi-Select Visual Styling Popover */}
-      {activeMultiPopover === 'style' && popoverPos && (
+      {activeMultiPopover === 'style' &&
+        driver.capabilities.supportsNodeStyles !== false &&
+        popoverPos && (
         <NodeStylePopover
           popoverPos={popoverPos}
           currentStyle={undefined}

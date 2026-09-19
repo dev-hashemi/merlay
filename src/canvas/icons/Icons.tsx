@@ -330,6 +330,9 @@ export const ShapeIcons = {
   trapezoid: createShape(<polygon points="6,5 18,5 22,19 2,19" />),
   trapezoid_alt: createShape(<polygon points="2,5 22,5 18,19 6,19" />),
   asymmetric: createShape(<polygon points="2,5 18,5 22,12 18,19 2,19" />),
+  cloud: createShape(<path d="M17.5 19H7a4.5 4.5 0 0 1-.7-8.94A6 6 0 0 1 17.6 8.5 4 4 0 0 1 17.5 19Z" />),
+  bang: createShape(<polygon points="12,2 14.5,7.5 20,4.5 18,10.5 23,12 18,13.5 20,19.5 14.5,16.5 12,22 9.5,16.5 4,19.5 6,13.5 1,12 6,10.5 4,4.5 9.5,7.5" />),
+  default: createShape(<rect x="3" y="6" width="18" height="12" rx="3" strokeDasharray="3 3" />),
 };
 
 export const StateTypeIcons = {

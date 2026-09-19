@@ -13,6 +13,8 @@ import {
   MermaidNodeDef,
   MermaidSubgraphDef,
 } from './viewModel';
+import { MermaidTheme } from './common';
+
 
 export type SupportedDiagramType =
   | 'flowchart'
@@ -77,6 +79,8 @@ export interface DiagramCapabilities {
   hasAnchors: boolean;
   /** Diagram-level default theme/style (e.g. classDef default / linkStyle default). */
   supportsDefaultStyles?: boolean;
+  /** Whether individual nodes support custom styling / colors. Defaults to true. */
+  supportsNodeStyles?: boolean;
 }
 
 /** UI vocabulary so components never hard-code diagram-specific nouns. */
@@ -197,6 +201,8 @@ export interface DiagramMutations<TAst = unknown> {
   // Diagram-level
   getDirection(ast: TAst): string | undefined;
   setDirection(ast: TAst, direction: string): void;
+  getTheme?(ast: TAst): MermaidTheme | undefined;
+  setTheme?(ast: TAst, theme: MermaidTheme | null): void;
 
   // Start/end anchors (optional — hasAnchors)
   anchors?: AnchorApi<TAst>;
@@ -228,6 +234,12 @@ export interface SvgDomAdapter {
   getAnchorKind?(el: Element): 'start' | 'end' | null;
   /** Derive the composite/subgraph id from an anchor element if inside a composite, or null/undefined if root */
   getAnchorCompositeId?(el: Element): string | null;
+  /**
+   * Optional custom resolver to map an SVG element to its view-model node ID.
+   * Useful for diagrams like Mindmap where Mermaid SVG DOM uses sequential IDs (node_0, node_1...)
+   * rather than authoring IDs.
+   */
+  resolveNodeId?(el: Element, displayNodes: Map<string, MermaidNodeDef>): string | null;
 }
 
 export interface DiagramCanvasHint {

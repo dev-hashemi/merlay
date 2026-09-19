@@ -8,11 +8,13 @@
  * the centralized `useCanvasStore`.
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
 import { useDiagramAst } from './mutations/useDiagramAst';
 import { EdgeThemePreset, ThemePreset } from '../constants';
 import { ArrowType } from '../../diagrams/viewModel';
+import { MermaidTheme } from '../../diagrams/common';
+
 
 export interface UseDiagramMutationsOptions {
   astHook: ReturnType<typeof useDiagramAst>;
@@ -273,6 +275,19 @@ export function useDiagramMutations(options: UseDiagramMutationsOptions) {
       m.setDirection(a, nextDir);
     });
   }, [driver, m, ast, applyMutation]);
+
+  const currentTheme = useMemo(() => {
+    return m.getTheme ? m.getTheme(ast) : undefined;
+  }, [m, ast]);
+
+  const handleSetTheme = useCallback(
+    (theme: MermaidTheme | null) => {
+      applyMutation((a) => {
+        m.setTheme?.(a, theme);
+      });
+    },
+    [m, applyMutation]
+  );
 
   const handleAddStartState = useCallback((compositeId?: string) => {
     if (!anchors) return null;
@@ -841,6 +856,8 @@ export function useDiagramMutations(options: UseDiagramMutationsOptions) {
     hasDefaultNodeStyle: Boolean(m.getDefaultStyle?.(ast)),
     handleAddStandaloneStep,
     handleToggleDirection,
+    currentTheme,
+    handleSetTheme,
     handleAddStartState,
     handleAddEndState,
     handleConnectToEnd,

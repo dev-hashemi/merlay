@@ -134,7 +134,9 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
         )}
 
       {/* Visual Styling Popover for single node */}
-      {activeNodePopover === 'style' && popoverPos && (
+      {activeNodePopover === 'style' &&
+        driver.capabilities.supportsNodeStyles !== false &&
+        popoverPos && (
         <NodeStylePopover
           popoverPos={popoverPos}
           currentStyle={currentStyle}

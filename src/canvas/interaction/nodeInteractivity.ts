@@ -54,13 +54,20 @@ export function setupNodeInteractivity({
     const idAttr = htmlEl.getAttribute('id') || '';
     let matchedNodeId: string | null = null;
 
+    // 0. Custom driver resolver (e.g. mindmap preorder sequential mapping)
+    if (dom.resolveNodeId) {
+      matchedNodeId = dom.resolveNodeId(htmlEl, displayNodes);
+    }
+
     // 1. Direct name or data-id attribute (standard in Mermaid sequence participants, actors, lifelines)
-    const directName =
-      htmlEl.getAttribute('name') ||
-      htmlEl.getAttribute('data-id') ||
-      htmlEl.getAttribute('data-actor-id');
-    if (directName && displayNodes.has(directName)) {
-      matchedNodeId = directName;
+    if (!matchedNodeId) {
+      const directName =
+        htmlEl.getAttribute('name') ||
+        htmlEl.getAttribute('data-id') ||
+        htmlEl.getAttribute('data-actor-id');
+      if (directName && displayNodes.has(directName)) {
+        matchedNodeId = directName;
+      }
     }
 
     // 2. Closest ancestor with name or data-id (e.g. inner rect/text inside actor-man figure or top container)

@@ -22,7 +22,7 @@ import {
 import { parseMermaidSequenceDiagram } from './parser';
 import { serializeMermaidSequenceDiagram } from './serializer';
 import { findNodeLinkUrl } from '../nodeLinks';
-import { matchesHeader } from '../common/diagramHeader';
+import { matchesHeader, getDiagramTheme, setDiagramTheme } from '../common/diagramHeader';
 import * as seq from './mutations';
 
 const SEQUENCE_KIND_OPTIONS = [
@@ -326,6 +326,10 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
     getDirection: () => undefined,
     setDirection: () => {
       /* no-op: sequence diagrams don't support direction */
+    },
+    getTheme: (ast) => getDiagramTheme(ast.frontmatter),
+    setTheme: (ast, theme) => {
+      ast.frontmatter = setDiagramTheme(ast.frontmatter, theme);
     },
   },
 
