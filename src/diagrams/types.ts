@@ -210,6 +210,10 @@ export interface DiagramMutations<TAst = unknown> {
 export interface SvgDomAdapter {
   /** Prefixes mermaid uses for node element ids, e.g. 'flowchart-'. */
   nodeIdPrefixes: string[];
+  /** Optional prefixes mermaid uses for cluster/subgraph element ids. Falls back to nodeIdPrefixes. */
+  clusterIdPrefixes?: string[];
+  /** Optional custom CSS selector for locating cluster elements. */
+  clusterSelector?: string;
   /** Optional custom CSS selector for locating node elements. */
   nodeSelector?: string;
   /** Optional custom CSS selector for locating edge line/path elements. */
@@ -224,6 +228,11 @@ export interface SvgDomAdapter {
   getAnchorKind?(el: Element): 'start' | 'end' | null;
   /** Derive the composite/subgraph id from an anchor element if inside a composite, or null/undefined if root */
   getAnchorCompositeId?(el: Element): string | null;
+}
+
+export interface DiagramCanvasHint {
+  desktop: string;
+  touch: string;
 }
 
 export interface DiagramDriver<TAst = unknown> {
@@ -250,6 +259,12 @@ export interface DiagramDriver<TAst = unknown> {
    * Absent = this diagram kind has no openable node links.
    */
   getNodeLink?(ast: TAst, nodeId: string): string | undefined;
+
+  /**
+   * Optional diagram-specific affordance hint displayed at the bottom of the canvas.
+   * Absent = no hint bar displayed.
+   */
+  canvasHint?: DiagramCanvasHint;
 
   capabilities: DiagramCapabilities;
   labels: DiagramLabels;

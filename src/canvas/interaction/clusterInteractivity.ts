@@ -6,11 +6,13 @@
  */
 
 import { MermaidSubgraphDef } from '../../diagrams/viewModel';
+import { SvgDomAdapter } from '../../diagrams/types';
 import { Rect } from '../types';
 import { attachTapGestures } from './touchGestures';
 
 export interface SetupClusterInteractivityOptions {
   mountEl: HTMLElement;
+  dom?: SvgDomAdapter;
   displaySubgraphs: Map<string, MermaidSubgraphDef>;
   getLocalRect: (el: Element) => Rect | null;
   onSelectSubgraph: (targetSubId: string, htmlEl: Element) => void;
@@ -20,14 +22,19 @@ export interface SetupClusterInteractivityOptions {
 
 export function setupClusterInteractivity({
   mountEl,
+  dom,
   displaySubgraphs,
   getLocalRect,
   onSelectSubgraph,
   onStartEditingSubgraph,
   onHoverSubgraph,
 }: SetupClusterInteractivityOptions): void {
+  const defaultClusterSelector = '.cluster, [class*="cluster"], .box, [class*="box"]';
+  const clusterSelector = dom?.clusterSelector
+    ? `${dom.clusterSelector}, ${defaultClusterSelector}`
+    : defaultClusterSelector;
   const clusterElements: Element[] = Array.from(
-    mountEl.querySelectorAll('.cluster, [class*="cluster"], .box, [class*="box"]')
+    mountEl.querySelectorAll(clusterSelector)
   );
 
   // In Mermaid sequence diagrams, boxes are rendered as <g><rect class="rect" .../><text class="text">...</text></g>
@@ -130,9 +137,13 @@ export function setupClusterInteractivity({
   const matchById = (htmlEl: Element): string | null => {
     const idAttr = htmlEl.getAttribute('id') || '';
     if (idAttr) {
+      const prefixes = dom?.clusterIdPrefixes || dom?.nodeIdPrefixes || ['flowchart-', 'state-'];
       for (const subId of displaySubgraphs.keys()) {
         if (usedSubIds.has(subId)) continue;
         if (
+          prefixes.some(
+            (p) => idAttr.includes(`${p}${subId}-`) || idAttr === `${p}${subId}`
+          ) ||
           idAttr.includes(`flowchart-${subId}-`) ||
           idAttr === `flowchart-${subId}` ||
           idAttr.includes(`state-${subId}-`) ||

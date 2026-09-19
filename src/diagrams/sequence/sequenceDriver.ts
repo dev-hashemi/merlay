@@ -183,6 +183,13 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
     hasAnchors: false,
   },
 
+  canvasHint: {
+    desktop:
+      'Drag from a participant handle to connect • Click message to edit • Double-click to rename',
+    touch:
+      'Drag from a participant to connect • Tap message to edit • Double-tap to rename',
+  },
+
   labels: {
     node: 'Participant',
     nodes: 'Participants',

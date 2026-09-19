@@ -4,6 +4,7 @@
  */
 
 import { MermaidEdgeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
+import { SvgDomAdapter } from '../../diagrams/types';
 import { matchSvgEdgeToAst } from '../../utils/edgeMatching';
 import { getDistanceToSvgPath } from '../../utils/edgeGeometry';
 import {
@@ -15,6 +16,7 @@ import { attachTapGestures, guardClickAfterLongPress } from './touchGestures';
 
 export interface SetupEdgeInteractivityOptions {
   mountEl: HTMLElement;
+  dom?: SvgDomAdapter;
   displayEdges: MermaidEdgeDef[];
   displaySubgraphs?: Map<string, MermaidSubgraphDef>;
   onSelectEdge: (targetEdge: MermaidEdgeDef, resolvedPath: Element, isMulti: boolean) => void;
@@ -23,6 +25,7 @@ export interface SetupEdgeInteractivityOptions {
 
 export function setupEdgeInteractivity({
   mountEl,
+  dom,
   displayEdges,
   displaySubgraphs,
   onSelectEdge,
@@ -104,9 +107,10 @@ export function setupEdgeInteractivity({
   // Remove stale hit areas
   mountEl.querySelectorAll('.mermaid-edge-hit-area').forEach((el) => el.remove());
 
-  const rawEdgePaths = mountEl.querySelectorAll(
-    '.edgePaths path, .edgePath path, path.flowchart-link, [class*="flowchart-link"], line.messageLine0, line.messageLine1, [class*="messageLine"], path.messageLine0, path.messageLine1'
-  );
+  const defaultEdgeSelector =
+    '.edgePaths path, .edgePath path, path.flowchart-link, [class*="flowchart-link"], line.messageLine0, line.messageLine1, [class*="messageLine"], path.messageLine0, path.messageLine1';
+  const edgeSelector = dom?.edgeSelector || defaultEdgeSelector;
+  const rawEdgePaths = mountEl.querySelectorAll(edgeSelector);
   const edgePaths: SVGGraphicsElement[] = [];
   rawEdgePaths.forEach((p) => {
     const el = p as SVGGraphicsElement;

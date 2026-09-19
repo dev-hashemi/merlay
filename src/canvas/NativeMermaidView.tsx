@@ -600,14 +600,13 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
         )}
       </div>
 
-      {/* Sequence Diagram Affordance Guide */}
-      {isEditable && driver.type === 'sequenceDiagram' && (
+      {/* Diagram Affordance Guide (polymorphic per driver) */}
+      {isEditable && driver.canvasHint && (
         <div className="mermaid-canvas-hint-bar nodrag">
-          {isCoarsePointer ? (
-            <span>💡 <strong>Tip:</strong> Drag from a participant to connect &bull; Tap message to edit &bull; Double-tap to rename</span>
-          ) : (
-            <span>💡 <strong>Tip:</strong> Drag from a participant handle to connect &bull; Click message to edit &bull; Double-click to rename</span>
-          )}
+          <span>
+            💡 <strong>Tip:</strong>{' '}
+            {isCoarsePointer ? driver.canvasHint.touch : driver.canvasHint.desktop}
+          </span>
         </div>
       )}
 

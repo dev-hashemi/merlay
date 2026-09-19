@@ -66,6 +66,7 @@ export function setupSvgInteractivity(options: SetupSvgInteractivityOptions): vo
   // 2. Edges & edge labels
   setupEdgeInteractivity({
     mountEl,
+    dom,
     displayEdges,
     displaySubgraphs,
     onSelectEdge,
@@ -75,6 +76,7 @@ export function setupSvgInteractivity(options: SetupSvgInteractivityOptions): vo
   // 3. Subgraph clusters (also connectable as endpoints via data-mermaid-node-id)
   setupClusterInteractivity({
     mountEl,
+    dom,
     displaySubgraphs,
     getLocalRect,
     onSelectSubgraph,

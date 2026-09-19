@@ -44,9 +44,14 @@ test('Touch layout: narrow phones wrap controls and sheet the drawer', () => {
 
 test('Touch layout: sequence hints use touch wording on coarse pointers', () => {
   const view = read('src/canvas/NativeMermaidView.tsx');
+  const seqDriver = read('src/diagrams/sequence/sequenceDriver.ts');
   assert.ok(view.includes('isCoarsePointer'), 'view must detect coarse pointers');
   assert.ok(
-    view.includes('Double-tap to rename'),
+    view.includes('driver.canvasHint.touch'),
+    'view must render touch hint when pointer is coarse'
+  );
+  assert.ok(
+    seqDriver.includes('Double-tap to rename'),
     'touch hint copy must describe double-tap rename'
   );
 });

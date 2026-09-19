@@ -134,6 +134,7 @@ test('Driver surface: sequence capabilities, labels, and projection', () => {
   assert.strictEqual(sequenceDriver.labels.edge, 'Message');
   assert.strictEqual(sequenceDriver.mutations.anchors, undefined);
   assert.ok(sequenceDriver.nodeKindOptions.length > 0);
+  assert.ok(sequenceDriver.canvasHint);
 
   const { ast, code } = roundTrip(
     sequenceDriver,
