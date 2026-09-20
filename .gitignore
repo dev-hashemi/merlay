@@ -25,6 +25,9 @@ Thumbs.db
 *.png
 *.svg
 
+# Local environment (machine paths, tokens — never commit)
+.env
+
 # Temporary files
 *.tmp
 *.log

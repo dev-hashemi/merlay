@@ -11,6 +11,8 @@
     "build": "npm run build -w merlay && npm run build -w merlay-vscode",
     "build:obsidian": "npm run build -w merlay",
     "build:vscode": "npm run build -w merlay-vscode",
+    "install:obsidian": "npm run build:obsidian && node scripts/install-obsidian.mjs",
+    "install:vscode": "npm run build:vscode && node scripts/install-vscode.mjs",
     "test": "tsx --test packages/core/tests/*.test.ts packages/obsidian/tests/*.test.ts packages/vscode/tests/*.test.ts"
   },
   "author": "Seyed Ali Hashemi",

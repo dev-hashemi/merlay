@@ -100,7 +100,15 @@ Mermaid is a declarative, code-first diagramming language that computes its own 
 ```bash
 npm install     # Install dependencies
 npm test        # Run tests
-npm run build   # Build production bundle
+npm run build   # Build production bundles
+```
+
+### Testing in the real apps
+
+```bash
+cp .env.example .env   # once: point MERLAY_VAULT_DIR at your vault
+npm run install:obsidian   # build + install into your Obsidian vault (then Ctrl+R)
+npm run install:vscode     # build + package + install into VS Code (then reload window)
 ```
 
 For architecture details, see [ARCHITECTURE.md](ARCHITECTURE.md).
