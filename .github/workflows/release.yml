@@ -30,7 +30,7 @@ jobs:
         run: npm ci
 
       - name: Build plugin
-        run: npm run build
+        run: npm run build:obsidian
 
       - name: Create Release
         uses: softprops/action-gh-release@v3
@@ -41,8 +41,8 @@ jobs:
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: |
-            main.js
-            manifest.json
-            styles.css
+            packages/obsidian/main.js
+            packages/obsidian/manifest.json
+            packages/obsidian/styles.css
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,37 +1,23 @@
 {
-  "name": "merlay",
+  "name": "merlay-monorepo",
+  "private": true,
   "version": "0.4.0",
   "description": "Visual overlay editor for Mermaid diagrams. Mermaid, your way.",
-  "main": "main.js",
-  "scripts": {
-    "dev": "node esbuild.config.mjs",
-    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-    "test": "tsx --test tests/*.test.ts"
-  },
-  "keywords": [
-    "obsidian",
-    "obsidian-plugin",
-    "mermaid",
-    "merlay",
-    "diagram",
-    "flowchart",
-    "visual-editor",
-    "drag-and-drop"
+  "workspaces": [
+    "packages/*"
   ],
+  "scripts": {
+    "dev": "npm run dev -w merlay",
+    "build": "npm run build -w merlay && npm run build -w merlay-vscode",
+    "build:obsidian": "npm run build -w merlay",
+    "build:vscode": "npm run build -w merlay-vscode",
+    "test": "tsx --test packages/core/tests/*.test.ts packages/obsidian/tests/*.test.ts"
+  },
   "author": "Seyed Ali Hashemi",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dev-hashemi/merlay.git"
-  },
-  "bugs": {
-    "url": "https://github.com/dev-hashemi/merlay/issues"
-  },
-  "homepage": "https://github.com/dev-hashemi/merlay#readme",
-  "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@types/jsdom": "^30.0.0",
@@ -40,8 +26,6 @@
     "@types/react-dom": "^18.3.0",
     "esbuild": "^0.23.0",
     "jsdom": "^29.1.1",
-    "mermaid": "^11.17.2",
-    "obsidian": "latest",
     "tslib": "^2.6.3",
     "tsx": "^4.23.12",
     "typescript": "^5.5.2"

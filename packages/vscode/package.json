@@ -1,0 +1,40 @@
+{
+  "name": "merlay-vscode",
+  "displayName": "Merlay",
+  "description": "Visual overlay editor for Mermaid diagrams. Mermaid, your way.",
+  "version": "0.4.0",
+  "publisher": "merlay",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization"
+  ],
+  "activationEvents": [
+    "onCommand:merlay.openVisualEditor"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "merlay.openVisualEditor",
+        "title": "Merlay: Open Visual Editor"
+      }
+    ]
+  },
+  "scripts": {
+    "dev": "node esbuild.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.mjs production"
+  },
+  "author": "Seyed Ali Hashemi",
+  "license": "MIT",
+  "dependencies": {
+    "@merlay/core": "*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "@types/vscode": "^1.85.0"
+  }
+}

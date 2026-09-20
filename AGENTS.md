@@ -5,9 +5,17 @@ Read `ARCHITECTURE.md` first. It is the source of truth for the driver pattern, 
 ## Commands
 
 ```bash
-npm test        # must pass before any PR
-npm run build   # tsc + esbuild production bundle, must pass before any PR
+npm test              # must pass before any PR (all packages)
+npm run build         # builds obsidian + vscode bundles, must pass before any PR
+npm run build:obsidian # tsc + esbuild for the Obsidian plugin only
 ```
+
+## Monorepo Layout
+
+- `packages/core/` (`@merlay/core`) — portable diagrams, canvas, utils, platform seam. **Zero `obsidian`/`vscode` imports** (enforced by core-purity tests).
+- `packages/obsidian/` — Obsidian shell: plugin entry, views, settings, `obsidianHost`.
+- `packages/vscode/` — VS Code shell: extension host + webview.
+- Hosts import core **only via the `@merlay/core` barrel** (`packages/core/src/index.ts`). No deep relative imports across packages.
 
 ## Simplicity Rules (highest priority)
 
@@ -21,9 +29,9 @@ npm run build   # tsc + esbuild production bundle, must pass before any PR
 ## Correctness Rules
 
 1. **Mermaid source string is the single source of truth.** Never store layout coordinates. Never mutate SVG DOM to change diagram structure.
-2. **All structural edits go through pure AST mutations** (`src/diagrams/<name>/mutations/`): clone → mutate → serialize → verify syntax. See `ARCHITECTURE.md §3.2`.
+2. **All structural edits go through pure AST mutations** (`packages/core/src/diagrams/<name>/mutations/`): clone → mutate → serialize → verify syntax. See `ARCHITECTURE.md §3.2`.
 3. **Never corrupt user code.** Unknown statements (`click`, `accTitle`, `classDef`, `%% comments`, notes) must be preserved verbatim via `ast.rawLines` and re-emitted by the serializer. A visual edit must never drop hand-written Mermaid. This is tested by `*Preservation*.test.ts` and `realWorldDiagrams.test.ts`.
-4. **Canvas never branches on diagram type.** Talk only to the `DiagramDriver` contract (`src/diagrams/types.ts`). New diagram support = new package under `src/diagrams/<name>/` + registration in `registry.ts`. If canvas code needs an `if (type === ...)` branch, fix the driver contract instead.
+4. **Canvas never branches on diagram type.** Talk only to the `DiagramDriver` contract (`packages/core/src/diagrams/types.ts`). New diagram support = new package under `packages/core/src/diagrams/<name>/` + registration in `registry.ts`. If canvas code needs an `if (type === ...)` branch, fix the driver contract instead.
 5. **Emit 100% standard Mermaid.** No synthetic comments, no `%% mv: x=...` lock-in.
 6. **Pin camera on structural edits.** Call `pinNodeForCamera(activeNodeId)` when sprouting/splitting so the viewport doesn't jump.
 
@@ -32,16 +40,16 @@ npm run build   # tsc + esbuild production bundle, must pass before any PR
 - Strict TS. No `any`, no `// @ts-ignore`. Use `unknown` + narrowing.
 - No `enum`; use string-literal unions.
 - Prefer `const`/`let` over `var`, and `async`/`await` over `.then()` chains.
-- Prefer `readonly` arrays and pure functions in `src/diagrams/`. Side effects live only in `src/canvas/hooks/` and `src/obsidian/`.
+- Prefer `readonly` arrays and pure functions in `packages/core/src/diagrams/`. Side effects live only in `packages/core/src/canvas/hooks/` and host adapters (`packages/obsidian/src/`, `packages/vscode/src/`).
 - Keep facade `index.ts` re-exports working when moving code.
 - Follow existing file naming: `camelCase.ts`, `*.test.ts` next to nothing — all tests live in `tests/`.
 
 ## Testing
 
-- Every bug fix needs a regression test in `tests/` proving parse → mutate → serialize round-trip.
-- Every new mutation needs coverage in `tests/<name>.test.ts` (see `driverSurface.test.ts` for the contract pattern).
+- Every bug fix needs a regression test in `packages/core/tests/` proving parse → mutate → serialize round-trip.
+- Every new mutation needs coverage in `packages/core/tests/<name>.test.ts` (see `driverSurface.test.ts` for the contract pattern).
 - Prefer small AST-level tests over DOM tests. Only add DOM/interactivity tests when hit-testing is the actual bug.
-- Obsidian review rules that are statically checkable are enforced by `tests/obsidianCompliance.test.ts`. Extend that file — don't duplicate the rules elsewhere.
+- Obsidian review rules that are statically checkable are enforced by `packages/obsidian/tests/obsidianCompliance.test.ts`. Extend that file — don't duplicate the rules elsewhere.
 
 ## Workflow
 

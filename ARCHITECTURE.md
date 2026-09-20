@@ -29,38 +29,38 @@ flowchart LR
 
 ## 2. Directory Structure & Module Map
 
-The codebase is organized into modular, decoupled single-responsibility units:
+The repo is a monorepo. Portable code lives in `@merlay/core`;
+each host is a thin shell that implements the `HostAdapter` seam:
 
 ```
-src/
-├── main.ts                     # Obsidian Plugin lifecycle entrypoint (clean, lightweight coordinator)
-├── diagrams/                   # Pluggable multi-diagram driver system
-│   ├── types.ts                # DiagramDriver contract: capabilities, labels, mutation surface,
-│   │                           # view projection, anchor API, SVG DOM adapter, registry types
-│   ├── viewModel.ts            # Shared canvas view-model (MermaidNodeDef, MermaidEdgeDef,
-│   │                           # MermaidSubgraphDef, shapes, arrows, directions) — every driver
-│   │                           # projects onto these; the canvas never sees a native AST
-│   ├── registry.ts             # Driver registry + diagram detection + default templates
-│   ├── nodeLinks.ts            # Node link extraction and Obsidian note navigation
-│   ├── common/                 # Shared plumbing across all diagram types
-│   │   ├── diagramHeader.ts    # splitFrontmatter, emitFrontmatter, theme helpers, unique ID generation
-│   │   └── index.ts            # Barrel export
-│   └── <diagramPackage>/       # Pluggable diagram packages (e.g. flowchart, state, sequence, mindmap, ...)
-│       ├── types.ts            # Diagram AST definitions & domain-specific tokens
-│       ├── lexer.ts            # Tokenizer for diagram syntax
-│       ├── parser.ts           # Code -> AST parser (uses splitFrontmatter from common/)
-│       ├── serializer.ts       # AST -> clean standard Mermaid code
-│       ├── <name>Driver.ts     # DiagramDriver<T> implementation
-│       └── mutations/          # Pure AST mutations (<300 LOC each)
-│           ├── nodeMutations.ts      # Add, sprout, rename, delete nodes/elements
-│           ├── edgeMutations.ts      # Connect, relabel, reverse, delete connections
-│           ├── clipboardMutations.ts # Duplicate, copy, paste elements
-│           └── index.ts              # Barrel export
-├── obsidian/                   # Obsidian API adapters (decoupled from UI)
-│   ├── buttonInjector.ts       # Injects "Visual Mode" button beside Obsidian's edit button
-│   ├── workspaceObserver.ts    # Monitors workspace leaves, preview mutations, and active file
-│   └── diagramOpener.ts        # Coordinates opening diagrams in modal or file tabs
-├── canvas/                     # Interactive visual canvas & overlays (driver-agnostic)
+packages/
+├── core/                         # @merlay/core — portable, zero host imports
+│   ├── src/
+│   │   ├── index.ts              # Public barrel: the ONLY entry hosts import
+│   │   ├── platform/             # Host seam: HostAdapter, dom helpers, npm engine
+│   │   ├── diagrams/             # Pluggable multi-diagram driver system
+│   │   │   ├── types.ts          # DiagramDriver contract: capabilities, labels, mutation surface,
+│   │   │   │                     # view projection, anchor API, SVG DOM adapter, registry types
+│   │   │   ├── viewModel.ts      # Shared canvas view-model (MermaidNodeDef, MermaidEdgeDef,
+│   │   │   │                     # MermaidSubgraphDef, shapes, arrows, directions) — every driver
+│   │   │   │                     # projects onto these; the canvas never sees a native AST
+│   │   │   ├── registry.ts       # Driver registry + diagram detection + default templates
+│   │   │   ├── nodeLinks.ts      # Node link extraction and Obsidian note navigation
+│   │   │   ├── common/           # Shared plumbing across all diagram types
+│   │   │   │   ├── diagramHeader.ts # splitFrontmatter, emitFrontmatter, theme helpers, unique ID generation
+│   │   │   │   └── index.ts      # Barrel export
+│   │   │   └── <diagramPackage>/ # Pluggable diagram packages (e.g. flowchart, state, sequence, mindmap, ...)
+│   │   │       ├── types.ts      # Diagram AST definitions & domain-specific tokens
+│   │   │       ├── lexer.ts      # Tokenizer for diagram syntax
+│   │   │       ├── parser.ts     # Code -> AST parser (uses splitFrontmatter from common/)
+│   │   │       ├── serializer.ts # AST -> clean standard Mermaid code
+│   │   │       ├── <name>Driver.ts # DiagramDriver<T> implementation
+│   │   │       └── mutations/    # Pure AST mutations (<300 LOC each)
+│   │   │           ├── nodeMutations.ts      # Add, sprout, rename, delete nodes/elements
+│   │   │           ├── edgeMutations.ts      # Connect, relabel, reverse, delete connections
+│   │   │           ├── clipboardMutations.ts # Duplicate, copy, paste elements
+│   │   │           └── index.ts              # Barrel export
+│   │   ├── canvas/               # Interactive visual canvas & overlays (driver-agnostic, host-agnostic)
 │   ├── NativeMermaidView.tsx   # Primary React canvas coordinator component
 │   ├── types.ts                # Viewport, camera, selection, and overlay types
 │   ├── constants.ts            # Preset color themes and edge styles
@@ -109,10 +109,28 @@ src/
 │           ├── useSubgraphMutations.ts # Group creation, renaming, dissolve
 │           ├── useBatchMutations.ts    # Multi-node batch operations
 │           └── useClipboardMutations.ts# Copy, paste, duplicate
-└── utils/                      # Helper algorithms
-    ├── markdownBlock.ts        # Scans and updates ```mermaid fences in markdown notes
-    ├── edgeMatching.ts         # Fuzzy maps SVG <path> elements to view-model edge definitions
-    └── edgeGeometry.ts         # Math for SVG bezier path hit distance
+│   └── utils/                  # Helper algorithms
+│       ├── markdownBlock.ts    # Scans and updates ```mermaid fences in markdown notes
+│       ├── edgeMatching.ts     # Fuzzy maps SVG <path> elements to view-model edge definitions
+│       └── edgeGeometry.ts     # Math for SVG bezier path hit distance
+│   └── tests/                    # Core tests (round-trip, preservation, interactivity, compliance helpers)
+├── obsidian/                     # Obsidian shell: owns ALL `obsidian` imports
+│   ├── package.json              # name "merlay", build/dev scripts
+│   ├── manifest.json             # Obsidian release manifest (version == package.json)
+│   ├── esbuild.mjs               # CJS main.js bundle + styles.css copy
+│   └── src/
+│       ├── main.ts               # Plugin lifecycle entrypoint (lightweight coordinator)
+│       ├── obsidian/             # Workspace observer, diagram opener, menus, commands,
+│       │                         # icons + obsidianHost/obsidianMermaid (HostAdapter impl)
+│       ├── views/                # File view + block/template modals hosting the canvas
+│       └── settings/             # Settings tab
+└── vscode/                       # VS Code shell: owns ALL `vscode` imports
+    ├── package.json              # engines, contributes, vsce/ovsx metadata
+    ├── esbuild.mjs               # host CJS bundle + webview IIFE bundle
+    └── src/
+        ├── extension.ts          # activate(): commands, editors, panels
+        ├── webviewHtml.ts        # Webview HTML shell (CSP + bundle URI)
+        └── webview.tsx           # Webview entry mounting @merlay/core canvas
 ```
 
 ---
@@ -121,7 +139,7 @@ src/
 
 ### 3.1 Domain Cohesion & State Architecture
 - Prefer **cohesive, decoupled modules** over arbitrary line-count file chopping.
-- Centralize shared canvas state (selection, geometry, camera, active popovers) in the Zustand store (`src/canvas/store/canvasStore.ts`) to eliminate prop-threading and ref-mirroring.
+- Centralize shared canvas state (selection, geometry, camera, active popovers) in the Zustand store (`packages/core/src/canvas/store/canvasStore.ts`) to eliminate prop-threading and ref-mirroring.
 - Always maintain facade re-exports (`index.ts`) when refactoring code to preserve backward compatibility with tests and callers.
 
 ### 3.2 Pure AST Mutations
@@ -140,7 +158,7 @@ src/
 - **Verbatim Preservation (`rawLines`)**: Real-world diagrams frequently contain statements or directives not directly modeled by visual editing tools (e.g., notes, styling classes, click events, accessibility directives, comments). Every driver parser must preserve unmodeled lines in `ast.rawLines` and re-emit them verbatim during serialization. A visual edit must never corrupt or discard hand-written code.
 
 ### 3.5 Universal Driver Pattern (Pluggable Diagram System)
-The canvas layer has **zero hardcoded knowledge of any specific diagram type**. It interacts exclusively with the polymorphic `DiagramDriver<T>` interface (`src/diagrams/types.ts`).
+The canvas layer has **zero hardcoded knowledge of any specific diagram type**. It interacts exclusively with the polymorphic `DiagramDriver<T>` interface (`packages/core/src/diagrams/types.ts`). Core additionally has **zero host knowledge**: it talks to Obsidian/VS Code/web only through `HostAdapter` (`packages/core/src/platform/types.ts`) — enforced by the core-purity tests.
 
 Every diagram package satisfies the same core contract:
 
@@ -158,7 +176,7 @@ Every diagram package satisfies the same core contract:
 5. **SVG DOM Adapter (`dom`)**:
    - Mermaid renders different diagram types with different SVG element structures and ID conventions. The driver's `dom` adapter defines how to find SVG elements by node ID, resolve start/end anchors, and locate element bounding boxes.
 6. **Centralized Header & Theme Plumbing**:
-   - All diagram parsers and serializers delegate frontmatter extraction, header detection, and theme configuration to `src/diagrams/common/diagramHeader.ts`.
+    - All diagram parsers and serializers delegate frontmatter extraction, header detection, and theme configuration to `packages/core/src/diagrams/common/diagramHeader.ts`.
    - Themes (`default`, `neutral`, `forest`, `dark`, `base`, `auto`) operate universally across all diagrams via standard Mermaid YAML frontmatter (`--- config: { theme: ... } ---`).
 
 ---
@@ -168,7 +186,7 @@ Every diagram package satisfies the same core contract:
 Every PR and change must maintain strict correctness:
 
 ```bash
-# Run all unit, integration, and compliance tests (385+ passing tests)
+# Run all unit, integration, and compliance tests (417 passing tests)
 npm test
 
 # Run TypeScript type check and production esbuild bundle
@@ -178,8 +196,8 @@ npm run build
 ### Testing Invariants:
 - **Parse-Mutate-Serialize Round-Trip**: Every mutation must be covered by unit tests proving clean round-trip serialization.
 - **Verbatim Preservation**: Real-world diagrams with comments, notes, class definitions, and custom directives must survive visual edits without losing user code.
-- **Driver Surface Contract**: Every new diagram driver must pass the polymorphic contract suite (see `tests/driverSurface.test.ts`).
-- **Obsidian Review Compliance**: Statically checkable Obsidian review rules are enforced by `tests/obsidianCompliance.test.ts`.
+- **Driver Surface Contract**: Every new diagram driver must pass the polymorphic contract suite (see `packages/core/tests/driverSurface.test.ts`).
+- **Obsidian Review Compliance**: Statically checkable Obsidian review rules are enforced by `packages/obsidian/tests/obsidianCompliance.test.ts`.
 
 ---
 
@@ -190,13 +208,13 @@ For the complete, 5-phase step-by-step engineering and UX procedure (including g
 👉 **[docs/ADDING_NEW_DIAGRAM.md](docs/ADDING_NEW_DIAGRAM.md)**
 
 ### Quick Summary:
-1. **Scaffold Package**: Create `src/diagrams/<name>/` following the canonical driver layout.
+1. **Scaffold Package**: Create `packages/core/src/diagrams/<name>/` following the canonical driver layout.
 2. **Define AST & Types**: In `types.ts`.
 3. **Implement Lexer & Parser**: In `lexer.ts` and `parser.ts` (using `splitFrontmatter` from `common/`).
 4. **Implement Serializer**: In `serializer.ts` (using `emitFrontmatter`).
 5. **Implement Mutations**: In `mutations/`, wiring into `DiagramMutations`.
 6. **Implement Driver**: In `<name>Driver.ts` implementing `DiagramDriver<T>`.
-7. **Register Driver**: In `src/diagrams/registry.ts` and add template.
-8. **Verify**: Add unit tests under `tests/<name>.test.ts` and verify with `npm test`.
+7. **Register Driver**: In `packages/core/src/diagrams/registry.ts` and add template.
+8. **Verify**: Add unit tests under `packages/core/tests/<name>.test.ts` and verify with `npm test`.
 
-**No canvas, hook, overlay, or component files need to change** — if they do, the driver contract has a gap that should be generalized in `src/diagrams/types.ts` instead.
+**No canvas, hook, overlay, or component files need to change** — if they do, the driver contract has a gap that should be generalized in `packages/core/src/diagrams/types.ts` instead.

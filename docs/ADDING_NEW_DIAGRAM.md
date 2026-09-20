@@ -10,8 +10,8 @@ It is designed to be directly actionable by human developers and autonomous AI c
 
 Before initiating the procedure, every contributor or AI assistant must understand the core architectural rules established in [ARCHITECTURE.md](../ARCHITECTURE.md):
 
-1. **Zero Canvas Branching**: The canvas layer ([`NativeMermaidView.tsx`](../src/canvas/NativeMermaidView.tsx), overlays, HUDs, interaction hooks) **never branches on diagram type**. It only interacts with the polymorphic [`DiagramDriver<TAst>`](../src/diagrams/types.ts#L179-L203) interface.
-2. **View Projection Isolation**: The canvas consumes a read-only projection ([`ViewProjection`](../src/diagrams/types.ts#L39-L44)) composed of [`MermaidNodeDef`](../src/diagrams/viewModel.ts#L47-L57), [`MermaidEdgeDef`](../src/diagrams/viewModel.ts#L59-L67), and [`MermaidSubgraphDef`](../src/diagrams/viewModel.ts#L69-L77). The canvas never mutates projection objects directly.
+1. **Zero Canvas Branching**: The canvas layer ([`NativeMermaidView.tsx`](../packages/core/src/canvas/NativeMermaidView.tsx), overlays, HUDs, interaction hooks) **never branches on diagram type**. It only interacts with the polymorphic [`DiagramDriver<TAst>`](../packages/core/packages/core/src/diagrams/types.ts#L179-L203) interface.
+2. **View Projection Isolation**: The canvas consumes a read-only projection ([`ViewProjection`](../packages/core/packages/core/src/diagrams/types.ts#L39-L44)) composed of [`MermaidNodeDef`](../packages/core/packages/core/src/diagrams/viewModel.ts#L47-L57), [`MermaidEdgeDef`](../packages/core/packages/core/src/diagrams/viewModel.ts#L59-L67), and [`MermaidSubgraphDef`](../packages/core/packages/core/src/diagrams/viewModel.ts#L69-L77). The canvas never mutates projection objects directly.
 3. **Single Active AST**: All mutations happen via pure functions on a cloned AST (`driver.clone(ast)`), which is then serialized and parsed back.
 4. **Verbatim Preservation (Zero Code Lock-in)**: Mermaid statements not directly modeled by visual editing tools (YAML frontmatter, comments `%%`, directives `accTitle`, themes, unsupported advanced annotations) must be preserved verbatim in `rawLines` and re-emitted without corruption.
 5. **Obsidian Parity**: SVG rendering is performed 100% natively by Obsidian's Mermaid engine. Direct-manipulation overlays match the SVG DOM bounding boxes without modifying layout calculations.
@@ -32,7 +32,7 @@ flowchart TD
     end
 
     subgraph Phase3["Phase 3: Technical Implementation"]
-        P3_1["3.1 Scaffold Package: src/diagrams/<name>/"] --> P3_2["3.2 Define Native AST (types.ts)"]
+        P3_1["3.1 Scaffold Package: packages/core/src/diagrams/<name>/"] --> P3_2["3.2 Define Native AST (types.ts)"]
         P3_2 --> P3_3["3.3 Implement Lexer & Tolerant Parser"]
         P3_3 --> P3_4["3.4 Implement Clean Serializer"]
         P3_4 --> P3_5["3.5 Implement View Projection (project)"]
@@ -113,7 +113,7 @@ Identify all syntax valid in Mermaid that the visual editor will not mutate dire
 Merlay aims for an intuitive, direct-manipulation interface that feels familiar regardless of diagram type, while respecting each diagram's specific rules.
 
 ### Step 2.1: UI Vocabulary Adaptation (`DiagramLabels`)
-The canvas UI components ([`CanvasTopBar`](../src/canvas/components/CanvasTopBar.tsx), [`NodeActionHud`](../src/canvas/components/NodeActionHud.tsx), [`EdgeActionHud`](../src/canvas/components/EdgeActionHud.tsx)) dynamically render their text from [`driver.labels`](../src/diagrams/types.ts#L62-L73).
+The canvas UI components ([`CanvasTopBar`](../packages/core/src/canvas/components/CanvasTopBar.tsx), [`NodeActionHud`](../packages/core/src/canvas/components/NodeActionHud.tsx), [`EdgeActionHud`](../packages/core/src/canvas/components/EdgeActionHud.tsx)) dynamically render their text from [`driver.labels`](../packages/core/packages/core/src/diagrams/types.ts#L62-L73).
 
 Define appropriate terminology:
 
@@ -126,7 +126,7 @@ Define appropriate terminology:
 | **Mindmap** | Topic | Topics | Branch | Branches | Section | Add Topic | Subtopic | Insert Subtopic | Topic Note... |
 
 ### Step 2.2: Capabilities Configuration (`DiagramCapabilities`)
-Set the feature flags in [`DiagramCapabilities`](../src/diagrams/types.ts#L47-L59) to show or hide canvas UI elements automatically:
+Set the feature flags in [`DiagramCapabilities`](../packages/core/packages/core/src/diagrams/types.ts#L47-L59) to show or hide canvas UI elements automatically:
 
 ```typescript
 export interface DiagramCapabilities {
@@ -144,7 +144,7 @@ export interface DiagramCapabilities {
 - If `supportsGroups: false`, the group button and assign-to-group popovers disappear.
 
 ### Step 2.3: Node Kinds vs Shapes Specification (`nodeKindOptions`)
-Define the options presented in the [`KindPopover`](../src/canvas/components/KindPopover.tsx):
+Define the options presented in the [`KindPopover`](../packages/core/src/canvas/components/KindPopover.tsx):
 - For **Flowchart**: 14 flowchart shapes (rectangle, rounded, diamond, hexagon, cylinder, etc.).
 - For **State**: `normal`, `choice`, `fork`, `join`.
 - For **Class**: `class`, `interface`, `abstract`, `enum`, `service`.
@@ -180,12 +180,12 @@ Mermaid will fail to render if syntax rules are violated. The UI must prevent er
 
 ## Phase 3: Technical Implementation Blueprint
 
-Every diagram type is implemented as an isolated driver package under `src/diagrams/<name>/`.
+Every diagram type is implemented as an isolated driver package under `packages/core/src/diagrams/<name>/`.
 
 ### Step 3.1: Package Scaffolding
 Create the directory structure:
 ```
-src/diagrams/<name>/
+packages/core/src/diagrams/<name>/
 ├── types.ts              # Native AST definitions & diagram-specific types
 ├── lexer.ts              # Tokenizer / line lexer
 ├── parser.ts             # Tolerant AST parser
@@ -223,7 +223,7 @@ export interface RawLineEntry {
 ```
 
 ### Step 3.3: Lexer & Parser Implementation (`lexer.ts`, `parser.ts`)
-1. **Frontmatter Stripping**: Use the shared `splitFrontmatter(input)` from `src/diagrams/common/diagramHeader.ts` — do not write your own `---` scanning loop. Store the result in `ast.frontmatter`. For header detection in `canHandle`, use `matchesHeader(code, /.../i)` from the same module.
+1. **Frontmatter Stripping**: Use the shared `splitFrontmatter(input)` from `packages/core/src/diagrams/common/diagramHeader.ts` — do not write your own `---` scanning loop. Store the result in `ast.frontmatter`. For header detection in `canHandle`, use `matchesHeader(code, /.../i)` from the same module.
 2. **Diagram Declaration**: Parse and record header (e.g. `classDiagram` or `classDiagram-v2`).
 3. **Direction Declaration**: Parse `direction TB | LR | RL | BT`.
 4. **Statement Classification**:
@@ -240,7 +240,7 @@ export interface RawLineEntry {
 
 ### Step 3.4: Serializer Implementation (`serializer.ts`)
 Emit standard, clean, readable Mermaid code. Emit frontmatter with the shared
-`emitFrontmatter(lines, ast.frontmatter)` from `src/diagrams/common/diagramHeader.ts`.
+`emitFrontmatter(lines, ast.frontmatter)` from `packages/core/src/diagrams/common/diagramHeader.ts`.
 Preserve predictable section ordering:
 1. YAML frontmatter (if present)
 2. Diagram type header
@@ -253,14 +253,14 @@ Preserve predictable section ordering:
 9. Trailing `rawLines`
 
 ### Step 3.5: View Projection (`project(ast)`)
-Map the native AST onto [`ViewProjection`](../src/diagrams/types.ts#L39-L44):
-- **Nodes**: Map native nodes to [`MermaidNodeDef`](../src/diagrams/viewModel.ts#L47-L57). Set `shape` (for SVG bounding calculation) and `kind` (carrying native type like `'interface'`, `'choice'`, `'entity'`).
-- **Edges**: Map native relationships to [`MermaidEdgeDef`](../src/diagrams/viewModel.ts#L59-L67). Map native arrow tokens to [`ArrowType`](../src/diagrams/viewModel.ts#L36-L46).
-- **Subgraphs**: Map native containers/packages to [`MermaidSubgraphDef`](../src/diagrams/viewModel.ts#L69-L77).
+Map the native AST onto [`ViewProjection`](../packages/core/packages/core/src/diagrams/types.ts#L39-L44):
+- **Nodes**: Map native nodes to [`MermaidNodeDef`](../packages/core/packages/core/src/diagrams/viewModel.ts#L47-L57). Set `shape` (for SVG bounding calculation) and `kind` (carrying native type like `'interface'`, `'choice'`, `'entity'`).
+- **Edges**: Map native relationships to [`MermaidEdgeDef`](../packages/core/packages/core/src/diagrams/viewModel.ts#L59-L67). Map native arrow tokens to [`ArrowType`](../packages/core/packages/core/src/diagrams/viewModel.ts#L36-L46).
+- **Subgraphs**: Map native containers/packages to [`MermaidSubgraphDef`](../packages/core/packages/core/src/diagrams/viewModel.ts#L69-L77).
 - **Direction**: Set diagram-level direction.
 
 ### Step 3.6: Pure AST Mutations (`mutations/`)
-Implement the functions required by [`DiagramMutations<TAst>`](../src/diagrams/types.ts#L100-L159):
+Implement the functions required by [`DiagramMutations<TAst>`](../packages/core/packages/core/src/diagrams/types.ts#L100-L159):
 - `addNode(ast, label)`: Generate collision-free ID, add node, return ID.
 - `addChildNode(ast, parentId, label)`: Add node and create edge from parent.
 - `deleteNode(ast, nodeId)`: Remove node and cascade-delete all connected edges.
@@ -280,24 +280,24 @@ Implement the functions required by [`DiagramMutations<TAst>`](../src/diagrams/t
 - Anchors (if applicable): `AnchorApi` implementation for pseudo-nodes.
 
 ### Step 3.7: SVG DOM Adapter (`dom`)
-Mermaid generates unique SVG structures for each diagram type. Implement [`SvgDomAdapter`](../src/diagrams/types.ts#L166-L177):
+Mermaid generates unique SVG structures for each diagram type. Implement [`SvgDomAdapter`](../packages/core/packages/core/src/diagrams/types.ts#L166-L177):
 - `nodeIdPrefixes`: Array of prefixes Mermaid assigns to SVG element IDs (e.g. `['classId-', 'class-']` or `['flowchart-']` or `['state-']`).
 - `anchorSelectors` / `anchorNodeId`: Selectors and pseudo-ID for start/end markers if the diagram uses them.
 - `isAnchorElement` / `getAnchorKind`: Helpers for detecting start vs end anchors.
 
 ### Step 3.8: Driver Registration (`registry.ts`)
-Register the new driver in [`src/diagrams/registry.ts`](../src/diagrams/registry.ts):
+Register the new driver in [`packages/core/src/diagrams/registry.ts`](../packages/core/packages/core/src/diagrams/registry.ts):
 1. Import driver and add `registerDriver(<Name>Driver)`.
-2. Add one header-regex branch in `detectDiagramType` (it matches against the shared `findFirstCodeLine`, which already skips frontmatter and comments — no new scanning loop needed). For ID generation in mutations, use `generateUniqueId` from `src/diagrams/common/diagramHeader.ts`.
+2. Add one header-regex branch in `detectDiagramType` (it matches against the shared `findFirstCodeLine`, which already skips frontmatter and comments — no new scanning loop needed). For ID generation in mutations, use `generateUniqueId` from `packages/core/src/diagrams/common/diagramHeader.ts`.
 3. Add a template entry to `DIAGRAM_TEMPLATES` with a sensible, minimal default code snippet.
 
 ---
 
 ## Phase 4: The 5-Tier Verification Suite
 
-Every new diagram type must provide comprehensive tests under `tests/` passing all 5 tiers.
+Every new diagram type must provide comprehensive tests under `packages/core/tests/` passing all 5 tiers.
 
-### Tier 1: Official Documentation Compliance (`tests/<name>OfficialDocsCompliance.test.ts`)
+### Tier 1: Official Documentation Compliance (`packages/core/tests/<name>OfficialDocsCompliance.test.ts`)
 Collect 10 to 15 real-world examples directly from the official Mermaid documentation:
 - Test header recognition and detection (`detectDiagramType`).
 - Test frontmatter parsing and round-trip preservation.
@@ -306,14 +306,14 @@ Collect 10 to 15 real-world examples directly from the official Mermaid document
 - Test all edge syntax forms, labels, and cardinalities.
 - Test comments (`%%`) and unmodeled syntax preservation (`roundTrip(code) === code`).
 
-### Tier 2: Driver Contract Test (`tests/driverSurface.test.ts`)
-Add assertions for the new driver into `tests/driverSurface.test.ts`:
+### Tier 2: Driver Contract Test (`packages/core/tests/driverSurface.test.ts`)
+Add assertions for the new driver into `packages/core/tests/driverSurface.test.ts`:
 - Check `driver.capabilities` matches expectations.
 - Check `driver.labels` has all required fields.
 - Check `driver.project(ast)` produces valid `ViewProjection`.
 - Verify `driver.clone(ast)` never aliases state (modifying a clone does not alter original).
 
-### Tier 3: AST Mutation Invariant Tests (`tests/<name>Mutations.test.ts`)
+### Tier 3: AST Mutation Invariant Tests (`packages/core/tests/<name>Mutations.test.ts`)
 Verify every mutation function in isolation:
 - Sprouting adds node and edge.
 - Deleting a node cascades and deletes connected edges without leaving dangling references.
@@ -359,8 +359,8 @@ Follow the procedure defined in `new_diagram_playbook.md` and `ARCHITECTURE.md`.
    - Identify node entities, edge types, containers/packages, and unmodeled statements to preserve in `rawLines`.
 
 2. **Scaffold Package**:
-   - Create `src/diagrams/<name>/` with `types.ts`, `lexer.ts`, `parser.ts`, `serializer.ts`, `<name>Driver.ts`, and `mutations/`.
-   - Implement `DiagramDriver<TAst>` according to `src/diagrams/types.ts`.
+   - Create `packages/core/src/diagrams/<name>/` with `types.ts`, `lexer.ts`, `parser.ts`, `serializer.ts`, `<name>Driver.ts`, and `mutations/`.
+   - Implement `DiagramDriver<TAst>` according to `packages/core/src/diagrams/types.ts`.
    - DO NOT modify canvas hooks or UI components unless expanding the driver contract itself.
 
 3. **Configure UX & Capabilities**:
@@ -373,13 +373,13 @@ Follow the procedure defined in `new_diagram_playbook.md` and `ARCHITECTURE.md`.
    - Ensure YAML frontmatter, comments (`%%`), directives (`accTitle`, `accDescr`), and unmodeled lines survive visual edits verbatim.
 
 5. **Register Driver**:
-   - Add detection regex to `detectDiagramType` in `src/diagrams/registry.ts`.
+   - Add detection regex to `detectDiagramType` in `packages/core/src/diagrams/registry.ts`.
    - Register driver and add template in `DIAGRAM_TEMPLATES`.
 
 6. **Test Suite**:
-   - Create `tests/<name>OfficialDocsCompliance.test.ts` with 10+ official Mermaid documentation examples.
-   - Create `tests/<name>Mutations.test.ts` testing sprout, connect, reverse, split, morph, duplicate, delete.
-   - Update `tests/driverSurface.test.ts` with driver contract tests.
+   - Create `packages/core/tests/<name>OfficialDocsCompliance.test.ts` with 10+ official Mermaid documentation examples.
+   - Create `packages/core/tests/<name>Mutations.test.ts` testing sprout, connect, reverse, split, morph, duplicate, delete.
+   - Update `packages/core/tests/driverSurface.test.ts` with driver contract tests.
    - Ensure `npm test` and `npm run build` pass with zero errors.
 ```
 
@@ -389,14 +389,14 @@ Follow the procedure defined in `new_diagram_playbook.md` and `ARCHITECTURE.md`.
 
 - [ ] **1. Grammar & Model**: Studied official Mermaid docs; identified nodes, edges, containers, and `rawLines`.
 - [ ] **2. Product UX**: Configured `labels`, `capabilities`, `nodeKindOptions`, and interaction semantics.
-- [ ] **3. AST & Types**: Scaffolded `src/diagrams/<name>/types.ts` with clean AST and `rawLines` support.
+- [ ] **3. AST & Types**: Scaffolded `packages/core/src/diagrams/<name>/types.ts` with clean AST and `rawLines` support.
 - [ ] **4. Lexer & Parser**: Implemented tolerant parser that captures unmodeled lines in `rawLines`.
 - [ ] **5. Serializer**: Implemented round-trip serializer producing clean standard Mermaid syntax.
 - [ ] **6. View Projection**: Implemented `project(ast)` mapping native AST to `MermaidNodeDef` / `MermaidEdgeDef` / `MermaidSubgraphDef`.
 - [ ] **7. Mutations**: Implemented all required `DiagramMutations` functions with cascade deletions and safe cloning.
 - [ ] **7b. Illegal-connection feedback**: `canConnect` implemented and sharing logic with `connect`; blocked drops show red line / red glow / `not-allowed` cursor via the canvas (no canvas changes).
 - [ ] **8. SVG DOM Adapter**: Mapped SVG element prefixes and selectors in `dom`.
-- [ ] **9. Registry**: Registered driver in `src/diagrams/registry.ts` and added starter template.
+- [ ] **9. Registry**: Registered driver in `packages/core/src/diagrams/registry.ts` and added starter template.
 - [ ] **10. Tests & Verification**:
   - [ ] Official docs compliance tests passing
   - [ ] AST mutation invariants passing
