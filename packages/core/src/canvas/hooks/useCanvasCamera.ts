@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Rect } from '../types';
 
 export interface UseCanvasCameraOptions {
@@ -31,6 +31,11 @@ export function useCanvasCamera({
     screenX: number;
     screenY: number;
   } | null>(null);
+
+  // True once the user takes manual camera control (zoom/pan). While false
+  // the camera is a fresh fit, so container resizes (sidebar toggles, pane
+  // splits, window resizes) re-fit instead of stranding the diagram.
+  const userAdjustedCameraRef = useRef<boolean>(false);
 
   // Convert an SVG/DOM element bounding rect to world coordinates
   const getLocalRect = useCallback((el: Element): Rect | null => {
@@ -105,6 +110,7 @@ export function useCanvasCamera({
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
+    userAdjustedCameraRef.current = true;
     if (e.ctrlKey || e.metaKey) {
       // Zoom
       const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
@@ -213,7 +219,50 @@ export function useCanvasCamera({
     setZoom(newZoom);
     zoomRef.current = newZoom;
     setPan({ x: Math.round(panX), y: Math.round(panY) });
+    userAdjustedCameraRef.current = false;
   }, [containerRef, worldRef, svgMountRef, getLocalRect]);
+
+  // Responsive camera: re-fit when the container resizes (host sidebar
+  // toggles, pane splits, window resizes) as long as the user has not taken
+  // manual camera control. rAF-throttled and jitter-guarded so open
+  // animations settle into a single final fit.
+  useEffect(() => {
+    const el = containerRef?.current ?? worldRef.current?.parentElement ?? null;
+    if (!el || typeof window === 'undefined') return;
+    let raf = 0;
+    let lastW = el.clientWidth;
+    let lastH = el.clientHeight;
+    const maybeRefit = (): void => {
+      raf = 0;
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      if (w <= 0 || h <= 0) {
+        lastW = w;
+        lastH = h;
+        return;
+      }
+      if (Math.abs(w - lastW) < 2 && Math.abs(h - lastH) < 2) return;
+      lastW = w;
+      lastH = h;
+      if (!userAdjustedCameraRef.current) handleFitView();
+    };
+    const schedule = (): void => {
+      if (raf) return;
+      raf = window.requestAnimationFrame(maybeRefit);
+    };
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(schedule);
+      observer.observe(el);
+    } else {
+      window.addEventListener('resize', schedule);
+    }
+    return () => {
+      if (raf) window.cancelAnimationFrame(raf);
+      observer?.disconnect();
+      window.removeEventListener('resize', schedule);
+    };
+  }, [containerRef, worldRef, handleFitView]);
 
   const startPan = useCallback((clientX: number, clientY: number) => {
     setIsPanning(true);
@@ -224,6 +273,7 @@ export function useCanvasCamera({
   }, [pan]);
 
   const updatePan = useCallback((clientX: number, clientY: number) => {
+    userAdjustedCameraRef.current = true;
     setPan({
       x: clientX - panStartRef.current.x,
       y: clientY - panStartRef.current.y,
@@ -255,6 +305,7 @@ export function useCanvasCamera({
   const updatePinch = useCallback((dist: number, midX: number, midY: number) => {
     const s = pinchRef.current;
     if (!s || s.startDist <= 0) return;
+    userAdjustedCameraRef.current = true;
     const newZoom = Math.min(Math.max(s.startZoom * (dist / s.startDist), 0.2), 3);
     zoomRef.current = newZoom;
     setZoom(newZoom);

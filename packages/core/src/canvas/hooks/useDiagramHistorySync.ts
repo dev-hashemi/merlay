@@ -50,6 +50,11 @@ export function useDiagramHistorySync({
   // useState/useHistory seed once. Without this sync the view keeps showing
   // the old diagram and undo replays the old file's code into the new file.
   const lastInitialCodeRef = useRef<string | null>(null);
+  // Live mirror of the code on screen, so write-back echoes (hosts that
+  // round-trip our own edits back through the initialCode prop, e.g. the
+  // VS Code document sync) are not mistaken for file switches.
+  const codeRef = useRef(code);
+  codeRef.current = code;
   useEffect(() => {
     if (lastInitialCodeRef.current === null) {
       lastInitialCodeRef.current = initialCode ?? null;
@@ -59,6 +64,11 @@ export function useDiagramHistorySync({
       lastInitialCodeRef.current = initialCode ?? null;
       const next =
         initialCode || 'flowchart LR\n    A["Start"] --> B["Process"]\n    B --> C["End"]';
+      // Echo of what we already show: keep history (undo/redo) and selection.
+      // Compared whitespace-insensitively: the serializer emits a trailing
+      // newline but fence write-back trims it, so the round-tripped echo
+      // always differs by surrounding whitespace from the code on screen.
+      if (next.trim() === codeRef.current.trim()) return;
       resetHistory(next);
       setCode(next);
       resetTransientUiState();
