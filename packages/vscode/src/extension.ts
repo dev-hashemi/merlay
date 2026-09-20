@@ -1,23 +1,45 @@
 import * as vscode from 'vscode';
-import { getWebviewHtml } from './webviewHtml';
+import { DIAGRAM_TEMPLATES } from '@merlay/core';
+import { MERLAY_EDITOR_VIEW_TYPE } from './protocol';
+import { MermaidEditorProvider } from './mermaidEditor';
+import {
+  EDIT_FENCE_COMMAND,
+  MermaidFenceCodeLensProvider,
+  openFenceEditor,
+} from './fenceLens';
 
-/**
- * VS Code entry (scaffold for Phase 3).
- * Today: one command opening a Webview with the shared @merlay/core canvas.
- * Phase 3 adds: CustomEditor for .mmd files, markdown fence CodeLens,
- * and document sync over postMessage.
- */
 export function activate(context: vscode.ExtensionContext): void {
-  const openCmd = vscode.commands.registerCommand('merlay.openVisualEditor', () => {
-    const panel = vscode.window.createWebviewPanel(
-      'merlay.visualEditor',
-      'Merlay',
-      vscode.ViewColumn.Beside,
-      { enableScripts: true, retainContextWhenHidden: true }
-    );
-    panel.webview.html = getWebviewHtml(panel.webview, context.extensionUri);
-  });
-  context.subscriptions.push(openCmd);
+  context.subscriptions.push(
+    vscode.window.registerCustomEditorProvider(
+      MERLAY_EDITOR_VIEW_TYPE,
+      new MermaidEditorProvider(context.extensionUri),
+      {
+        webviewOptions: { retainContextWhenHidden: true },
+        supportsMultipleEditorsPerDocument: true,
+      }
+    ),
+    vscode.languages.registerCodeLensProvider(
+      { language: 'markdown' },
+      new MermaidFenceCodeLensProvider()
+    ),
+    vscode.commands.registerCommand('merlay.openVisualEditor', () => openNewDiagram()),
+    vscode.commands.registerCommand(
+      EDIT_FENCE_COMMAND,
+      (uriString?: string, startLine?: number) =>
+        openFenceEditor(context.extensionUri, uriString, startLine)
+    )
+  );
+}
+
+/** Create an untitled mermaid document and open it in the visual editor. */
+async function openNewDiagram(): Promise<void> {
+  const direction = vscode.workspace
+    .getConfiguration('merlay')
+    .get<string>('defaultDirection', 'LR');
+  const fallback = DIAGRAM_TEMPLATES[0]?.defaultCode ?? 'flowchart LR\n    A --> B\n';
+  const code = fallback.replace(/^flowchart\s+\w+/, `flowchart ${direction}`);
+  const document = await vscode.workspace.openTextDocument({ language: 'mermaid', content: code });
+  await vscode.commands.executeCommand('vscode.openWith', document.uri, MERLAY_EDITOR_VIEW_TYPE);
 }
 
 export function deactivate(): void {

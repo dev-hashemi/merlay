@@ -10,17 +10,80 @@
   "categories": [
     "Visualization"
   ],
+  "keywords": [
+    "mermaid",
+    "merlay",
+    "diagram",
+    "flowchart",
+    "visual-editor"
+  ],
   "activationEvents": [
-    "onCommand:merlay.openVisualEditor"
+    "onCustomEditor:merlay.mermaidEditor",
+    "onCommand:merlay.openVisualEditor",
+    "onCommand:merlay.editMermaidFence",
+    "onLanguage:markdown",
+    "onLanguage:mermaid"
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "customEditors": [
+      {
+        "viewType": "merlay.mermaidEditor",
+        "displayName": "Merlay Visual Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.{mmd,mermaid}"
+          }
+        ]
+      }
+    ],
     "commands": [
       {
         "command": "merlay.openVisualEditor",
-        "title": "Merlay: Open Visual Editor"
+        "title": "Merlay: New Diagram"
+      },
+      {
+        "command": "merlay.editMermaidFence",
+        "title": "Merlay: Edit Mermaid Fence Visually"
       }
-    ]
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "merlay.editMermaidFence",
+          "when": "false"
+        }
+      ]
+    },
+    "languages": [
+      {
+        "id": "mermaid",
+        "aliases": [
+          "Mermaid"
+        ],
+        "extensions": [
+          ".mmd",
+          ".mermaid"
+        ]
+      }
+    ],
+    "configuration": {
+      "title": "Merlay",
+      "properties": {
+        "merlay.defaultDirection": {
+          "type": "string",
+          "enum": [
+            "TB",
+            "TD",
+            "BT",
+            "RL",
+            "LR"
+          ],
+          "default": "LR",
+          "description": "Default flow direction for new Merlay diagrams."
+        }
+      }
+    }
   },
   "scripts": {
     "dev": "node esbuild.mjs",
@@ -28,6 +91,14 @@
   },
   "author": "Seyed Ali Hashemi",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dev-hashemi/merlay.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dev-hashemi/merlay/issues"
+  },
+  "homepage": "https://github.com/dev-hashemi/merlay#readme",
   "dependencies": {
     "@merlay/core": "*",
     "react": "^18.3.1",

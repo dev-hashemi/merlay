@@ -5,41 +5,88 @@ import {
   renderMermaidWithNpm,
   type HostAdapter,
 } from '@merlay/core';
+import type { HostToWebviewMessage, WebviewToHostMessage } from './protocol';
 
-/**
- * Webview entry (scaffold for Phase 3).
- * Mounts the shared canvas with a minimal host: npm Mermaid engine,
- * console notifications, OS color-scheme theme sync. Document sync
- * (postMessage <-> extension host) lands in Phase 3.
- */
-const host: HostAdapter = {
-  renderMermaid: renderMermaidWithNpm,
-  notify: (message: string) => {
-    // eslint-disable-next-line no-console -- webview has no toast channel yet
-    console.log(`[Merlay] ${message}`);
-  },
-  subscribeTheme: (cb: () => void) => {
-    const query = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = (): void => cb();
-    query.addEventListener('change', onChange);
-    return () => query.removeEventListener('change', onChange);
-  },
-};
+interface VsCodeApi {
+  postMessage: (message: WebviewToHostMessage) => void;
+}
 
-function postCodeChange(code: string): void {
-  const api = (
-    window as unknown as { acquireVsCodeApi?: () => { postMessage: (msg: unknown) => void } }
-  ).acquireVsCodeApi?.();
-  api?.postMessage({ type: 'merlay/codeChange', code });
+function getVsCodeApi(): VsCodeApi | null {
+  try {
+    const w = window as unknown as {
+      acquireVsCodeApi?: () => VsCodeApi;
+    };
+    return w.acquireVsCodeApi?.() ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const FALLBACK_CODE = 'flowchart LR\n    A["Start"] --> B["Process"]\n    B --> C["End"]';
+
+function MerlayWebviewApp(): React.ReactElement {
+  const apiRef = React.useRef<VsCodeApi | null>(null);
+  if (apiRef.current === null) {
+    apiRef.current = getVsCodeApi();
+  }
+  // Outside VS Code (plain browser preview) show the fallback immediately.
+  const [docCode, setDocCode] = React.useState<string | null>(() =>
+    apiRef.current ? null : FALLBACK_CODE
+  );
+  const themeSubsRef = React.useRef(new Set<() => void>());
+
+  const host = React.useMemo<HostAdapter>(
+    () => ({
+      renderMermaid: renderMermaidWithNpm,
+      notify: (message: string) => {
+        const api = apiRef.current;
+        if (api) {
+          api.postMessage({ type: 'merlay/notify', message });
+        } else {
+          // eslint-disable-next-line no-console -- no toast channel outside VS Code
+          console.log(`[Merlay] ${message}`);
+        }
+      },
+      subscribeTheme: (cb: () => void) => {
+        themeSubsRef.current.add(cb);
+        return () => {
+          themeSubsRef.current.delete(cb);
+        };
+      },
+    }),
+    []
+  );
+
+  React.useEffect(() => {
+    const api = apiRef.current;
+    if (!api) return;
+    const onMessage = (event: MessageEvent): void => {
+      const message = event.data as HostToWebviewMessage;
+      if (message.type === 'merlay/init' || message.type === 'merlay/update') {
+        // Echo guard: identical code is a no-op (React bails out, canvas keeps history).
+        setDocCode((prev) => (prev === message.code ? prev : message.code));
+      } else if (message.type === 'merlay/theme') {
+        themeSubsRef.current.forEach((cb) => cb());
+      }
+    };
+    window.addEventListener('message', onMessage);
+    api.postMessage({ type: 'merlay/ready' });
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
+
+  const handleCodeChange = React.useCallback((code: string) => {
+    apiRef.current?.postMessage({ type: 'merlay/codeChange', code });
+  }, []);
+
+  if (docCode === null) {
+    return <div className="merlay-webview-loading">Loading diagram…</div>;
+  }
+  return (
+    <NativeMermaidView host={host} initialCode={docCode} onCodeChange={handleCodeChange} />
+  );
 }
 
 const rootEl = document.getElementById('merlay-root');
 if (rootEl) {
-  createRoot(rootEl).render(
-    <NativeMermaidView
-      host={host}
-      initialCode={'flowchart LR\n    A["Start"] --> B["Process"]\n    B --> C["End"]'}
-      onCodeChange={postCodeChange}
-    />
-  );
+  createRoot(rootEl).render(<MerlayWebviewApp />);
 }

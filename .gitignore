@@ -9,6 +9,7 @@ main.js
 styles.css
 dist/
 *.tsbuildinfo
+*.vsix
 
 # OS metadata
 .DS_Store

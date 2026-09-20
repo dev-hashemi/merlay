@@ -11,7 +11,7 @@
     "build": "npm run build -w merlay && npm run build -w merlay-vscode",
     "build:obsidian": "npm run build -w merlay",
     "build:vscode": "npm run build -w merlay-vscode",
-    "test": "tsx --test packages/core/tests/*.test.ts packages/obsidian/tests/*.test.ts"
+    "test": "tsx --test packages/core/tests/*.test.ts packages/obsidian/tests/*.test.ts packages/vscode/tests/*.test.ts"
   },
   "author": "Seyed Ali Hashemi",
   "license": "MIT",

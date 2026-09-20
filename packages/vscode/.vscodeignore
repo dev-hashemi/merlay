@@ -1,0 +1,8 @@
+## VS Code packaging — never ship these into the .vsix
+dist/**/*.map
+src/**
+tests/**
+tsconfig.json
+esbuild.mjs
+.vscode/**
+.gitignore
