@@ -1732,20 +1732,32 @@ pre.language-mermaid {
   }
 }
 
-/* Narrow phones: wrap the top bar instead of clipping, sheet the drawer. */
+/* Narrow phones: one scrollable toolbar row instead of a tall wrapping stack. */
 @media (max-width: 640px) {
   .mermaid-native-top-bar {
     left: 8px;
     right: 8px;
     top: 8px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 6px;
   }
 
   .mermaid-top-bar-left,
   .mermaid-top-bar-right {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
     max-width: 100%;
+  }
+
+  .mermaid-top-bar-left::-webkit-scrollbar,
+  .mermaid-top-bar-right::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Decorative brand mark earns no space on a 360px bar. */
+  .merlay-top-bar-brand {
+    display: none;
   }
 
   .mermaid-tool-btn {
@@ -1758,6 +1770,33 @@ pre.language-mermaid {
     white-space: normal;
     text-align: center;
     font-size: 11px;
+  }
+
+  /* HUD pills scroll instead of clipping off-screen next to the node. */
+  .mermaid-action-hud,
+  .mermaid-edge-hud,
+  .mermaid-subgraph-hud,
+  .mermaid-multiselect-hud {
+    max-width: calc(100vw - 16px);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  /* Popovers fit narrow screens: single-column shape list, capped widths. */
+  .mermaid-popover-menu,
+  .mermaid-subgraph-popover,
+  .mermaid-theme-popover,
+  .mermaid-export-popover {
+    max-width: calc(100vw - 24px);
+  }
+
+  .mermaid-shape-popover {
+    min-width: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .mermaid-style-popover {
+    min-width: 0;
   }
 
   .mermaid-side-code-drawer {

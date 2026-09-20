@@ -143,6 +143,57 @@ test('Touch gestures: all SVG interactivity layers wire tap gestures', () => {
   assert.ok(edge.includes('guardClickAfterLongPress'), 'edge clicks need long-press guard');
 });
 
+test('Touch gestures: long-press never selects (HUD opens on single tap only)', () => {
+  // Regression: a stationary hold must not open the node/edge HUD — it only
+  // arms release-click suppression while hold-then-drag flows into
+  // drag-to-connect via the movement threshold.
+  for (const rel of [
+    'src/canvas/interaction/nodeInteractivity.ts',
+    'src/canvas/interaction/edgeInteractivity.ts',
+    'src/canvas/interaction/lifelineInteractivity.ts',
+  ]) {
+    const code = read(rel);
+    assert.ok(
+      !code.includes('onLongPress: () => onSelect'),
+      `${rel} must not select on long-press (HUD is single-tap only)`
+    );
+  }
+});
+
+test('Touch gestures: node-like hold suppresses HUD, single tap still selects', async () => {
+  const el = document.createElement('div');
+  let selects = 0;
+  (el as unknown as { onclick: ((ev: Event) => void) | null }).onclick = () => {
+    selects++;
+  };
+  // Mirrors nodeInteractivity: double-tap renames, long-press is a no-op that
+  // only arms release-click suppression (never selects).
+  const handle = attachTapGestures(el, {
+    onDoubleTap: () => undefined,
+    onLongPress: () => undefined,
+    longPressDelay: 10,
+  });
+  guardClickAfterLongPress(el, handle);
+  const click = (): void => {
+    (el as unknown as { onclick: ((ev: Event) => void) | null }).onclick?.(
+      new dom.window.Event('click', { bubbles: true })
+    );
+  };
+
+  // Stationary hold → release click swallowed → no HUD.
+  el.dispatchEvent(pointerEvent('pointerdown', {}));
+  await tick(30);
+  click();
+  assert.strictEqual(selects, 0, 'long-press release must not open the HUD');
+  el.dispatchEvent(pointerEvent('pointerup', {}));
+
+  // Plain single tap → click flows through → HUD opens.
+  await tick(750);
+  click();
+  assert.strictEqual(selects, 1, 'single tap must still open the HUD');
+  handle.detach();
+});
+
 test('Touch gestures: hint pill falls back to tap selection (no hover on touch)', () => {
   const pill = read('src/canvas/components/ConnectionHintPill.tsx');
   assert.ok(pill.includes('selectedNodeId'), 'pill must accept tap-selected node');

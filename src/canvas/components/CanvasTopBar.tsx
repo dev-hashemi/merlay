@@ -80,6 +80,14 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
     ? theme.charAt(0).toUpperCase() + theme.slice(1)
     : 'Auto';
 
+  // Touch: one-finger empty-canvas drag already pans in select mode and
+  // pinch zooms, so the desktop Select/Hand switcher earns no space on
+  // phones — hide it and keep the bar to a single scrollable row.
+  const isCoarsePointer =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(pointer: coarse)').matches;
+
   return (
     <div className="mermaid-native-top-bar nodrag">
       <div className="mermaid-top-bar-left">
@@ -89,33 +97,37 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
         </div>
         <div className="mermaid-bar-divider" />
 
-        {/* Mode Switcher: Select (V) vs Hand (H) */}
-        <div className="mermaid-mode-segmented" role="group" aria-label="Tool selection">
-          <button
-            type="button"
-            className={`mermaid-mode-btn ${cursorMode === 'select' ? 'is-active' : ''}`}
-            onClick={() => onSetCursorMode('select')}
-            title={!isEditable ? 'Select & Highlight Tool (V)' : 'Select & Marquee Tool (V)'}
-            aria-label="Select tool"
-            aria-pressed={cursorMode === 'select'}
-          >
-            <SelectModeIcon size={13} />
-            <span>Select</span>
-          </button>
-          <button
-            type="button"
-            className={`mermaid-mode-btn ${cursorMode === 'hand' ? 'is-active' : ''}`}
-            onClick={() => onSetCursorMode('hand')}
-            title="Hand / Pan Tool (H) - or hold Space"
-            aria-label="Hand / Pan tool"
-            aria-pressed={cursorMode === 'hand'}
-          >
-            <HandModeIcon size={13} />
-            <span>Hand</span>
-          </button>
-        </div>
+        {/* Mode Switcher: Select (V) vs Hand (H) — desktop only (see above) */}
+        {!isCoarsePointer && (
+          <>
+            <div className="mermaid-mode-segmented" role="group" aria-label="Tool selection">
+              <button
+                type="button"
+                className={`mermaid-mode-btn ${cursorMode === 'select' ? 'is-active' : ''}`}
+                onClick={() => onSetCursorMode('select')}
+                title={!isEditable ? 'Select & Highlight Tool (V)' : 'Select & Marquee Tool (V)'}
+                aria-label="Select tool"
+                aria-pressed={cursorMode === 'select'}
+              >
+                <SelectModeIcon size={13} />
+                <span>Select</span>
+              </button>
+              <button
+                type="button"
+                className={`mermaid-mode-btn ${cursorMode === 'hand' ? 'is-active' : ''}`}
+                onClick={() => onSetCursorMode('hand')}
+                title="Hand / Pan Tool (H) - or hold Space"
+                aria-label="Hand / Pan tool"
+                aria-pressed={cursorMode === 'hand'}
+              >
+                <HandModeIcon size={13} />
+                <span>Hand</span>
+              </button>
+            </div>
 
-        <div className="mermaid-bar-divider" />
+            <div className="mermaid-bar-divider" />
+          </>
+        )}
 
         {/* Undo / Redo */}
         {isEditable && (

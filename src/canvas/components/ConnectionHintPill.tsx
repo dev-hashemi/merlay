@@ -41,6 +41,17 @@ export const ConnectionHintPill: React.FC<ConnectionHintPillProps> = ({
     hoveredNodeRect ?? (!isMultiSelect ? (selectedNodeRect ?? null) : null);
   const showKind = hoveredNodeId ? hoveredNodeKind : selectedNodeKind;
 
+  // Touch: the single-node HUD already sits on the tap-selected node, so the
+  // pill would stack a second floater on the same finger target (HUD opens on
+  // tap; drag-to-connect stays documented in the canvas hint bar).
+  const isCoarsePointer =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(pointer: coarse)').matches;
+  if (isCoarsePointer && !hoveredNodeId && selectedNodeId) {
+    return null;
+  }
+
   if (
     !showRect ||
     !showId ||

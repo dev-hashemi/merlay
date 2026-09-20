@@ -73,9 +73,12 @@ export function setupLifelineHitArea({
     e.stopPropagation();
     onStartEditingNode(targetNodeId, htmlEl);
   };
+  // Touch: double-tap renames. Long-press never selects (HUD opens on single
+  // tap only) — the no-op arms release-click suppression while hold-then-drag
+  // flows into drag-connect.
   const lifelineTap = attachTapGestures(hitArea, {
     onDoubleTap: () => onStartEditingNode(targetNodeId, htmlEl),
-    onLongPress: () => onSelectNode(targetNodeId, true, htmlEl),
+    onLongPress: () => undefined,
   });
   guardClickAfterLongPress(hitArea, lifelineTap);
 
