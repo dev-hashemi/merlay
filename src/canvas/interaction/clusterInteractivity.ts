@@ -9,6 +9,7 @@ import { MermaidSubgraphDef } from '../../diagrams/viewModel';
 import { SvgDomAdapter } from '../../diagrams/types';
 import { Rect } from '../types';
 import { attachTapGestures } from './touchGestures';
+import { applyStyles } from '../../platform/dom';
 
 export interface SetupClusterInteractivityOptions {
   mountEl: HTMLElement;
@@ -97,13 +98,13 @@ export function setupClusterInteractivity({
     // composite states, edges between flowchart subgraphs). Drivers decide
     // whether the id is connectable; the canvas just resolves the drop.
     htmlEl.setAttribute('data-mermaid-node-id', targetSubId);
-    htmlEl.setCssStyles({ cursor: 'pointer' });
+      applyStyles(htmlEl, { cursor: 'pointer' });
 
     // Ensure all interactive children receive clicks.  Flowchart HTML labels
     // use foreignObject, not <text>, so we include it explicitly.
     htmlEl.querySelectorAll('rect, text, foreignObject, .cluster-label, .nodeLabel').forEach((child) => {
       const childEl = child as SVGGraphicsElement;
-      childEl.setCssStyles({ cursor: 'pointer' });
+      applyStyles(childEl, { cursor: 'pointer' });
       childEl.setAttribute('pointer-events', 'all');
       childEl.onclick = (e) => {
         e.stopPropagation();
@@ -206,7 +207,7 @@ export function setupClusterInteractivity({
   const unassignedClusters: Element[] = [];
   for (const el of candidates) {
     const htmlEl = el as SVGGraphicsElement;
-    htmlEl.setCssStyles({ cursor: 'pointer' });
+      applyStyles(htmlEl, { cursor: 'pointer' });
     const matched = matchById(htmlEl);
     if (matched) {
       usedSubIds.add(matched);
@@ -278,7 +279,7 @@ export function setupClusterInteractivity({
   for (const el of pendingLabelClusters) {
     const htmlEl = el as SVGGraphicsElement;
     if (!htmlEl.onclick) {
-      htmlEl.setCssStyles({ cursor: 'default' });
+      applyStyles(htmlEl, { cursor: 'default' });
     }
   }
 }

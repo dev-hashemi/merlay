@@ -15,14 +15,6 @@ import {
 function buildMount() {
   const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
   const doc = dom.window.document;
-  // Obsidian provides setCssStyles at runtime; record calls for assertions.
-  const cssCalls = new Map<Element, Record<string, string>>();
-  (dom.window.Element.prototype as any).setCssStyles = function (
-    styles: Record<string, string>
-  ) {
-    cssCalls.set(this as Element, { ...(cssCalls.get(this as Element) ?? {}), ...styles });
-    Object.assign((this as Element as any).style ?? {}, styles);
-  };
 
   const mount = doc.createElement('div');
   mount.innerHTML =
@@ -38,11 +30,11 @@ function buildMount() {
     '<g class="edgeLabel" data-mermaid-edge-id="e1"><text>Hi</text></g>' +
     '</svg>';
   doc.body.append(mount);
-  return { mount: mount as unknown as HTMLElement, cssCalls };
+  return { mount: mount as unknown as HTMLElement };
 }
 
 test('Edge halo: selected linkStyle edge gets a stripped clone, original untouched', () => {
-  const { mount, cssCalls } = buildMount();
+  const { mount } = buildMount();
   applySelectedEdgeHalos(mount, new Set(['e0']));
 
   const original = mount.querySelector(
@@ -62,7 +54,7 @@ test('Edge halo: selected linkStyle edge gets a stripped clone, original untouch
   // Classes preserved (dash patterns, markers), clone marker added.
   assert.ok(clone.classList.contains('flowchart-link'));
   // Clone carries no user styling: only the widening width we set ourselves
-  // (via setCssStyles, which writes inline stroke-width by design).
+  // (inline stroke-width by design).
   const cloneStyle = clone.getAttribute('style') || '';
   assert.ok(!cloneStyle.includes('#ff0000'), 'user stroke must not leak onto clone');
   assert.ok(!cloneStyle.includes('fill'), 'user fill must not leak onto clone');
@@ -70,18 +62,21 @@ test('Edge halo: selected linkStyle edge gets a stripped clone, original untouch
   assert.strictEqual(clone.getAttribute('pointer-events'), 'none');
   assert.strictEqual(clone.getAttribute('d'), 'M0,0 L100,0');
   // Clone widens over the custom 4px edge (max of 3.5 and 4).
-  assert.strictEqual(cssCalls.get(clone)?.strokeWidth, '4px');
+  assert.ok(cloneStyle.includes('stroke-width: 4px'), `clone must widen to 4px, got: ${cloneStyle}`);
 });
 
 test('Edge halo: plain edge clone uses the default width, label gets the class', () => {
-  const { mount, cssCalls } = buildMount();
+  const { mount } = buildMount();
   applySelectedEdgeHalos(mount, new Set(['e1']));
 
   const clone = mount.querySelector(
     `path.${EDGE_SELECTED_CLONE_CLS}[data-mermaid-edge-id="e1"]`
   )!;
   assert.ok(clone);
-  assert.strictEqual(cssCalls.get(clone)?.strokeWidth, `${EDGE_SELECTED_HALO_WIDTH}px`);
+  assert.ok(
+    (clone.getAttribute('style') || '').includes(`stroke-width: ${EDGE_SELECTED_HALO_WIDTH}px`),
+    `clone must use default width, got: ${clone.getAttribute('style')}`
+  );
 
   const label = mount.querySelector('.edgeLabel[data-mermaid-edge-id="e1"]')!;
   assert.ok(label.classList.contains('mermaid-edge-selected'));
@@ -119,7 +114,7 @@ test('Edge halo: hit-areas are never cloned; clearing removes clones only', () =
 });
 
 test('Edge halo: hover clone skipped while selected; scoped clearing works', () => {
-  const { mount, cssCalls } = buildMount();
+  const { mount } = buildMount();
   const pathEl = mount.querySelector(
     'path.flowchart-link[data-mermaid-edge-id="e0"]'
   )!;
@@ -130,7 +125,10 @@ test('Edge halo: hover clone skipped while selected; scoped clearing works', () 
   )!;
   assert.ok(hover);
   // Hover also widens over the custom 4px edge (max of 3 and 4).
-  assert.strictEqual(cssCalls.get(hover)?.strokeWidth, '4px');
+  assert.ok(
+    (hover.getAttribute('style') || '').includes('stroke-width: 4px'),
+    `hover clone must widen to 4px, got: ${hover.getAttribute('style')}`
+  );
 
   // Selecting removes the hover clone and adds the selected clone.
   applySelectedEdgeHalos(mount, new Set(['e0']));

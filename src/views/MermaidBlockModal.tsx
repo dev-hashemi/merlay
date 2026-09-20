@@ -2,6 +2,7 @@ import { Modal, App, Notice, TFile } from 'obsidian';
 import * as React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { NativeMermaidView } from '../canvas/NativeMermaidView';
+import { getObsidianHost } from '../obsidian/obsidianHost';
 import { replaceMermaidBlock } from '../utils/markdownBlock';
 import type MerlayPlugin from '../main';
 
@@ -65,7 +66,7 @@ export class MermaidBlockModal extends Modal {
     this.root = createRoot(contentEl);
     this.root.render(
       <NativeMermaidView
-        app={this.app}
+        host={getObsidianHost(this.app)}
         initialCode={this.initialCode}
         onCodeChange={(newCode) => {
           this.latestCode = newCode;

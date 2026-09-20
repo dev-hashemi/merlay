@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { App } from 'obsidian';
+import type { NotifyFn, RenderMermaidFn } from '../../platform/types';
 import { DiagramDriver } from '../../diagrams/types';
 import { CodeIcon, ExportIcon, MaximizeIcon, MinimizeIcon } from '../icons/Icons';
 import { ExportPopover } from './ExportPopover';
@@ -12,8 +12,9 @@ export interface TopBarRightControlsProps {
   isFullscreen: boolean;
   onToggleFullscreen?: () => void;
   svgMountRef?: React.RefObject<HTMLDivElement>;
-  app?: App;
+  renderMermaid?: RenderMermaidFn;
   code?: string;
+  notify?: NotifyFn;
 }
 
 export const TopBarRightControls: React.FC<TopBarRightControlsProps> = ({
@@ -24,8 +25,9 @@ export const TopBarRightControls: React.FC<TopBarRightControlsProps> = ({
   isFullscreen,
   onToggleFullscreen,
   svgMountRef,
-  app,
+  renderMermaid,
   code,
+  notify,
 }) => {
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
 
@@ -72,8 +74,9 @@ export const TopBarRightControls: React.FC<TopBarRightControlsProps> = ({
             isOpen={isExportOpen}
             onClose={() => setIsExportOpen(false)}
             svgMountRef={svgMountRef}
-            app={app}
+            renderMermaid={renderMermaid}
             code={code}
+            notify={notify}
           />
         </div>
       )}

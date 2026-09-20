@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { App } from 'obsidian';
+import type { NotifyFn, RenderMermaidFn } from '../../platform/types';
 import { CursorMode } from '../types';
 import {
   SelectModeIcon,
@@ -39,8 +39,9 @@ export interface CanvasTopBarProps {
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
   svgMountRef?: React.RefObject<HTMLDivElement>;
-  app?: App;
+  renderMermaid?: RenderMermaidFn;
   code?: string;
+  notify?: NotifyFn;
   theme?: string;
   onSetTheme?: (theme: MermaidTheme | null) => void;
 }
@@ -67,8 +68,9 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
   isFullscreen = false,
   onToggleFullscreen,
   svgMountRef,
-  app,
+  renderMermaid,
   code,
+  notify,
   theme,
   onSetTheme,
 }) => {
@@ -264,8 +266,9 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
         isFullscreen={isFullscreen}
         onToggleFullscreen={onToggleFullscreen}
         svgMountRef={svgMountRef}
-        app={app}
+        renderMermaid={renderMermaid}
         code={code}
+        notify={notify}
       />
     </div>
   );

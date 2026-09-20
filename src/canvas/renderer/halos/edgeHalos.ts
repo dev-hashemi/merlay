@@ -9,9 +9,11 @@
  * top — the same pattern as node halos. The clone keeps the original's
  * classes (dash patterns, markers) but drops `id`/`style`/`stroke`/`fill`, so
  * only our `#merlay-svg-mount`-scoped clone rules apply to it. An inline
- * `stroke-width` (via Obsidian's `setCssStyles`, no `!important`) widens the
- * clone over custom-thick edges. Pixel output matches the old recolor exactly.
+ * `stroke-width` (applied via the shared style helper, no `!important`) widens
+ * the clone over custom-thick edges. Pixel output matches the old recolor exactly.
  */
+import { applyStyles } from '../../../platform/dom';
+
 export const EDGE_SELECTED_CLONE_CLS = 'mermaid-edge-selected-clone';
 export const EDGE_HOVERED_CLONE_CLS = 'mermaid-edge-hovered-clone';
 
@@ -57,7 +59,7 @@ function cloneEdgeForHalo(
   clone.setAttribute('data-mermaid-edge-id', edgeId);
   clone.setAttribute('pointer-events', 'none');
   const origWidth = parseEdgeStrokeWidth(original) ?? 0;
-  clone.setCssStyles({ strokeWidth: `${Math.max(baseWidth, origWidth)}px` });
+  applyStyles(clone, { strokeWidth: `${Math.max(baseWidth, origWidth)}px` });
   original.parentNode?.insertBefore(clone, original.nextSibling);
 }
 

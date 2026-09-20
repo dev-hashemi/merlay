@@ -207,3 +207,48 @@ test('Obsidian compliance: no hardcoded text colors in TS', () => {
 test('Obsidian compliance: no telemetry / analytics identifiers', () => {
   assertNoMatch(srcFiles(), /\b(telemetry|analytics|trackingPixel)\b/i, 'no telemetry allowed');
 });
+
+// --- Core purity: portable core must never touch host APIs ---
+
+function coreFiles(): { path: string; rel: string; code: string }[] {
+  return srcFiles().filter((f) =>
+    /^(src\/(canvas|diagrams|utils|platform)\/)/.test(f.rel)
+  );
+}
+
+test('Core purity: no host package imports in portable core', () => {
+  assertNoMatch(
+    coreFiles(),
+    /from\s+['"](obsidian|vscode)['"]/,
+    'core must talk to hosts only via src/platform HostAdapter'
+  );
+  assertNoMatch(
+    coreFiles(),
+    /require\(\s*['"](obsidian|vscode)['"]\s*\)/,
+    'core must talk to hosts only via src/platform HostAdapter'
+  );
+});
+
+test('Core purity: no host DOM extensions in portable core', () => {
+  assertNoMatch(
+    coreFiles(),
+    /\.setCssStyles\s*\(/,
+    'use applyStyles() from src/platform/dom instead'
+  );
+  assertNoMatch(
+    coreFiles(),
+    /\.empty\(\)/,
+    'use clearElement() from src/platform/dom instead'
+  );
+  assertNoMatch(
+    coreFiles(),
+    /(^|[^.\w])createDiv\s*\(/,
+    'use document.createElement or createDiv() from src/platform/dom instead',
+    ['src/platform/dom.ts']
+  );
+  assertNoMatch(
+    coreFiles(),
+    /(^|[^.\w])createEl\s*\(/,
+    'use document.createElement instead of the host createEl helper'
+  );
+});

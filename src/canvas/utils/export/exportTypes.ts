@@ -1,4 +1,4 @@
-import type { App } from 'obsidian';
+import type { NotifyFn, RenderMermaidFn } from '../../../platform/types';
 
 export type ExportAppearance = 'as-shown' | 'readable';
 
@@ -8,12 +8,15 @@ export interface ExportOptions {
   appearance?: ExportAppearance;
   scale?: number;
   fileName?: string;
+  /** Optional toast/notice sink. Silent when omitted (headless/tests). */
+  notify?: NotifyFn;
 }
 
 export type ExportTarget =
   | HTMLElement
   | {
-      app?: App;
+      /** Re-render path: needs both code and a host render function. */
+      renderMermaid?: RenderMermaidFn;
       code?: string;
       svgMountEl?: HTMLElement | null;
     };

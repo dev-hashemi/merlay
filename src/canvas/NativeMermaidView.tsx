@@ -32,7 +32,7 @@ import { useCanvasStore } from './store/canvasStore';
 export type { NativeMermaidViewProps };
 
 export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
-  app,
+  host,
   initialCode,
   onCodeChange,
   isFullscreen: externalIsFullscreen,
@@ -321,7 +321,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
 
   // 12. Mermaid Native SVG Mount & Renderer
   useCanvasRenderer({
-    app,
+    renderMermaid: host.renderMermaid,
     code,
     driver,
     svgMountRef,
@@ -365,18 +365,18 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     }
   }, [connectingSourceId, connectingTargetId, connectBlocked, svgMountRef, code]);
 
-  // 14. Theme switch synchronization (Obsidian css-change event)
+  // 14. Theme switch synchronization (host theme event)
   useEffect(() => {
-    const onCssChange = () => {
+    const onThemeChange = () => {
       selection.updateSelectedNodeHalo(selection.selectedNodeIdsRef.current);
       selection.updateSelectedEdgeHalo(selection.selectedEdgeIdsRef.current);
       selection.updateSelectedNodeRect();
     };
-    const ref = app.workspace.on('css-change', onCssChange);
+    const unsubscribe = host.subscribeTheme(onThemeChange);
     return () => {
-      app.workspace.offref(ref);
+      unsubscribe();
     };
-  }, [app, selection]);
+  }, [host, selection]);
 
   return (
     <div
@@ -517,8 +517,9 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
         isFullscreen={isFullscreen}
         onToggleFullscreen={handleToggleFullscreen}
         svgMountRef={svgMountRef}
-        app={app}
+        renderMermaid={host.renderMermaid}
         code={code}
+        notify={host.notify}
         theme={mutations.currentTheme}
         onSetTheme={mutations.handleSetTheme}
       />

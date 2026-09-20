@@ -2,7 +2,7 @@
  * SVG normalization, DOM parsing, clean SVG generation, and export pipeline orchestrator.
  */
 
-import type { App } from 'obsidian';
+import type { RenderMermaidFn } from '../../../platform/types';
 import { ExportOptions, ExportTarget } from './exportTypes';
 import {
   isDarkThemeActive,
@@ -18,7 +18,7 @@ import {
 import { convertForeignObjectsToSvgText } from './foreignObjects';
 
 export function normalizeTarget(target: ExportTarget): {
-  app?: App;
+  renderMermaid?: RenderMermaidFn;
   code?: string;
   svgMountEl?: HTMLElement | null;
 } {
@@ -29,20 +29,22 @@ export function normalizeTarget(target: ExportTarget): {
     return { svgMountEl: target as HTMLElement };
   }
   return (target || {}) as {
-    app?: App;
+    renderMermaid?: RenderMermaidFn;
     code?: string;
     svgMountEl?: HTMLElement | null;
   };
 }
 
 /**
- * Attempts to re-render the Mermaid diagram via Obsidian's native Mermaid API.
- * Uses dynamic import so headless Node.js tests don't fail when 'obsidian' is absent.
+ * Attempts to re-render the Mermaid diagram via the host engine.
+ * Pure host-function call — no host imports.
  */
-export async function tryRenderMermaidSvg(app: App, code: string): Promise<string | null> {
+export async function tryRenderMermaidSvg(
+  renderMermaid: RenderMermaidFn,
+  code: string
+): Promise<string | null> {
   try {
-    const { renderMermaidSvg } = await import('../../renderer/mermaidRenderer');
-    return await renderMermaidSvg(app, code);
+    return await renderMermaid(code);
   } catch (err) {
     console.warn('Merlay: Re-rendering via Mermaid engine failed, using mount element fallback', err);
     return null;
@@ -145,9 +147,9 @@ export async function getExportSvgResult(
   const target = normalizeTarget(targetInput);
   let svg: SVGSVGElement | null = null;
 
-  // 1. Primary Engine Path: Re-render clean Mermaid SVG if app & code are available
-  if (target.app && target.code) {
-    const rawSvgHtml = await tryRenderMermaidSvg(target.app, target.code);
+  // 1. Primary Engine Path: Re-render clean Mermaid SVG if render fn & code are available
+  if (target.renderMermaid && target.code) {
+    const rawSvgHtml = await tryRenderMermaidSvg(target.renderMermaid, target.code);
     if (rawSvgHtml) {
       svg = parseSvgString(rawSvgHtml);
     }

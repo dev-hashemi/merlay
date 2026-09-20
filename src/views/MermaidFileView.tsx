@@ -2,6 +2,7 @@ import { TextFileView, WorkspaceLeaf } from 'obsidian';
 import * as React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { NativeMermaidView } from '../canvas/NativeMermaidView';
+import { getObsidianHost } from '../obsidian/obsidianHost';
 import { MERLAY_ICON_ID } from '../obsidian/icons';
 import type MerlayPlugin from '../main';
 
@@ -51,7 +52,7 @@ export class MermaidFileView extends TextFileView {
 
     this.root.render(
       <NativeMermaidView
-        app={this.app}
+        host={getObsidianHost(this.app)}
         initialCode={this.currentData}
         onCodeChange={(newCode) => {
           this.currentData = newCode;

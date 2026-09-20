@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { App } from 'obsidian';
+import type { NotifyFn, RenderMermaidFn } from '../../platform/types';
 import {
   ImageIcon,
   VectorIcon,
@@ -18,16 +18,18 @@ export interface ExportPopoverProps {
   isOpen: boolean;
   onClose: () => void;
   svgMountRef: React.RefObject<HTMLDivElement>;
-  app?: App;
+  renderMermaid?: RenderMermaidFn;
   code?: string;
+  notify?: NotifyFn;
 }
 
 export const ExportPopover: React.FC<ExportPopoverProps> = ({
   isOpen,
   onClose,
   svgMountRef,
-  app,
+  renderMermaid,
   code,
+  notify,
 }) => {
   const [includeBackground, setIncludeBackground] = useState<boolean>(true);
   const [scale, setScale] = useState<number>(2);
@@ -65,7 +67,7 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
   if (!isOpen) return null;
 
   const target = {
-    app,
+    renderMermaid,
     code,
     svgMountEl: svgMountRef.current,
   };
@@ -141,7 +143,7 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
           disabled={isExporting}
           onClick={() =>
             handleAction(() =>
-              copyPngToClipboard(target, { includeBackground, scale })
+              copyPngToClipboard(target, { includeBackground, scale, notify })
             )
           }
           title="Copy PNG image to clipboard for easy pasting into notes or chat"
@@ -159,7 +161,7 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
           disabled={isExporting}
           onClick={() =>
             handleAction(() =>
-              copySvgToClipboard(target, { includeBackground })
+              copySvgToClipboard(target, { includeBackground, notify })
             )
           }
           title="Copy raw SVG vector XML to clipboard"
@@ -179,7 +181,7 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
           disabled={isExporting}
           onClick={() =>
             handleAction(() =>
-              downloadPng(target, { includeBackground, scale })
+              downloadPng(target, { includeBackground, scale, notify })
             )
           }
           title="Download diagram as high-resolution PNG image file"
@@ -197,7 +199,7 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
           disabled={isExporting}
           onClick={() =>
             handleAction(() =>
-              downloadSvg(target, { includeBackground })
+              downloadSvg(target, { includeBackground, notify })
             )
           }
           title="Download diagram as scalable vector SVG file"

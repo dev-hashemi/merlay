@@ -4,18 +4,18 @@
  */
 
 import React, { useEffect, useRef, useCallback } from 'react';
-import { App } from 'obsidian';
+import type { RenderMermaidFn } from '../../platform/types';
 import { Rect } from '../types';
 import { MermaidNodeDef, MermaidEdgeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
 import { DiagramDriver } from '../../diagrams/types';
-import { renderMermaidSvg, mountMermaidSvg } from '../renderer/mermaidRenderer';
+import { mountMermaidSvg } from '../renderer/mermaidRenderer';
 import { setupSvgInteractivity } from '../interaction/setupSvgInteractivity';
 import { setupViewOnlyInteractivity } from '../interaction/setupViewOnlyInteractivity';
 import { useCanvasStore } from '../store/canvasStore';
 import { createRendererSelectionHandlers } from './renderer/rendererSelectionHandlers';
 
 export interface UseCanvasRendererOptions {
-  app: App;
+  renderMermaid: RenderMermaidFn;
   code: string;
   driver: DiagramDriver;
   svgMountRef: React.RefObject<HTMLDivElement>;
@@ -39,7 +39,7 @@ export interface UseCanvasRendererOptions {
 }
 
 export function useCanvasRenderer({
-  app,
+  renderMermaid,
   code,
   driver,
   svgMountRef,
@@ -70,7 +70,7 @@ export function useCanvasRenderer({
     if (!mountEl) return;
 
     if (!isEditable) {
-      // The listener lives on mountEl itself, so mountEl.empty() on the next
+      // The listener lives on mountEl itself, so clearing the mount on the next
       // render would NOT remove it — dispose the previous one first or every
       // re-render stacks another click handler (shift-click toggles twice and
       // appears to do nothing).
@@ -152,7 +152,7 @@ export function useCanvasRenderer({
 
     const ticket = ++renderTicketRef.current;
 
-    renderMermaidSvg(app, code)
+    renderMermaid(code)
       .then((svgHtml) => {
         if (ticket !== renderTicketRef.current) return;
         // Parsed as XML and adopted into the DOM (no innerHTML), preserving
@@ -205,5 +205,5 @@ export function useCanvasRenderer({
       // unmounted or re-rendered view.
       renderTicketRef.current++;
     };
-  }, [code, app, setSyntaxError, svgMountRef, displayNodes, displayEdges, displaySubgraphs]);
+  }, [code, renderMermaid, setSyntaxError, svgMountRef, displayNodes, displayEdges, displaySubgraphs]);
 }

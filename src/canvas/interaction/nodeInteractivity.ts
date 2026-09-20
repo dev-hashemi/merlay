@@ -10,6 +10,7 @@ import { Rect } from '../types';
 import { attachTapGestures, guardClickAfterLongPress } from './touchGestures';
 import { matchNodeElementId } from './matchNodeElement';
 import { setupLifelineHitArea } from './lifelineInteractivity';
+import { applyStyles } from '../../platform/dom';
 
 export type StartEndKind = 'start' | 'end' | null;
 
@@ -50,7 +51,7 @@ export function setupNodeInteractivity({
   const nodeElements = mountEl.querySelectorAll(nodeSelector);
   nodeElements.forEach((el) => {
     const htmlEl = el as SVGGraphicsElement;
-    htmlEl.setCssStyles({ cursor: 'pointer' });
+    applyStyles(htmlEl, { cursor: 'pointer' });
 
     const idAttr = htmlEl.getAttribute('id') || '';
     let matchedNodeId = matchNodeElementId(htmlEl, dom, displayNodes, prefixes);
@@ -194,7 +195,7 @@ export function setupNodeInteractivity({
       if (compId) {
         container.setAttribute('data-mermaid-subgraph-id', compId);
       }
-      container.setCssStyles({ cursor: 'pointer' });
+      applyStyles(container, { cursor: 'pointer' });
 
       container.onclick = (e) => {
         e.preventDefault();

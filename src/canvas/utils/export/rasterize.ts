@@ -11,18 +11,6 @@ import {
   parseSvgString,
 } from './svgNormalize';
 
-export function showNotice(message: string): void {
-  try {
-    const req = typeof require === 'function' ? require : (globalThis as { require?: (id: string) => unknown }).require;
-    const obsidian = req ? (req('obsidian') as { Notice?: new (msg: string) => void }) : null;
-    if (obsidian?.Notice) {
-      new obsidian.Notice(message);
-    }
-  } catch {
-    // In headless test environments
-  }
-}
-
 /**
  * Converts an SVG string into a UTF-8 Base64 Data URL.
  */
@@ -103,16 +91,16 @@ export async function copySvgToClipboard(
 ): Promise<boolean> {
   const res = await getExportSvgResult(targetInput, options);
   if (!res) {
-    showNotice('Failed to export: No diagram found');
+    options.notify?.('Failed to export: No diagram found');
     return false;
   }
   try {
     await navigator.clipboard.writeText(res.svgString);
-    showNotice('SVG copied to clipboard');
+    options.notify?.('SVG copied to clipboard');
     return true;
   } catch (e) {
     console.error('Failed to copy SVG to clipboard:', e);
-    showNotice('Failed to copy SVG to clipboard');
+    options.notify?.('Failed to copy SVG to clipboard');
     return false;
   }
 }
@@ -126,7 +114,7 @@ export async function downloadSvg(
 ): Promise<boolean> {
   const res = await getExportSvgResult(targetInput, options);
   if (!res) {
-    showNotice('Failed to export: No diagram found');
+    options.notify?.('Failed to export: No diagram found');
     return false;
   }
   try {
@@ -139,11 +127,11 @@ export async function downloadSvg(
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
-    showNotice('SVG downloaded');
+    options.notify?.('SVG downloaded');
     return true;
   } catch (e) {
     console.error('Failed to download SVG:', e);
-    showNotice('Failed to download SVG');
+    options.notify?.('Failed to download SVG');
     return false;
   }
 }
@@ -157,7 +145,7 @@ export async function copyPngToClipboard(
 ): Promise<boolean> {
   const res = await getExportSvgResult(targetInput, options);
   if (!res) {
-    showNotice('Failed to export: No diagram found');
+    options.notify?.('Failed to export: No diagram found');
     return false;
   }
   const target = normalizeTarget(targetInput);
@@ -171,7 +159,7 @@ export async function copyPngToClipboard(
       target.svgMountEl
     );
     if (!blob) {
-      showNotice('Failed to rasterize PNG');
+      options.notify?.('Failed to rasterize PNG');
       return false;
     }
     await navigator.clipboard.write([
@@ -179,11 +167,11 @@ export async function copyPngToClipboard(
         'image/png': blob,
       }),
     ]);
-    showNotice('PNG copied to clipboard');
+    options.notify?.('PNG copied to clipboard');
     return true;
   } catch (e) {
     console.error('Failed to copy PNG to clipboard:', e);
-    showNotice('Failed to copy PNG to clipboard');
+    options.notify?.('Failed to copy PNG to clipboard');
     return false;
   }
 }
@@ -197,7 +185,7 @@ export async function downloadPng(
 ): Promise<boolean> {
   const res = await getExportSvgResult(targetInput, options);
   if (!res) {
-    showNotice('Failed to export: No diagram found');
+    options.notify?.('Failed to export: No diagram found');
     return false;
   }
   const target = normalizeTarget(targetInput);
@@ -211,7 +199,7 @@ export async function downloadPng(
       target.svgMountEl
     );
     if (!blob) {
-      showNotice('Failed to rasterize PNG');
+      options.notify?.('Failed to rasterize PNG');
       return false;
     }
     const url = URL.createObjectURL(blob);
@@ -222,11 +210,11 @@ export async function downloadPng(
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
-    showNotice('PNG downloaded');
+    options.notify?.('PNG downloaded');
     return true;
   } catch (e) {
     console.error('Failed to download PNG:', e);
-    showNotice('Failed to download PNG');
+    options.notify?.('Failed to download PNG');
     return false;
   }
 }

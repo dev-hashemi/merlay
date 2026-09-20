@@ -13,6 +13,7 @@ import {
   showEdgeHoverHalo,
 } from '../renderer/selectionHalo';
 import { attachTapGestures, guardClickAfterLongPress } from './touchGestures';
+import { applyStyles } from '../../platform/dom';
 
 export interface SetupEdgeInteractivityOptions {
   mountEl: HTMLElement;
@@ -135,7 +136,7 @@ export function setupEdgeInteractivity({
     const targetEdgeId = targetEdge.id;
 
     pathEl.setAttribute('data-mermaid-edge-id', targetEdgeId);
-    pathEl.setCssStyles({ cursor: 'pointer' });
+    applyStyles(pathEl, { cursor: 'pointer' });
 
     // Create an invisible 10px stroke hit overlay
     const isLine = pathEl.tagName.toLowerCase() === 'line';
@@ -157,7 +158,7 @@ export function setupEdgeInteractivity({
     hitArea.setAttribute('stroke', 'transparent');
     hitArea.setAttribute('stroke-width', '14');
     hitArea.setAttribute('stroke-linecap', 'round');
-    hitArea.setCssStyles({ cursor: 'pointer', pointerEvents: 'stroke' });
+    applyStyles(hitArea, { cursor: 'pointer', pointerEvents: 'stroke' });
 
     pathEl.parentNode?.insertBefore(hitArea, pathEl.nextSibling);
 
@@ -274,7 +275,7 @@ export function setupEdgeInteractivity({
     const targetEdgeId = targetEdge.id;
 
     htmlEl.setAttribute('data-mermaid-edge-id', targetEdgeId);
-    htmlEl.setCssStyles({ cursor: 'pointer' });
+    applyStyles(htmlEl, { cursor: 'pointer' });
 
     htmlEl.onclick = (e) => {
       const edgeDef = displayEdges.find((ed) => ed.id === targetEdgeId) || targetEdge;

@@ -1,5 +1,6 @@
 import { Rect } from '../types';
 import { attachTapGestures, guardClickAfterLongPress } from './touchGestures';
+import { applyStyles } from '../../platform/dom';
 
 export interface SetupLifelineHitAreaOptions {
   htmlEl: SVGGraphicsElement;
@@ -35,7 +36,7 @@ export function setupLifelineHitArea({
   hitArea.setAttribute('fill', 'none');
   hitArea.setAttribute('stroke', 'transparent');
   hitArea.setAttribute('stroke-width', '28');
-  hitArea.setCssStyles({ cursor: 'pointer', pointerEvents: 'stroke' });
+  applyStyles(hitArea, { cursor: 'pointer', pointerEvents: 'stroke' });
 
   const updateLifelineHover = (e: MouseEvent) => {
     const lineRect = getLocalRect(lineEl);

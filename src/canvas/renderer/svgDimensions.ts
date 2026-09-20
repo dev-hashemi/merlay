@@ -1,8 +1,10 @@
 /**
  * Normalizes SVG dimensions so diagrams render at their true 1:1 natural scale
  * rather than being shrunk or constrained by container width, viewport width, or
- * Obsidian's responsive `max-width: 100%` stylesheet rules.
+ * host responsive `max-width: 100%` stylesheet rules.
  */
+import { applyStyles } from '../../platform/dom';
+
 export function normalizeSvgDimensions(svg: SVGSVGElement): void {
   let naturalWidth: number | null = null;
   let naturalHeight: number | null = null;
@@ -38,9 +40,9 @@ export function normalizeSvgDimensions(svg: SVGSVGElement): void {
   }
 
   // Dynamic pixel dimensions cannot be expressed as static CSS classes, so they
-  // go through Obsidian's setCssStyles helper (plain inline styles already beat
+  // are applied as inline styles (plain inline styles already beat
   // non-important stylesheet rules). The max-width override against
-  // Obsidian/theme responsive constraints lives in styles.css
+  // host responsive constraints lives in styles.css
   // (#merlay-svg-mount.mermaid-native-svg-mount svg).
   const inlineStyles: Partial<CSSStyleDeclaration> = {};
   if (naturalWidth !== null) {
@@ -54,5 +56,5 @@ export function normalizeSvgDimensions(svg: SVGSVGElement): void {
     inlineStyles.minHeight = `${naturalHeight}px`;
   }
   inlineStyles.maxWidth = 'none';
-  svg.setCssStyles(inlineStyles);
+  applyStyles(svg, inlineStyles);
 }

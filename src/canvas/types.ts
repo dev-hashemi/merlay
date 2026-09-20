@@ -1,4 +1,4 @@
-import { App } from 'obsidian';
+import type { HostAdapter } from '../platform/types';
 import { ArrowType } from '../diagrams/viewModel';
 
 export type CursorMode = 'select' | 'hand';
@@ -42,7 +42,7 @@ export interface PopoverPos {
 }
 
 export interface NativeMermaidViewProps {
-  app: App;
+  host: HostAdapter;
   initialCode: string;
   onCodeChange: (newCode: string) => void;
   onClose?: () => void;
