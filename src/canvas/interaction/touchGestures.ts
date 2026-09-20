@@ -4,7 +4,9 @@
  * Mouse pointers are ignored entirely, so desktop click / double-click
  * semantics stay exactly as they are. Touch and pen get:
  * - double-tap (second tap within the window edits, e.g. rename),
- * - long-press (stationary hold multi-selects / opens context),
+ * - long-press (stationary hold suppresses the release click so it never
+ *   selects — HUD opens on single tap only; hold-then-drag flows into
+ *   drag-to-connect / pan via the movement threshold),
  * while single taps keep flowing through the existing onclick handlers.
  */
 

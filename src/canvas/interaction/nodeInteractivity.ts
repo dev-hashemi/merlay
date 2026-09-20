@@ -129,11 +129,13 @@ export function setupNodeInteractivity({
       onStartEditingNode(targetNodeId, htmlEl, e);
     };
 
-    // Touch: single-tap selects via click; double-tap renames; long-press
-    // multi-selects (mirrors Shift+click). Mouse pointers are ignored.
+    // Touch: single-tap selects via click; double-tap renames. Long-press
+    // never selects (HUD opens on single tap only) — the no-op arms
+    // release-click suppression while hold-then-drag flows into drag-connect.
+    // Mouse pointers are ignored.
     const nodeTap = attachTapGestures(htmlEl, {
       onDoubleTap: () => onStartEditingNode(targetNodeId, htmlEl),
-      onLongPress: () => onSelectNode(targetNodeId, true, htmlEl),
+      onLongPress: () => undefined,
     });
     guardClickAfterLongPress(htmlEl, nodeTap);
 

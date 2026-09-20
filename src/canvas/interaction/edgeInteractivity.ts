@@ -229,10 +229,12 @@ export function setupEdgeInteractivity({
       onEdgeClick(e, targetEdge, pathEl);
     };
 
-    // Touch: double-tap edits the label; long-press multi-selects.
+    // Touch: double-tap edits the label. Long-press never selects (HUD opens
+    // on single tap only) — the no-op arms release-click suppression while
+    // hold-then-drag flows into drag-connect.
     const edgeTap = attachTapGestures(hitArea, {
       onDoubleTap: () => onStartEditingEdge(targetEdgeId, pathEl),
-      onLongPress: () => onSelectEdge(targetEdge, pathEl, true),
+      onLongPress: () => undefined,
     });
     guardClickAfterLongPress(hitArea, edgeTap);
     guardClickAfterLongPress(pathEl, edgeTap);
