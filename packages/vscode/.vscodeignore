@@ -6,3 +6,7 @@ tsconfig.json
 esbuild.mjs
 .vscode/**
 .gitignore
+# Runtime is fully bundled into dist/ (only `vscode` is external).
+# Without this, vsce follows the workspace symlink
+# node_modules/@merlay/core and packages the entire monorepo.
+node_modules/**

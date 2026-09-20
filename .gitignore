@@ -22,7 +22,6 @@ Thumbs.db
 *.swo
 
 # Binary assets (logos in assets/ are already tracked; new ones need git add -f)
-*.png
 *.svg
 
 # Local environment (machine paths, tokens — never commit)

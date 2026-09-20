@@ -4,6 +4,7 @@
   "description": "Visual overlay editor for Mermaid diagrams. Mermaid, your way.",
   "version": "0.4.0",
   "publisher": "merlay",
+  "icon": "icon.png",
   "engines": {
     "vscode": "^1.85.0"
   },
