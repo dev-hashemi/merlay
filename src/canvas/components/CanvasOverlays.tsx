@@ -30,7 +30,9 @@ export interface CanvasOverlaysProps {
   isSpacePressed: boolean;
   canRenameSelectedNode?: boolean;
   svgMountRef: React.RefObject<HTMLDivElement>;
-  handleStartEditingNode: (nodeId: string, nodeEl: Element) => void;
+  handleStartEditingNode: (nodeId: string, nodeEl: Element, event?: MouseEvent | TouchEvent) => void;
+  onAddNodeAttribute?: (nodeId: string) => void;
+  onAddNodeMethod?: (nodeId: string) => void;
 }
 
 export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
@@ -44,6 +46,8 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
   canRenameSelectedNode,
   svgMountRef,
   handleStartEditingNode,
+  onAddNodeAttribute,
+  onAddNodeMethod,
 }) => {
   const { selectedNodeId, selectedEdgeId, selectedSubgraphId } = selection;
   const driver = mutations.driver;
@@ -71,6 +75,13 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
   const selectedNodeLink =
     selectedNodeId && !selection.isMultiSelect
       ? driver.getNodeLink?.(mutations.ast, selectedNodeId)
+      : undefined;
+
+  const nodeMemberCapabilities =
+    selectedNodeId &&
+    driver.capabilities.supportsNodeMembers &&
+    driver.mutations.getNodeMemberCapabilities
+      ? driver.mutations.getNodeMemberCapabilities(mutations.ast, selectedNodeId)
       : undefined;
 
   return (
@@ -172,6 +183,9 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         onSetDefaultStyle={mutations.handleSetDefaultNodeStyle}
         onClearDefaultStyle={mutations.handleClearDefaultNodeStyle}
         hasDefaultStyle={mutations.hasDefaultNodeStyle}
+        nodeMemberCapabilities={nodeMemberCapabilities}
+        onAddNodeAttribute={onAddNodeAttribute}
+        onAddNodeMethod={onAddNodeMethod}
         currentSubgraphId={
           selectedNodeId ? mutations.displayNodes.get(selectedNodeId)?.subgraphId : undefined
         }
@@ -295,6 +309,10 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         onEditNodeLabelChange={inlineEditing.setEditNodeLabel}
         onFinishEditingNode={inlineEditing.handleFinishEditingNode}
         onCancelEditingNode={inlineEditing.cancelEditingNode}
+        editingMemberSection={inlineEditing.editingMemberSection}
+        onEditMemberSectionTextChange={inlineEditing.setEditMemberSectionText}
+        onFinishEditingMemberSection={inlineEditing.handleFinishEditingMemberSection}
+        onCancelEditingMemberSection={inlineEditing.cancelEditingMemberSection}
         editingEdgeId={inlineEditing.editingEdgeId}
         editingEdgePos={inlineEditing.editingEdgePos}
         editEdgeLabel={inlineEditing.editEdgeLabel}

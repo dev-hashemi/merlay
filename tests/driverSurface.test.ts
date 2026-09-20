@@ -7,6 +7,7 @@ const flowchartDriver = getDriver('flowchart')!;
 const stateDriver = getDriver('stateDiagram')!;
 const sequenceDriver = getDriver('sequenceDiagram')!;
 const mindmapDriver = getDriver('mindmap')!;
+const classDriver = getDriver('classDiagram')!;
 
 function roundTrip(driver: DiagramDriver, code: string) {
   const ast = driver.parse(code);
@@ -206,8 +207,76 @@ test('Driver surface: mindmap mutations work through the unified interface', () 
   assert.strictEqual(reparsed.nodes.size, ast.nodes.size);
 });
 
+test('Driver surface: class diagram capabilities, labels, and projection', () => {
+  assert.deepEqual(classDriver.capabilities, {
+    supportsDirection: true,
+    supportsNodeKinds: true,
+    supportsEdgeTypes: true,
+    supportsEdgeStyles: false,
+    supportsGroups: true,
+    hasAnchors: false,
+    supportsDefaultStyles: true,
+    supportsNodeStyles: true,
+    supportsNodeMembers: true,
+  });
+  assert.strictEqual(classDriver.labels.node, 'Class');
+  assert.strictEqual(classDriver.labels.group, 'Namespace');
+  assert.strictEqual(classDriver.mutations.anchors, undefined);
+  assert.ok(classDriver.nodeKindOptions.length > 0);
+
+  const { ast, code } = roundTrip(
+    classDriver,
+    'classDiagram\n    direction LR\n    class Animal {\n        +String name\n    }\n    class Duck\n    Animal <|-- Duck\n'
+  );
+  const projection = classDriver.project(ast);
+  assert.strictEqual(projection.nodes.size, 2);
+  assert.strictEqual(projection.edges.length, 1);
+  assert.strictEqual(projection.direction, 'LR');
+  assert.strictEqual(projection.nodes.get('Animal')!.shape, 'rectangle');
+  assert.ok(code.includes('classDiagram'));
+});
+
+test('Driver surface: class diagram mutations work through the unified interface', () => {
+  const driver = classDriver;
+  const ast = driver.parse('classDiagram\n    class Animal\n');
+
+  const childId = driver.mutations.addChildNode(ast, 'Animal', 'Dog');
+  const proj = driver.project(ast);
+  assert.ok(proj.nodes.has(childId));
+  assert.ok(proj.edges.some((e) => e.from === 'Animal' && e.to === childId));
+
+  const code = driver.serialize(ast);
+  assert.ok(code.includes('Animal <|--'));
+  const reparsed = driver.parse(code);
+  assert.strictEqual(reparsed.classes.size, ast.classes.size);
+
+  // Member mutations via driver interface
+  assert.ok(driver.mutations.addNodeMember);
+  assert.ok(driver.mutations.getNodeMembers);
+  assert.ok(driver.mutations.getNodeMemberCapabilities);
+  const caps = driver.mutations.getNodeMemberCapabilities(ast, 'Animal');
+  assert.strictEqual(caps.supportsAttributes, true);
+  assert.strictEqual(caps.supportsMethods, true);
+
+  driver.mutations.addNodeMember(ast, 'Animal', 'attribute', '+String species');
+  driver.mutations.addNodeMember(ast, 'Animal', 'method', '+makeSound()');
+  const members = driver.mutations.getNodeMembers(ast, 'Animal');
+  assert.deepEqual(members, {
+    attributes: ['+String species'],
+    methods: ['+makeSound()'],
+  });
+
+  assert.ok(driver.mutations.setNodeMembers);
+  driver.mutations.setNodeMembers(ast, 'Animal', 'attribute', ['age: int', 'species']);
+  const membersAfterSet = driver.mutations.getNodeMembers(ast, 'Animal');
+  assert.deepEqual(membersAfterSet.attributes, [
+    '+age: int',
+    '+species',
+  ]);
+});
+
 test('Driver surface: clone never aliases committed AST state', () => {
-  for (const driver of [flowchartDriver, stateDriver, sequenceDriver, mindmapDriver]) {
+  for (const driver of [flowchartDriver, stateDriver, sequenceDriver, mindmapDriver, classDriver]) {
     const ast = driver.parse(driver.createDefault('TD'));
     const cloned = driver.clone(ast);
     assert.notEqual(cloned, ast);
@@ -240,4 +309,13 @@ test('Driver surface: groups through the unified interface', () => {
   );
   assert.ok(seqAst.boxes.has(seqGroupId));
   assert.strictEqual(seqAst.participants.get('Alice')!.boxId, seqGroupId);
+
+  const clsAst = classDriver.parse('classDiagram\n    class Shape\n');
+  const clsGroupId = classDriver.mutations.createGroupWithMembers(
+    clsAst,
+    'Geometry',
+    ['Shape']
+  );
+  assert.ok(clsAst.namespaces.has(clsGroupId));
+  assert.strictEqual(clsAst.classes.get('Shape')!.namespaceId, clsGroupId);
 });

@@ -471,7 +471,7 @@ pre.language-mermaid {
 }
 
 #merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-hovered-clone {
-  stroke-width: 3px;
+  stroke-width: 2px;
 }
 
 #merlay-svg-mount.mermaid-native-svg-mount line.actor-line.mermaid-node-selected {
@@ -773,6 +773,21 @@ pre.language-mermaid {
   padding: 3px 8px;
   outline: none;
 }
+
+.mermaid-inline-member-input,
+.mermaid-inline-member-textarea {
+  text-align: left;
+  font-family: var(--font-monospace, monospace);
+  font-size: 11.5px;
+  line-height: 1.4;
+  padding: 3px 6px;
+  border-width: 1.5px;
+  border-radius: 4px;
+  resize: vertical;
+  white-space: pre;
+  box-sizing: border-box;
+}
+
 
 /* 6. Side Code Syntax Drawer */
 .mermaid-side-code-drawer {
@@ -1246,6 +1261,7 @@ pre.language-mermaid {
   background: var(--mermaid-accent-subtle);
   border-color: var(--mermaid-accent);
 }
+
 
 /* Theme Popover */
 .mermaid-theme-wrapper {
@@ -1751,6 +1767,8 @@ pre.language-mermaid {
   /* 16px+ inputs stop Android from zooming on focus. */
   .mermaid-inline-node-input,
   .mermaid-inline-edge-input,
+  .mermaid-inline-member-input,
+  .mermaid-inline-member-textarea,
   .mermaid-edge-input,
   .mermaid-code-drawer-textarea {
     font-size: 16px;

@@ -6,7 +6,7 @@ import React from 'react';
 import { ActiveNodePopover, PopoverPos, Rect } from '../types';
 import { ThemePreset } from '../constants';
 import { MermaidNodeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
-import { DiagramDriver } from '../../diagrams/types';
+import { DiagramDriver, NodeMemberCapabilities } from '../../diagrams/types';
 import { NodeActionHud } from '../components/NodeActionHud';
 import { KindPopover } from '../components/KindPopover';
 import { NodeStylePopover } from '../components/NodeStylePopover';
@@ -41,6 +41,10 @@ export interface NodeOverlaysProps {
   onSetDefaultStyle?: () => void;
   onClearDefaultStyle?: () => void;
   hasDefaultStyle?: boolean;
+
+  onAddNodeAttribute?: (nodeId: string) => void;
+  onAddNodeMethod?: (nodeId: string) => void;
+  nodeMemberCapabilities?: NodeMemberCapabilities;
 
   currentSubgraphId: string | undefined;
   displaySubgraphs: Map<string, MermaidSubgraphDef>;
@@ -78,6 +82,9 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
   onSetDefaultStyle,
   onClearDefaultStyle,
   hasDefaultStyle,
+  onAddNodeAttribute,
+  onAddNodeMethod,
+  nodeMemberCapabilities,
   currentSubgraphId,
   displaySubgraphs,
   onSelectSubgraphMembership,
@@ -111,6 +118,16 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
           canRename={canRenameNode}
           nodeLinkUrl={nodeLinkUrl}
           onOpenNodeLink={onOpenNodeLink}
+          onAddAttribute={
+            onAddNodeAttribute ? () => onAddNodeAttribute(selectedNodeId) : undefined
+          }
+          onAddMethod={
+            onAddNodeMethod ? () => onAddNodeMethod(selectedNodeId) : undefined
+          }
+          supportsAttributes={nodeMemberCapabilities?.supportsAttributes ?? true}
+          supportsMethods={nodeMemberCapabilities?.supportsMethods ?? true}
+          attributeLabel={nodeMemberCapabilities?.attributeLabel}
+          methodLabel={nodeMemberCapabilities?.methodLabel}
           hideSprout={
             !!driver.mutations.anchors?.isAnchor(selectedNodeId)
           }

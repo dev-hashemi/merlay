@@ -164,7 +164,7 @@ export const EDGE_SELECTED_CLONE_CLS = 'mermaid-edge-selected-clone';
 export const EDGE_HOVERED_CLONE_CLS = 'mermaid-edge-hovered-clone';
 
 export const EDGE_SELECTED_HALO_WIDTH = 3.5;
-export const EDGE_HOVERED_HALO_WIDTH = 3;
+export const EDGE_HOVERED_HALO_WIDTH = 2;
 
 /** Read-only parse of an edge's effective stroke width (attribute or inline style). No style writes. */
 function parseEdgeStrokeWidth(el: Element): number | null {
@@ -197,6 +197,9 @@ function cloneEdgeForHalo(
   clone.removeAttribute('style');
   clone.removeAttribute('fill');
   clone.removeAttribute('stroke');
+  clone.removeAttribute('marker-start');
+  clone.removeAttribute('marker-end');
+  clone.removeAttribute('marker-mid');
   clone.setAttribute('fill', 'none');
   clone.setAttribute('class', `${original.getAttribute('class') || ''} ${cloneCls}`.trim());
   clone.setAttribute('data-mermaid-edge-id', edgeId);

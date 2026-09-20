@@ -3,6 +3,7 @@ import { FlowchartDriver } from './flowchart/flowchartDriver';
 import { StateDiagramDriver } from './state/stateDriver';
 import { SequenceDiagramDriver } from './sequence/sequenceDriver';
 import { MindmapDriver } from './mindmap/mindmapDriver';
+import { ClassDiagramDriver } from './class/classDriver';
 import { createUnsupportedDiagramDriver } from './unsupported/unsupportedDriver';
 import { findFirstCodeLine } from './common/diagramHeader';
 
@@ -17,6 +18,7 @@ registerDriver(FlowchartDriver);
 registerDriver(StateDiagramDriver);
 registerDriver(SequenceDiagramDriver);
 registerDriver(MindmapDriver);
+registerDriver(ClassDiagramDriver);
 
 export const DIAGRAM_DISPLAY_NAMES: Record<SupportedDiagramType, string> = {
   flowchart: 'Flowchart',
@@ -224,5 +226,11 @@ export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
     label: 'Mindmap',
     description: 'Hierarchical idea trees, brainstorms, outlines, and knowledge breakdown.',
     defaultCode: `mindmap\n  root((Central Topic))\n    Idea 1\n      Detail A\n      Detail B\n    Idea 2\n      Detail C\n`,
+  },
+  {
+    type: 'classDiagram',
+    label: 'Class Diagram',
+    description: 'Object-oriented structures, interfaces, inheritance, and associations.',
+    defaultCode: `classDiagram\n    class Animal {\n        +String name\n        +move()\n    }\n    class Duck {\n        +quack()\n    }\n    Animal <|-- Duck\n`,
   },
 ];

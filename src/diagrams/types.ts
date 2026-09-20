@@ -81,6 +81,8 @@ export interface DiagramCapabilities {
   supportsDefaultStyles?: boolean;
   /** Whether individual nodes support custom styling / colors. Defaults to true. */
   supportsNodeStyles?: boolean;
+  /** Node internal rows/members (e.g. attributes/methods in class diagrams, fields in ER diagrams). */
+  supportsNodeMembers?: boolean;
 }
 
 /** UI vocabulary so components never hard-code diagram-specific nouns. */
@@ -95,6 +97,21 @@ export interface DiagramLabels {
   addChild: string; // "Next Step" | "Next State"
   insertNodeOnEdge: string; // "Insert Step" | "Insert State"
   edgeLabelPlaceholder: string;
+  member?: string; // "Row" | "Member"
+  members?: string; // "Rows" | "Members"
+  addMember?: string; // "Add Row" | "Add Member"
+}
+
+export interface NodeMemberCapabilities {
+  supportsAttributes: boolean;
+  supportsMethods: boolean;
+  attributeLabel?: string;
+  methodLabel?: string;
+}
+
+export interface NodeMembersGroup {
+  attributes: string[];
+  methods: string[];
 }
 
 /** One entry in the node-kind picker (shape or state type). */
@@ -141,6 +158,36 @@ export interface DiagramMutations<TAst = unknown> {
   isNodeTextEditable(ast: TAst, nodeId: string): boolean;
   updateNodeKind(ast: TAst, nodeId: string, kind: string): void;
   updateNodesKind(ast: TAst, nodeIds: Iterable<string>, kind: string): void;
+
+  // Node rows / members (optional — supportsNodeMembers)
+  getNodeMemberCapabilities?(ast: TAst, nodeId: string): NodeMemberCapabilities;
+  getNodeMembers?(ast: TAst, nodeId: string): NodeMembersGroup;
+  setNodeMembers?(
+    ast: TAst,
+    nodeId: string,
+    kind: 'attribute' | 'method',
+    members: string[]
+  ): void;
+  addNodeMember?(
+    ast: TAst,
+    nodeId: string,
+    kind: 'attribute' | 'method',
+    rawText?: string,
+    afterIndex?: number
+  ): void;
+  updateNodeMember?(
+    ast: TAst,
+    nodeId: string,
+    kind: 'attribute' | 'method',
+    index: number,
+    rawText: string
+  ): void;
+  deleteNodeMember?(
+    ast: TAst,
+    nodeId: string,
+    kind: 'attribute' | 'method',
+    index: number
+  ): void;
 
   // Connections
   connect(ast: TAst, fromId: string, toId: string, context?: ConnectionContext): void;

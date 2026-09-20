@@ -22,7 +22,7 @@ export interface NodeLink {
  * callback form has no URL to open).
  */
 export function parseClickLink(text: string): NodeLink | null {
-  const m = /^\s*click\s+(\S+)\s+(?:href\s+)?["']([^"']+)["']/i.exec(text);
+  const m = /^\s*(?:click|link)\s+(\S+)\s+(?:href\s+)?["']([^"']+)["']/i.exec(text);
   if (!m) return null;
   return { nodeId: m[1], url: m[2] };
 }

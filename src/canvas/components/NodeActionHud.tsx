@@ -49,6 +49,14 @@ export interface NodeActionHudProps {
   /** External hyperlink from a preserved click/link statement (edit-mode clicks select, so the link opens from here). */
   nodeLinkUrl?: string;
   onOpenNodeLink?: () => void;
+
+  // Member additions directly from HUD
+  onAddAttribute?: () => void;
+  onAddMethod?: () => void;
+  supportsAttributes?: boolean;
+  supportsMethods?: boolean;
+  attributeLabel?: string;
+  methodLabel?: string;
 }
 
 export const NodeActionHud: React.FC<NodeActionHudProps> = ({
@@ -71,6 +79,12 @@ export const NodeActionHud: React.FC<NodeActionHudProps> = ({
   hideDelete = false,
   nodeLinkUrl,
   onOpenNodeLink,
+  onAddAttribute,
+  onAddMethod,
+  supportsAttributes = true,
+  supportsMethods = true,
+  attributeLabel,
+  methodLabel,
 }) => {
   const { labels, capabilities } = driver;
   const isAnchor = !!driver.mutations.anchors?.isAnchor(selectedNodeId);
@@ -98,6 +112,32 @@ export const NodeActionHud: React.FC<NodeActionHudProps> = ({
         >
           <PlusIcon size={13} />
           <span>{labels.addChild}</span>
+        </button>
+      )}
+
+      {/* Add Attribute / Value Button (for class diagrams, enum, etc.) */}
+      {capabilities.supportsNodeMembers && !isAnchor && supportsAttributes && onAddAttribute && (
+        <button
+          type="button"
+          className="mermaid-hud-btn"
+          onClick={onAddAttribute}
+          title={`Add ${attributeLabel || 'Attribute'}`}
+        >
+          <PlusIcon size={12} />
+          <span>{attributeLabel || 'Attribute'}</span>
+        </button>
+      )}
+
+      {/* Add Method / Operation Button (for class diagrams, interfaces, services, etc.) */}
+      {capabilities.supportsNodeMembers && !isAnchor && supportsMethods && onAddMethod && (
+        <button
+          type="button"
+          className="mermaid-hud-btn"
+          onClick={onAddMethod}
+          title={`Add ${methodLabel || 'Method'}`}
+        >
+          <PlusIcon size={12} />
+          <span>{methodLabel || 'Method'}</span>
         </button>
       )}
 

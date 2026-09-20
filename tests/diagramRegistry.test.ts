@@ -99,14 +99,15 @@ test('Diagram Registry: detectDiagramType for all 20+ mermaid diagrams', () => {
 });
 
 test('Diagram Registry: isDiagramSupported', () => {
-  // Only 3 registered editable drivers return true
+  // Registered editable drivers return true
   assert.strictEqual(isDiagramSupported('flowchart'), true);
   assert.strictEqual(isDiagramSupported('stateDiagram'), true);
   assert.strictEqual(isDiagramSupported('sequenceDiagram'), true);
+  assert.strictEqual(isDiagramSupported('mindmap'), true);
+  assert.strictEqual(isDiagramSupported('classDiagram'), true);
 
   // All other types return false (graceful view-only)
   assert.strictEqual(isDiagramSupported('pie'), false);
-  assert.strictEqual(isDiagramSupported('classDiagram'), false);
   assert.strictEqual(isDiagramSupported('gantt'), false);
   assert.strictEqual(isDiagramSupported('gitGraph'), false);
   assert.strictEqual(isDiagramSupported('unknown'), false);

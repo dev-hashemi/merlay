@@ -2,6 +2,13 @@ import { useState, useCallback } from 'react';
 import { Rect } from '../types';
 import { MermaidEdgeDef, MermaidNodeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
 
+export interface EditingMemberSectionState {
+  nodeId: string;
+  kind: 'attribute' | 'method';
+  text: string;
+  pos: Rect;
+}
+
 export interface UseInlineEditingOptions {
   displayNodes: Map<string, MermaidNodeDef>;
   displayEdges: MermaidEdgeDef[];
@@ -11,6 +18,11 @@ export interface UseInlineEditingOptions {
   onCommitEdgeLabel: (edgeId: string, newLabel: string) => void;
   onCommitSubgraphLabel: (subgraphId: string, newLabel: string) => void;
   onClearOtherSelections: (keepType: 'node' | 'edge' | 'subgraph', id: string) => void;
+  onCommitMemberSection?: (
+    nodeId: string,
+    kind: 'attribute' | 'method',
+    lines: string[]
+  ) => void;
 }
 
 export function useInlineEditing({
@@ -22,11 +34,15 @@ export function useInlineEditing({
   onCommitEdgeLabel,
   onCommitSubgraphLabel,
   onClearOtherSelections,
+  onCommitMemberSection,
 }: UseInlineEditingOptions) {
   // Node inline editing
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [editNodeLabel, setEditNodeLabel] = useState<string>('');
   const [editingPos, setEditingPos] = useState<Rect | null>(null);
+
+  // Member section (attributes / methods) multiline inline editing
+  const [editingMemberSection, setEditingMemberSection] = useState<EditingMemberSectionState | null>(null);
 
   // Edge inline editing
   const [editingEdgeId, setEditingEdgeId] = useState<string | null>(null);
@@ -43,6 +59,7 @@ export function useInlineEditing({
       onClearOtherSelections('node', nodeId);
       setEditingEdgeId(null);
       setEditingSubgraphId(null);
+      setEditingMemberSection(null);
 
       const rect = getLocalRect(nodeEl);
       if (rect) {
@@ -73,11 +90,50 @@ export function useInlineEditing({
     setEditingPos(null);
   }, []);
 
+  const startEditingMemberSection = useCallback(
+    (
+      nodeId: string,
+      kind: 'attribute' | 'method',
+      pos: Rect,
+      initialText: string
+    ) => {
+      onClearOtherSelections('node', nodeId);
+      setEditingNodeId(null);
+      setEditingEdgeId(null);
+      setEditingSubgraphId(null);
+
+      setEditingMemberSection({
+        nodeId,
+        kind,
+        text: initialText,
+        pos,
+      });
+    },
+    [onClearOtherSelections]
+  );
+
+  const handleFinishEditingMemberSection = useCallback(() => {
+    if (!editingMemberSection) return;
+    const { nodeId, kind, text } = editingMemberSection;
+    setEditingMemberSection(null);
+    const lines = text.split('\n');
+    onCommitMemberSection?.(nodeId, kind, lines);
+  }, [editingMemberSection, onCommitMemberSection]);
+
+  const cancelEditingMemberSection = useCallback(() => {
+    setEditingMemberSection(null);
+  }, []);
+
+  const setEditMemberSectionText = useCallback((text: string) => {
+    setEditingMemberSection((prev) => (prev ? { ...prev, text } : null));
+  }, []);
+
   const startEditingEdge = useCallback(
     (edgeId: string, anchorEl: Element) => {
       onClearOtherSelections('edge', edgeId);
       setEditingNodeId(null);
       setEditingSubgraphId(null);
+      setEditingMemberSection(null);
 
       const rect = getLocalRect(anchorEl);
       if (rect) {
@@ -113,6 +169,7 @@ export function useInlineEditing({
       onClearOtherSelections('subgraph', subId);
       setEditingNodeId(null);
       setEditingEdgeId(null);
+      setEditingMemberSection(null);
 
       const rect = getLocalRect(subEl);
       if (rect) {
@@ -156,6 +213,13 @@ export function useInlineEditing({
     startEditingNode,
     handleFinishEditingNode,
     cancelEditingNode,
+
+    editingMemberSection,
+    setEditingMemberSection,
+    setEditMemberSectionText,
+    startEditingMemberSection,
+    handleFinishEditingMemberSection,
+    cancelEditingMemberSection,
 
     editingEdgeId,
     setEditingEdgeId,

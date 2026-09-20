@@ -20,7 +20,7 @@ export interface SetupNodeInteractivityOptions {
   getLocalPoint?: (clientX: number, clientY: number) => { x: number; y: number } | null;
   onSelectNode: (targetNodeId: string, isMulti: boolean, htmlEl: Element) => void;
   onSelectSubgraph: (targetSubId: string, htmlEl: Element) => void;
-  onStartEditingNode: (nodeId: string, nodeEl: Element) => void;
+  onStartEditingNode: (nodeId: string, nodeEl: Element, event?: MouseEvent | TouchEvent) => void;
   onStartEditingSubgraph: (subId: string, subEl: Element) => void;
   onHoverNode: (nodeId: string, rect: Rect | null, startEndKind?: StartEndKind) => void;
 }
@@ -196,7 +196,7 @@ export function setupNodeInteractivity({
 
     htmlEl.ondblclick = (e) => {
       e.stopPropagation();
-      onStartEditingNode(targetNodeId, htmlEl);
+      onStartEditingNode(targetNodeId, htmlEl, e);
     };
 
     // Touch: single-tap selects via click; double-tap renames; long-press

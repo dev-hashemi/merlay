@@ -267,6 +267,46 @@ export function useDiagramMutations(options: UseDiagramMutationsOptions) {
     }
   }, [m, driver, applyMutation, setSelectedNodeId]);
 
+  const handleSetNodeMembers = useCallback(
+    (nodeId: string, kind: 'attribute' | 'method', members: string[]) => {
+      if (!m.setNodeMembers) return;
+      applyMutation((a) => {
+        m.setNodeMembers!(a, nodeId, kind, members);
+      }, nodeId);
+    },
+    [m, applyMutation]
+  );
+
+  const handleAddNodeMember = useCallback(
+    (nodeId: string, kind: 'attribute' | 'method', rawText?: string, afterIndex?: number) => {
+      if (!m.addNodeMember) return;
+      applyMutation((a) => {
+        m.addNodeMember!(a, nodeId, kind, rawText, afterIndex);
+      }, nodeId);
+    },
+    [m, applyMutation]
+  );
+
+  const handleUpdateNodeMember = useCallback(
+    (nodeId: string, kind: 'attribute' | 'method', index: number, rawText: string) => {
+      if (!m.updateNodeMember) return;
+      applyMutation((a) => {
+        m.updateNodeMember!(a, nodeId, kind, index, rawText);
+      }, nodeId);
+    },
+    [m, applyMutation]
+  );
+
+  const handleDeleteNodeMember = useCallback(
+    (nodeId: string, kind: 'attribute' | 'method', index: number) => {
+      if (!m.deleteNodeMember) return;
+      applyMutation((a) => {
+        m.deleteNodeMember!(a, nodeId, kind, index);
+      }, nodeId);
+    },
+    [m, applyMutation]
+  );
+
   const handleToggleDirection = useCallback(() => {
     if (!driver.capabilities.supportsDirection) return;
     const currentDir = m.getDirection(ast) || 'TD';
@@ -855,6 +895,10 @@ export function useDiagramMutations(options: UseDiagramMutationsOptions) {
     handleClearDefaultNodeStyle,
     hasDefaultNodeStyle: Boolean(m.getDefaultStyle?.(ast)),
     handleAddStandaloneStep,
+    handleSetNodeMembers,
+    handleAddNodeMember,
+    handleUpdateNodeMember,
+    handleDeleteNodeMember,
     handleToggleDirection,
     currentTheme,
     handleSetTheme,
