@@ -3,6 +3,7 @@
  */
 
 export * from './nodeMutations';
+export * from './memberMutations';
 export * from './edgeMutations';
 export * from './groupMutations';
 export * from './styleMutations';

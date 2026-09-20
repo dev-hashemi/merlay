@@ -7,7 +7,7 @@
 import React from 'react';
 import { CursorMode, SelectionBox } from '../types';
 import { useCanvasSelection } from '../hooks/useCanvasSelection';
-import { useCanvasStore } from '../store/canvasStore';import { useDiagramMutations } from '../hooks/useDiagramMutations';
+import { useDiagramMutations } from '../hooks/useDiagramMutations';
 import { useInlineEditing } from '../hooks/useInlineEditing';
 import { useCanvasMouseInteractions } from '../hooks/useCanvasMouseInteractions';
 
@@ -19,6 +19,12 @@ import { EdgeOverlays } from '../overlays/EdgeOverlays';
 import { SubgraphOverlays } from '../overlays/SubgraphOverlays';
 import { MultiSelectOverlays } from '../overlays/MultiSelectOverlays';
 import { InlineEditOverlays } from '../overlays/InlineEditOverlays';
+
+import {
+  useOverlayDerivedState,
+  findNodeEditElement,
+  findSubgraphEditElement,
+} from './useOverlayDerivedState';
 
 export interface CanvasOverlaysProps {
   mouse: ReturnType<typeof useCanvasMouseInteractions>;
@@ -51,38 +57,17 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
 }) => {
   const { selectedNodeId, selectedEdgeId, selectedSubgraphId } = selection;
   const driver = mutations.driver;
-  // Anchor kind for the tap-selected node (hides the hint pill on end anchors).
-  const selectedStarKind = useCanvasStore((s) => s.selectedStarKind);
-
-  const canUngroup = Array.from(selection.selectedNodeIds).some(
-    (nid) => !!mutations.displayNodes.get(nid)?.subgraphId
-  );
-
-  const selectedNodeStyle = selectedNodeId
-    ? mutations.displayNodes.get(selectedNodeId)?.style
-    : undefined;
-
-  const selectedEdgeStyle = selectedEdgeId
-    ? mutations.displayEdges.find((e) => e.id === selectedEdgeId)?.style
-    : undefined;
-
-  const selectedSubgraphStyle = selectedSubgraphId
-    ? mutations.displaySubgraphs.get(selectedSubgraphId)?.style
-    : undefined;
-
-  // External hyperlink preserved via click/link statements. Edit-mode clicks
-  // select (navigation is suppressed), so the HUD offers "Open link" instead.
-  const selectedNodeLink =
-    selectedNodeId && !selection.isMultiSelect
-      ? driver.getNodeLink?.(mutations.ast, selectedNodeId)
-      : undefined;
-
-  const nodeMemberCapabilities =
-    selectedNodeId &&
-    driver.capabilities.supportsNodeMembers &&
-    driver.mutations.getNodeMemberCapabilities
-      ? driver.mutations.getNodeMemberCapabilities(mutations.ast, selectedNodeId)
-      : undefined;
+  const {
+    selectedStarKind,
+    canUngroup,
+    selectedNodeStyle,
+    selectedEdgeStyle,
+    selectedSubgraphStyle,
+    selectedNodeLink,
+    nodeMemberCapabilities,
+    canAddStart,
+    canAddEnd,
+  } = useOverlayDerivedState(selection, mutations);
 
   return (
     <div className="mermaid-native-overlay">
@@ -157,10 +142,7 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         activeNodePopover={selection.activeNodePopover}
         onSproutNextStep={mutations.handleSproutNextStep}
         onStartEditingNode={(nodeId) => {
-          const el =
-            svgMountRef.current?.querySelector(
-              `rect.actor-top[name="${nodeId}"], g.actor-top[name="${nodeId}"], [data-mermaid-node-id="${nodeId}"]:not(.actor-line):not(.mermaid-lifeline-hit-area)`
-            ) || svgMountRef.current?.querySelector(`[data-mermaid-node-id="${nodeId}"]`);
+          const el = findNodeEditElement(svgMountRef.current, nodeId);
           if (el) handleStartEditingNode(nodeId, el);
         }}
         onToggleNodePopover={(popover) =>
@@ -191,20 +173,14 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         }
         displaySubgraphs={mutations.displaySubgraphs}
         onSelectSubgraphMembership={(subId) => {
-          if (selectedNodeId) {
-            mutations.handleMoveNodeToSubgraph(selectedNodeId, subId);
-          }
+          if (selectedNodeId) mutations.handleMoveNodeToSubgraph(selectedNodeId, subId);
           selection.setActiveNodePopover(null);
         }}
         onCreateNewGroupMembership={() => {
-          if (selectedNodeId) {
-            mutations.handleCreateGroupWithNode(selectedNodeId);
-          }
+          if (selectedNodeId) mutations.handleCreateGroupWithNode(selectedNodeId);
           selection.setActiveNodePopover(null);
         }}
-        onRemoveNodeFromGroup={(nodeId) => {
-          mutations.handleRemoveNodeFromGroup(nodeId);
-        }}
+        onRemoveNodeFromGroup={mutations.handleRemoveNodeFromGroup}
         onCloseSubgraphMembership={() => selection.setActiveNodePopover(null)}
       />
 
@@ -247,12 +223,10 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
           selection.setActiveSubgraphPopover((prev) => (prev === 'group' ? null : 'group'))
         }
         onStartEditingSubgraph={(subId) => {
-          const subEl = svgMountRef.current?.querySelector(`[data-mermaid-subgraph-id="${subId}"]`);
-          if (subEl) {
-            inlineEditing.startEditingSubgraph(subId, subEl);
-          } else if (selection.selectedSubgraphRect && svgMountRef.current) {
-            inlineEditing.startEditingSubgraph(subId, svgMountRef.current);
-          }
+          const subEl =
+            findSubgraphEditElement(svgMountRef.current, subId) ??
+            (selection.selectedSubgraphRect ? svgMountRef.current : null);
+          if (subEl) inlineEditing.startEditingSubgraph(subId, subEl);
         }}
         onDissolveSubgraph={mutations.handleDissolveSubgraph}
         onDeleteSubgraphAll={mutations.handleDeleteSubgraphAll}
@@ -279,16 +253,8 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
           selection.setActiveSubgraphPopover(null);
         }}
         onCloseSubgraphPopover={() => selection.setActiveSubgraphPopover(null)}
-        canAddStart={
-          selectedSubgraphId && driver.mutations.anchors
-            ? !driver.mutations.anchors.has(mutations.ast, 'start', selectedSubgraphId)
-            : false
-        }
-        canAddEnd={
-          selectedSubgraphId && driver.mutations.anchors
-            ? !driver.mutations.anchors.has(mutations.ast, 'end', selectedSubgraphId)
-            : false
-        }
+        canAddStart={canAddStart}
+        canAddEnd={canAddEnd}
         onAddStart={
           selectedSubgraphId && driver.capabilities.hasAnchors
             ? () => mutations.handleAddStartState(selectedSubgraphId)

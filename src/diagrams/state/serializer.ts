@@ -246,7 +246,7 @@ function emitCompositeState(
         );
       }
     } else if (item.kind === 'state') {
-      emitInnerStateDeclaration(lines, item.state, innerIndent);
+      emitStateDeclaration(lines, item.state, innerIndent, true);
     } else if (item.kind === 'transition') {
       emitTransition(lines, item.tr, innerIndent);
     } else if (item.kind === 'raw') {
@@ -258,7 +258,12 @@ function emitCompositeState(
   lines.push('');
 }
 
-function emitInnerStateDeclaration(lines: string[], state: MermaidStateDef, indent: string) {
+function emitStateDeclaration(
+  lines: string[],
+  state: MermaidStateDef,
+  indent: string,
+  fallbackToBareId = false
+) {
   if (state.stateType === 'choice') {
     lines.push(`${indent}state ${state.id} <<choice>>`);
   } else if (state.stateType === 'fork') {
@@ -267,20 +272,8 @@ function emitInnerStateDeclaration(lines: string[], state: MermaidStateDef, inde
     lines.push(`${indent}state ${state.id} <<join>>`);
   } else if (state.id !== '[*]' && state.label && state.label !== state.id && state.label !== '[*]') {
     lines.push(`${indent}state "${escapeString(state.label)}" as ${state.id}`);
-  } else {
+  } else if (fallbackToBareId) {
     lines.push(`${indent}${state.id}`);
-  }
-}
-
-function emitStateDeclaration(lines: string[], state: MermaidStateDef, indent: string) {
-  if (state.stateType === 'choice') {
-    lines.push(`${indent}state ${state.id} <<choice>>`);
-  } else if (state.stateType === 'fork') {
-    lines.push(`${indent}state ${state.id} <<fork>>`);
-  } else if (state.stateType === 'join') {
-    lines.push(`${indent}state ${state.id} <<join>>`);
-  } else if (state.id !== '[*]' && state.label && state.label !== state.id && state.label !== '[*]') {
-    lines.push(`${indent}state "${escapeString(state.label)}" as ${state.id}`);
   }
 }
 

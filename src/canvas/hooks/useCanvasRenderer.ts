@@ -9,10 +9,10 @@ import { Rect } from '../types';
 import { MermaidNodeDef, MermaidEdgeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
 import { DiagramDriver } from '../../diagrams/types';
 import { renderMermaidSvg, mountMermaidSvg } from '../renderer/mermaidRenderer';
-import { applySelectedNodeHalos } from '../renderer/selectionHalo';
 import { setupSvgInteractivity } from '../interaction/setupSvgInteractivity';
 import { setupViewOnlyInteractivity } from '../interaction/setupViewOnlyInteractivity';
 import { useCanvasStore } from '../store/canvasStore';
+import { createRendererSelectionHandlers } from './renderer/rendererSelectionHandlers';
 
 export interface UseCanvasRendererOptions {
   app: App;
@@ -79,6 +79,16 @@ export function useCanvasRenderer({
       return;
     }
 
+    const { onSelectNode, onSelectEdge, onSelectSubgraph } = createRendererSelectionHandlers({
+      mountEl,
+      driver,
+      getLocalRect,
+      updateSelectedNodeHalo,
+      updateSelectedEdgeHalo,
+      setEditingNodeId: inlineEditing.setEditingNodeId,
+      isAnchorId,
+    });
+
     setupSvgInteractivity({
       mountEl,
       dom: driver.dom,
@@ -87,120 +97,9 @@ export function useCanvasRenderer({
       displaySubgraphs,
       getLocalRect,
       getLocalPoint,
-      onSelectNode: (targetNodeId, isMulti, htmlEl) => {
-        useCanvasStore.getState().setSelectedSubgraphId(null);
-        useCanvasStore.getState().setSelectedSubgraphRect(null);
-        useCanvasStore.getState().setActiveSubgraphPopover(null);
-        mountEl.querySelectorAll('.mermaid-cluster-selected').forEach((c) =>
-          c.classList.remove('mermaid-cluster-selected')
-        );
-
-        // Track which anchor (start vs end) was clicked — they share one node
-        // id but have distinct visuals.
-        const starKindForTarget = isAnchorId(targetNodeId)
-          ? driver.dom.getAnchorKind?.(htmlEl) ?? null
-          : null;
-
-        if (isAnchorId(targetNodeId) && starKindForTarget) {
-          useCanvasStore.getState().setSelectedStarKind(starKindForTarget);
-        } else if (!isAnchorId(targetNodeId)) {
-          useCanvasStore.getState().setSelectedStarKind(null);
-        }
-
-        if (isMulti) {
-          // Anchors are single-select only — never part of a multi-select group.
-          if (isAnchorId(targetNodeId)) {
-            const nextNodes = new Set([targetNodeId]);
-            useCanvasStore.getState().setSelectedNodeIds(nextNodes);
-            useCanvasStore.getState().setSelectedEdgeIds(new Set());
-            useCanvasStore.getState().setSelectedEdgePos(null);
-            updateSelectedEdgeHalo(new Set());
-            const rect = getLocalRect(htmlEl);
-            if (rect) useCanvasStore.getState().setSelectedNodeRect(rect);
-            // Kind-filtered halo — only highlight the clicked anchor, not both
-            applySelectedNodeHalos(mountEl, nextNodes, undefined, starKindForTarget);
-            return;
-          }
-          const prev = useCanvasStore.getState().selectedNodeIds;
-          // Drop any existing anchor from the multi-set before toggling.
-          const next = new Set(
-            Array.from(prev).filter((id) => !isAnchorId(id))
-          );
-          if (next.has(targetNodeId)) next.delete(targetNodeId);
-          else next.add(targetNodeId);
-          useCanvasStore.getState().setSelectedNodeIds(next);
-          updateSelectedNodeHalo(next);
-        } else {
-          const nextNodes = new Set([targetNodeId]);
-          const emptyEdges = new Set<string>();
-          useCanvasStore.getState().setSelectedNodeIds(nextNodes);
-          useCanvasStore.getState().setSelectedEdgeIds(emptyEdges);
-          useCanvasStore.getState().setSelectedEdgePos(null);
-          updateSelectedEdgeHalo(emptyEdges);
-          const rect = getLocalRect(htmlEl);
-          if (rect) useCanvasStore.getState().setSelectedNodeRect(rect);
-          if (isAnchorId(targetNodeId) && starKindForTarget) {
-            applySelectedNodeHalos(mountEl, nextNodes, undefined, starKindForTarget);
-          } else {
-            updateSelectedNodeHalo(nextNodes);
-          }
-        }
-      },
-      onSelectEdge: (targetEdge, resolvedPath, isMulti) => {
-        useCanvasStore.getState().setSelectedStarKind(null);
-        useCanvasStore.getState().setSelectedSubgraphId(null);
-        useCanvasStore.getState().setSelectedSubgraphRect(null);
-        useCanvasStore.getState().setActiveSubgraphPopover(null);
-        mountEl.querySelectorAll('.mermaid-cluster-selected').forEach((c) =>
-          c.classList.remove('mermaid-cluster-selected')
-        );
-
-        const edgeId = targetEdge.id;
-        if (isMulti) {
-          const prev = useCanvasStore.getState().selectedEdgeIds;
-          const next = new Set(prev);
-          if (next.has(edgeId)) next.delete(edgeId);
-          else next.add(edgeId);
-          useCanvasStore.getState().setSelectedEdgeIds(next);
-          updateSelectedEdgeHalo(next);
-        } else {
-          const nextEdges = new Set([edgeId]);
-          const emptyNodes = new Set<string>();
-          useCanvasStore.getState().setSelectedEdgeIds(nextEdges);
-          useCanvasStore.getState().setSelectedNodeIds(emptyNodes);
-          useCanvasStore.getState().setSelectedNodeRect(null);
-          inlineEditing.setEditingNodeId(null);
-          updateSelectedNodeHalo(emptyNodes);
-          updateSelectedEdgeHalo(nextEdges);
-
-          const rect = getLocalRect(resolvedPath);
-          if (rect) {
-            useCanvasStore.getState().setSelectedEdgePos({
-              x: rect.x + rect.width / 2,
-              y: rect.y + rect.height / 2,
-              label: targetEdge.label,
-              from: targetEdge.from,
-              to: targetEdge.to,
-              arrowType: targetEdge.arrowType,
-            });
-          }
-        }
-      },
-      onSelectSubgraph: (targetSubId, htmlEl) => {
-        useCanvasStore.getState().setSelectedStarKind(null);
-        useCanvasStore.getState().clearSelection();
-        useCanvasStore.getState().setSelectedSubgraphId(targetSubId);
-        updateSelectedNodeHalo(new Set());
-        updateSelectedEdgeHalo(new Set());
-
-        mountEl.querySelectorAll('.mermaid-cluster-selected').forEach((c) =>
-          c.classList.remove('mermaid-cluster-selected')
-        );
-        htmlEl.classList.add('mermaid-cluster-selected');
-
-        const rect = getLocalRect(htmlEl);
-        if (rect) useCanvasStore.getState().setSelectedSubgraphRect(rect);
-      },
+      onSelectNode,
+      onSelectEdge,
+      onSelectSubgraph,
       onStartEditingNode: handleStartEditingNode,
       onStartEditingEdge: inlineEditing.startEditingEdge,
       onStartEditingSubgraph: inlineEditing.startEditingSubgraph,
@@ -210,11 +109,13 @@ export function useCanvasRenderer({
     });
   }, [
     svgMountRef,
+    isEditable,
     driver,
     displayNodes,
     displayEdges,
     displaySubgraphs,
     getLocalRect,
+    getLocalPoint,
     updateSelectedNodeHalo,
     updateSelectedEdgeHalo,
     inlineEditing,

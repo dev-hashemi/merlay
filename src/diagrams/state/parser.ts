@@ -7,12 +7,15 @@ import { splitFrontmatter } from '../common/diagramHeader';
 import {
   MermaidCompositeStateDef,
   MermaidStateAST,
-  MermaidStateDef,
   MermaidStateType,
   MermaidTransitionDef,
   StateDirection,
 } from './types';
-import { getDefaultStateStyle } from './mutations/styleMutations';
+import {
+  ensureStateInAst,
+  parseAndApplyStyleStatement,
+  reconcileCompositesAndStyles,
+} from './parserHelpers';
 
 export function parseMermaidStateDiagram(input: string): MermaidStateAST {
   const { frontmatter, body } = splitFrontmatter(input);
@@ -63,19 +66,8 @@ export function parseMermaidStateDiagram(input: string): MermaidStateAST {
 
     const token = currentToken();
 
-    // 1. Comments — preserved verbatim so visual edits never drop them
-    if (token.type === 'COMMENT') {
-      const t = advance();
-      ast.rawLines.push({
-        text: t.value,
-        compositeId: compositeStack[compositeStack.length - 1],
-        order: stmtOrder++,
-      });
-      continue;
-    }
-
-    // 1b. Unsupported statements (accTitle, accDescr, notes, classDefs, --, :::) — preserved verbatim
-    if (token.type === 'RAW_LINE') {
+    // 1. Comments and unsupported statements — preserved verbatim so visual edits never drop them
+    if (token.type === 'COMMENT' || token.type === 'RAW_LINE') {
       const t = advance();
       ast.rawLines.push({
         text: t.value,
@@ -134,35 +126,7 @@ export function parseMermaidStateDiagram(input: string): MermaidStateAST {
       while (currentToken().type !== 'NEWLINE' && currentToken().type !== 'EOF') {
         lineTokens.push(advance());
       }
-      const colonIdx = lineTokens.findIndex((t) => t.type === 'COLON' || t.value.includes(':'));
-      if (colonIdx > 0) {
-        const splitIdx = lineTokens[colonIdx].type === 'COLON' ? colonIdx - 1 : colonIdx;
-        const targetTokens = lineTokens.slice(0, splitIdx);
-        const stylePropTokens = lineTokens.slice(splitIdx);
-        const targets = targetTokens
-          .map((t) => t.value)
-          .join(' ')
-          .split(/[\s,]+/)
-          .map((s) => s.trim())
-          .filter(Boolean);
-        const styleString = stylePropTokens.map((t) => t.value).join('');
-        const styleMap = parseStyleString(styleString);
-        for (const targetId of targets) {
-          ast.styles.push({ targetId, styles: styleMap });
-          if (ast.states.has(targetId)) {
-            ast.states.get(targetId)!.style = {
-              ...(ast.states.get(targetId)!.style || {}),
-              ...styleMap,
-            };
-          }
-          if (ast.compositeStates.has(targetId)) {
-            ast.compositeStates.get(targetId)!.style = {
-              ...(ast.compositeStates.get(targetId)!.style || {}),
-              ...styleMap,
-            };
-          }
-        }
-      }
+      parseAndApplyStyleStatement(lineTokens, ast);
       continue;
     }
 
@@ -170,52 +134,7 @@ export function parseMermaidStateDiagram(input: string): MermaidStateAST {
     advance();
   }
 
-  // 7. Reconcile: a transition may reference a composite id before it is
-  // declared, which creates an implicit state. Composite ids win — drop the
-  // duplicate state (transitions keep the id and resolve to the composite).
-  for (const compId of ast.compositeStates.keys()) {
-    const dupState = ast.states.get(compId);
-    if (!dupState) continue;
-    const comp = ast.compositeStates.get(compId)!;
-    if (dupState.label && dupState.label !== compId && (comp.label === compId || !comp.label)) {
-      comp.label = dupState.label;
-    }
-    ast.states.delete(compId);
-    for (const other of ast.compositeStates.values()) {
-      other.stateIds = other.stateIds.filter((id) => id !== compId);
-    }
-  }
-
-  // 8. Reconcile styles onto states and composites (handles default theme and forward style declarations)
-  const defaultStyle = getDefaultStateStyle(ast);
-  if (defaultStyle) {
-    for (const st of ast.states.values()) {
-      if (!st.style || Object.keys(st.style).length === 0) {
-        st.style = { ...defaultStyle };
-      }
-    }
-    for (const comp of ast.compositeStates.values()) {
-      if (!comp.style || Object.keys(comp.style).length === 0) {
-        comp.style = { ...defaultStyle };
-      }
-    }
-  }
-
-  for (const s of ast.styles) {
-    if (ast.states.has(s.targetId)) {
-      ast.states.get(s.targetId)!.style = {
-        ...(ast.states.get(s.targetId)!.style || {}),
-        ...s.styles,
-      };
-    }
-    if (ast.compositeStates.has(s.targetId)) {
-      ast.compositeStates.get(s.targetId)!.style = {
-        ...(ast.compositeStates.get(s.targetId)!.style || {}),
-        ...s.styles,
-      };
-    }
-  }
-
+  reconcileCompositesAndStyles(ast);
   return ast;
 
   function parseStateKeywordStatement() {
@@ -364,71 +283,6 @@ export function parseMermaidStateDiagram(input: string): MermaidStateAST {
     label?: string,
     stateType: MermaidStateType = 'normal'
   ) {
-    const currentComp = compositeStack[compositeStack.length - 1];
-
-    // Composite states are valid transition endpoints — never shadow them
-    // with a duplicate state of the same id.
-    if (id !== '[*]' && ast.compositeStates.has(id)) {
-      return;
-    }
-
-    // [*] is an anchor pseudo-state — it is global and never belongs to a composite's stateIds
-    if (id === '[*]') {
-      if (!ast.states.has('[*]')) {
-        ast.states.set('[*]', {
-          type: 'state',
-          id: '[*]',
-          label: '[*]',
-          stateType,
-          order: stmtOrder++,
-        });
-      }
-      return;
-    }
-
-    if (!ast.states.has(id)) {
-      const newState: MermaidStateDef = {
-        type: 'state',
-        id,
-        label: label || id,
-        stateType,
-        compositeId: currentComp,
-        order: stmtOrder++,
-      };
-      ast.states.set(id, newState);
-
-      if (currentComp && ast.compositeStates.has(currentComp)) {
-        const comp = ast.compositeStates.get(currentComp)!;
-        if (!comp.stateIds.includes(id)) {
-          comp.stateIds.push(id);
-        }
-      }
-    } else {
-      const existing = ast.states.get(id)!;
-      if (label) existing.label = label;
-      if (stateType !== 'normal') existing.stateType = stateType;
-      if (existing.order === undefined) existing.order = stmtOrder++;
-      if (currentComp && !existing.compositeId) {
-        existing.compositeId = currentComp;
-        const comp = ast.compositeStates.get(currentComp);
-        if (comp && !comp.stateIds.includes(id)) {
-          comp.stateIds.push(id);
-        }
-      }
-    }
-  }
-
-  function parseStyleString(str: string): Record<string, string> {
-    const styleMap: Record<string, string> = {};
-    const parts = str.split(/[,;]/);
-    for (const part of parts) {
-      const colonIdx = part.indexOf(':');
-      if (colonIdx !== -1) {
-        const k = part.substring(0, colonIdx).trim();
-        const v = part.substring(colonIdx + 1).trim();
-        if (k && v) styleMap[k] = v;
-      }
-    }
-    return styleMap;
+    ensureStateInAst(ast, compositeStack, id, label, stateType, () => stmtOrder++);
   }
 }

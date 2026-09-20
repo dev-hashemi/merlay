@@ -7,7 +7,7 @@
 
 import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import { detectDiagramType } from '../diagrams/registry';
-import { CursorMode, NativeMermaidViewProps, Rect } from './types';
+import { CursorMode, NativeMermaidViewProps } from './types';
 import { useHistory } from './useHistory';
 import { applyDropTargetHalo } from './renderer/selectionHalo';
 
@@ -20,6 +20,8 @@ import { useDiagramMutations } from './hooks/useDiagramMutations';
 import { useCanvasShortcuts } from './hooks/useCanvasShortcuts';
 import { useCanvasMouseInteractions } from './hooks/useCanvasMouseInteractions';
 import { useCanvasRenderer } from './hooks/useCanvasRenderer';
+import { useNodeMemberEditing } from './hooks/useNodeMemberEditing';
+import { useDiagramHistorySync } from './hooks/useDiagramHistorySync';
 
 import { CanvasTopBar } from './components/CanvasTopBar';
 import { CanvasOverlays } from './components/CanvasOverlays';
@@ -28,75 +30,6 @@ import { SyntaxDrawer } from './components/SyntaxDrawer';
 import { useCanvasStore } from './store/canvasStore';
 
 export type { NativeMermaidViewProps };
-
-function getCompartmentRect(
-  nodeEl: Element,
-  kind: 'attribute' | 'method',
-  getLocalRect: (el: Element) => Rect | null
-): Rect | null {
-  const nodeRect = getLocalRect(nodeEl);
-  if (!nodeRect) return null;
-
-  const targetGroup = nodeEl.querySelector(
-    kind === 'attribute' ? '.members-group' : '.methods-group'
-  );
-  if (targetGroup && targetGroup.children.length > 0) {
-    const groupRect = getLocalRect(targetGroup);
-    if (groupRect && groupRect.height > 10) {
-      return {
-        x: nodeRect.x + 6,
-        y: Math.max(nodeRect.y, groupRect.y - 2),
-        width: Math.max(nodeRect.width - 12, 140),
-        height: Math.max(groupRect.height + 8, 56),
-      };
-    }
-  }
-
-  // Fallback to dividers if present
-  const dividers = Array.from(nodeEl.querySelectorAll('.divider'));
-  if (dividers.length >= 2) {
-    const d0Rect = getLocalRect(dividers[0]);
-    const d1Rect = getLocalRect(dividers[1]);
-    if (d0Rect && d1Rect) {
-      if (kind === 'attribute') {
-        const top = d0Rect.y + 2;
-        const height = Math.max(d1Rect.y - top, 56);
-        return {
-          x: nodeRect.x + 6,
-          y: top,
-          width: Math.max(nodeRect.width - 12, 140),
-          height,
-        };
-      } else {
-        const top = d1Rect.y + 2;
-        const height = Math.max(nodeRect.y + nodeRect.height - top - 4, 56);
-        return {
-          x: nodeRect.x + 6,
-          y: top,
-          width: Math.max(nodeRect.width - 12, 140),
-          height,
-        };
-      }
-    }
-  }
-
-  // Ratio-based fallback: top 35% header, 35%-65% attributes, 65%-100% methods
-  if (kind === 'attribute') {
-    return {
-      x: nodeRect.x + 6,
-      y: nodeRect.y + nodeRect.height * 0.35,
-      width: Math.max(nodeRect.width - 12, 140),
-      height: Math.max(nodeRect.height * 0.3, 56),
-    };
-  } else {
-    return {
-      x: nodeRect.x + 6,
-      y: nodeRect.y + nodeRect.height * 0.65,
-      width: Math.max(nodeRect.width - 12, 140),
-      height: Math.max(nodeRect.height * 0.35, 56),
-    };
-  }
-}
 
 export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
   app,
@@ -123,10 +56,6 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
 
   // History Stack
   const history = useHistory(code);
-  const pushHistoryState = history.pushState;
-  const undoHistory = history.undo;
-  const redoHistory = history.redo;
-  const resetHistory = history.reset;
 
   // Primary Canvas DOM Refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -177,7 +106,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     code,
     setCode,
     onCodeChange,
-    pushHistoryState,
+    pushHistoryState: history.pushState,
     diagramType,
     pinNodeForCamera,
   });
@@ -254,199 +183,45 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     useCanvasStore.getState().setShowCodeDrawer(show);
   }, []);
 
-  // SyntaxDrawer edits bypass applyMutation, so record a single history
-  // entry when the drawer closes instead of flooding the stack per keystroke.
-  // Without this, undo after a drawer edit jumps to the pre-drawer state
-  // and silently discards the drawer text.
-  const drawerOpenCodeRef = useRef<string | null>(null);
-  const wasDrawerOpenRef = useRef(showCodeDrawer);
-  useEffect(() => {
-    if (showCodeDrawer && !wasDrawerOpenRef.current) {
-      drawerOpenCodeRef.current = code;
-    } else if (!showCodeDrawer && wasDrawerOpenRef.current) {
-      if (drawerOpenCodeRef.current !== null && drawerOpenCodeRef.current !== code) {
-        pushHistoryState(code);
-      }
-      drawerOpenCodeRef.current = null;
-    }
-    wasDrawerOpenRef.current = showCodeDrawer;
+  // 8. Member and Node Editing Coordination
+  const {
+    handleAddNodeAttribute,
+    handleAddNodeMethod,
+    handleStartEditingNode,
+  } = useNodeMemberEditing({
+    driver,
+    ast: astHook.ast,
+    isEditable,
+    getLocalRect,
+    svgMountRef,
+    startEditingNode: inlineEditing.startEditingNode,
+    startEditingMemberSection: inlineEditing.startEditingMemberSection,
   });
-
-  const handleOpenMemberSection = useCallback(
-    (nodeId: string, kind: 'attribute' | 'method', nodeEl: Element) => {
-      const caps = driver.mutations.getNodeMemberCapabilities?.(astHook.ast, nodeId);
-      if (kind === 'attribute' && caps && !caps.supportsAttributes) return;
-      if (kind === 'method' && caps && !caps.supportsMethods) return;
-
-      const members = driver.mutations.getNodeMembers?.(astHook.ast, nodeId) || {
-        attributes: [],
-        methods: [],
-      };
-      const lines = kind === 'attribute' ? members.attributes : members.methods;
-      const initialText = lines.join('\n');
-
-      const pos = getCompartmentRect(nodeEl, kind, getLocalRect);
-      if (pos) {
-        inlineEditing.startEditingMemberSection(nodeId, kind, pos, initialText);
-      }
-    },
-    [driver, astHook.ast, getLocalRect, inlineEditing]
-  );
-
-  const handleAddNodeAttribute = useCallback(
-    (nodeId: string) => {
-      const nodeEl = svgMountRef.current?.querySelector(
-        `[data-mermaid-node-id="${nodeId}"], [id*="-classId-${nodeId}-"]`
-      );
-      if (nodeEl) {
-        handleOpenMemberSection(nodeId, 'attribute', nodeEl);
-      }
-    },
-    [handleOpenMemberSection]
-  );
-
-  const handleAddNodeMethod = useCallback(
-    (nodeId: string) => {
-      const nodeEl = svgMountRef.current?.querySelector(
-        `[data-mermaid-node-id="${nodeId}"], [id*="-classId-${nodeId}-"]`
-      );
-      if (nodeEl) {
-        handleOpenMemberSection(nodeId, 'method', nodeEl);
-      }
-    },
-    [handleOpenMemberSection]
-  );
-
-  const handleStartEditingNode = useCallback(
-    (nodeId: string, nodeEl: Element, event?: MouseEvent | TouchEvent) => {
-      if (!isEditable) return;
-
-      const targetEl = (event as MouseEvent)?.target as Element | undefined;
-
-      // 1. Check if user clicked on title area -> rename class / node
-      const titleEl = targetEl?.closest('.label-group') || targetEl?.closest('.annotation-group');
-      if (titleEl) {
-        if (driver.mutations.isNodeTextEditable(astHook.ast, nodeId)) {
-          inlineEditing.startEditingNode(nodeId, targetEl?.closest('.label-group') || nodeEl);
-        }
-        return;
-      }
-
-      // 2. Class diagram member compartments (attributes or methods)
-      if (driver.capabilities.supportsNodeMembers && driver.mutations.getNodeMembers) {
-        const caps = driver.mutations.getNodeMemberCapabilities?.(astHook.ast, nodeId) || {
-          supportsAttributes: true,
-          supportsMethods: true,
-        };
-
-        // Direct hit on members-group or methods-group (or any of their children)
-        const hitMembers = targetEl?.closest('.members-group');
-        const hitMethods = targetEl?.closest('.methods-group');
-
-        if (hitMembers && caps.supportsAttributes) {
-          handleOpenMemberSection(nodeId, 'attribute', nodeEl);
-          return;
-        }
-        if (hitMethods && caps.supportsMethods) {
-          handleOpenMemberSection(nodeId, 'method', nodeEl);
-          return;
-        }
-
-        // Stereotype constraints: interface/service has methods only, enum has values only
-        if (!caps.supportsAttributes && caps.supportsMethods) {
-          handleOpenMemberSection(nodeId, 'method', nodeEl);
-          return;
-        }
-        if (caps.supportsAttributes && !caps.supportsMethods) {
-          handleOpenMemberSection(nodeId, 'attribute', nodeEl);
-          return;
-        }
-
-        // Both supported: inspect relative click position
-        if (event && 'clientY' in event) {
-          const rect = nodeEl.getBoundingClientRect();
-          const relY = (event.clientY - rect.top) / Math.max(1, rect.height);
-          if (relY < 0.35) {
-            // Top 35% -> rename class
-            if (driver.mutations.isNodeTextEditable(astHook.ast, nodeId)) {
-              inlineEditing.startEditingNode(nodeId, nodeEl);
-            }
-            return;
-          } else if (relY < 0.65) {
-            // Middle -> attributes
-            handleOpenMemberSection(nodeId, 'attribute', nodeEl);
-            return;
-          } else {
-            // Bottom -> methods
-            handleOpenMemberSection(nodeId, 'method', nodeEl);
-            return;
-          }
-        }
-      }
-
-      // Default fallback: regular node rename
-      if (driver.mutations.isNodeTextEditable(astHook.ast, nodeId)) {
-        inlineEditing.startEditingNode(nodeId, nodeEl);
-      }
-    },
-    [isEditable, driver, astHook.ast, inlineEditing, handleOpenMemberSection]
-  );
 
   const canRenameSelectedNode = selection.selectedNodeId
     ? driver.mutations.isNodeTextEditable(astHook.ast, selection.selectedNodeId)
     : false;
 
-  const resetTransientUiState = useCallback(() => {
-    useCanvasStore.getState().resetTransientUiState();
-    selection.updateSelectedNodeHalo(new Set());
-    selection.updateSelectedEdgeHalo(new Set());
-    if (svgMountRef.current) {
-      svgMountRef.current
-        .querySelectorAll('.mermaid-cluster-selected, .mermaid-view-highlight')
-        .forEach((c) => {
-          c.classList.remove('mermaid-cluster-selected');
-          c.classList.remove('mermaid-view-highlight');
-        });
-    }
-  }, [selection, svgMountRef]);
-
-  // File switches reuse this component with a new initialCode prop, but
-  // useState/useHistory seed once. Without this sync the view keeps showing
-  // the old diagram and undo replays the old file's code into the new file.
-  const lastInitialCodeRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (lastInitialCodeRef.current === null) {
-      lastInitialCodeRef.current = initialCode;
-      return;
-    }
-    if (initialCode !== lastInitialCodeRef.current) {
-      lastInitialCodeRef.current = initialCode;
-      const next =
-        initialCode || 'flowchart LR\n    A["Start"] --> B["Process"]\n    B --> C["End"]';
-      resetHistory(next);
-      setCode(next);
-      resetTransientUiState();
-    }
-  }, [initialCode, resetHistory, resetTransientUiState]);
-
-  const handleUndo = useCallback(() => {
-    const prevCode = undoHistory();
-    if (prevCode === null) return;
-    // setCode triggers the re-parse effect inside useDiagramAst
-    setCode(prevCode);
-    mutations.setSyntaxError(null);
-    onCodeChange(prevCode);
-    resetTransientUiState();
-  }, [undoHistory, onCodeChange, mutations, resetTransientUiState]);
-
-  const handleRedo = useCallback(() => {
-    const nextCode = redoHistory();
-    if (nextCode === null) return;
-    setCode(nextCode);
-    mutations.setSyntaxError(null);
-    onCodeChange(nextCode);
-    resetTransientUiState();
-  }, [redoHistory, onCodeChange, mutations, resetTransientUiState]);
+  // 9. History and File Switch Sync
+  const {
+    handleUndo,
+    handleRedo,
+    resetTransientUiState,
+  } = useDiagramHistorySync({
+    initialCode,
+    code,
+    setCode,
+    onCodeChange,
+    showCodeDrawer,
+    pushHistoryState: history.pushState,
+    undoHistory: history.undo,
+    redoHistory: history.redo,
+    resetHistory: history.reset,
+    setSyntaxError: mutations.setSyntaxError,
+    updateSelectedNodeHalo: selection.updateSelectedNodeHalo,
+    updateSelectedEdgeHalo: selection.updateSelectedEdgeHalo,
+    svgMountRef,
+  });
 
   const handleSelectAll = useCallback(() => {
     if (!isEditable) {
@@ -479,7 +254,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     selection.updateSelectedEdgeHalo(allEdgeIds);
   }, [isEditable, driver, mutations.displayNodes, mutations.displayEdges, selection]);
 
-  // 8. Keyboard Shortcuts
+  // 10. Keyboard Shortcuts
   const hasActivePopovers = !!(
     selection.activeNodePopover ||
     selection.activeEdgePopover ||
@@ -522,7 +297,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     onToggleFullscreen: handleToggleFullscreen,
   });
 
-  // 9. Mouse Interactions (Panning, Connecting, Hover)
+  // 11. Mouse Interactions (Panning, Connecting, Hover)
   const mouse = useCanvasMouseInteractions({
     worldRef,
     svgMountRef,
@@ -544,7 +319,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     setSelectedNodeId: selection.setSelectedNodeId,
   });
 
-  // 10. Mermaid Native SVG Mount & Renderer
+  // 12. Mermaid Native SVG Mount & Renderer
   useCanvasRenderer({
     app,
     code,
@@ -565,7 +340,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     onInitialRender: handleFitView,
   });
 
-  // 11. Drop-target highlight while drag-connecting (red when the driver refuses)
+  // 13. Drop-target highlight while drag-connecting (red when the driver refuses)
   const connectingSourceId = useCanvasStore((s) => s.connectingSourceId);
   const connectingTargetId = useCanvasStore((s) => s.connectingTargetId);
   const connectBlocked = useCanvasStore((s) => s.connectBlocked);
@@ -590,7 +365,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     }
   }, [connectingSourceId, connectingTargetId, connectBlocked, svgMountRef, code]);
 
-  // 12. Theme switch synchronization (Obsidian css-change event)
+  // 14. Theme switch synchronization (Obsidian css-change event)
   useEffect(() => {
     const onCssChange = () => {
       selection.updateSelectedNodeHalo(selection.selectedNodeIdsRef.current);

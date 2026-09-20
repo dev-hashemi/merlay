@@ -8,49 +8,15 @@ import { CursorMode, Rect } from '../types';
 import { DiagramDriver } from '../../diagrams/types';
 import { MermaidNodeDef, MermaidEdgeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
 import { DragLine, useCanvasStore } from '../store/canvasStore';
+import { getPerimeterAnchor, getHitElement } from './mouse/mouseGeometry';
+import {
+  findClosestNodeElement,
+  isBlockedAnchorEdge,
+  isInnerToOuterBlocked,
+  resolveSequenceInsertion,
+} from './mouse/connectionDropTarget';
 
-/**
- * Calculates the point on the perimeter of a rectangle that intersects
- * the ray from the center of the rectangle to (targetX, targetY).
- */
-export function getPerimeterAnchor(
-  rect: Rect,
-  targetX: number,
-  targetY: number
-): { x: number; y: number } {
-  const cx = rect.x + rect.width / 2;
-  const cy = rect.y + rect.height / 2;
-  const dx = targetX - cx;
-  const dy = targetY - cy;
-
-  if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) {
-    return { x: cx, y: rect.y + rect.height };
-  }
-
-  const halfW = Math.max(rect.width / 2, 1);
-  const halfH = Math.max(rect.height / 2, 1);
-
-  const scaleX = Math.abs(dx) > 0.0001 ? halfW / Math.abs(dx) : Infinity;
-  const scaleY = Math.abs(dy) > 0.0001 ? halfH / Math.abs(dy) : Infinity;
-  const scale = Math.min(scaleX, scaleY);
-
-  return {
-    x: cx + dx * scale,
-    y: cy + dy * scale,
-  };
-}
-
-/**
- * Resolves the topmost DOM element underneath the pointer, bypassing any
- * pointer capture redirection so hit-testing targets the visual element.
- */
-function getHitElement(e: React.PointerEvent): Element | null {
-  if (typeof document !== 'undefined' && typeof document.elementFromPoint === 'function') {
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    if (el) return el;
-  }
-  return e.target instanceof Element ? e.target : null;
-}
+export { getPerimeterAnchor };
 
 export interface UseCanvasMouseInteractionsOptions {
   worldRef: React.RefObject<HTMLDivElement>;
@@ -402,30 +368,17 @@ export function useCanvasMouseInteractions({
       if (rawTargetId && displayNodes?.has(rawTargetId)) {
         resolvedTargetId = rawTargetId !== sourceId ? rawTargetId : null;
       } else if (worldRef.current) {
-        let closestDist = 50;
-        let snapNodeId: string | null = null;
-        const candidates = Array.from(
-          worldRef.current.querySelectorAll('[data-mermaid-node-id]')
+        const snap = findClosestNodeElement(
+          worldRef.current,
+          worldRect,
+          currentWorldX,
+          currentWorldY,
+          sourceId,
+          zoom,
+          displaySubgraphs
         );
-        for (const cand of candidates) {
-          const nid = cand.getAttribute('data-mermaid-node-id');
-          if (!nid || nid === sourceId) continue;
-          if (displaySubgraphs?.has(nid)) continue; // skip subgraphs so inner nodes win
-          const r = cand.getBoundingClientRect();
-          const candX = (r.left - worldRect.left) / zoom;
-          const candY = (r.top - worldRect.top) / zoom;
-          const candW = r.width / zoom;
-          const candH = r.height / zoom;
-          const dx = Math.max(candX - currentWorldX, 0, currentWorldX - (candX + candW));
-          const dy = Math.max(candY - currentWorldY, 0, currentWorldY - (candY + candH));
-          const dist = Math.hypot(dx, dy);
-          if (dist < closestDist) {
-            closestDist = dist;
-            snapNodeId = nid;
-          }
-        }
-        if (snapNodeId) {
-          resolvedTargetId = snapNodeId;
+        if (snap) {
+          resolvedTargetId = snap.id;
         } else if (rawTargetId && rawTargetId !== sourceId) {
           resolvedTargetId = rawTargetId;
         }
@@ -567,30 +520,17 @@ export function useCanvasMouseInteractions({
         const worldRect = worldRef.current.getBoundingClientRect();
         const dropX = (e.clientX - worldRect.left) / zoom;
         const dropY = (e.clientY - worldRect.top) / zoom;
-        let closestDist = 50;
-        let closestNodeEl: Element | null = null;
-        const candidates = Array.from(
-          worldRef.current.querySelectorAll('[data-mermaid-node-id]')
+        const snap = findClosestNodeElement(
+          worldRef.current,
+          worldRect,
+          dropX,
+          dropY,
+          cSourceId,
+          zoom,
+          displaySubgraphs
         );
-        for (const cand of candidates) {
-          const nid = cand.getAttribute('data-mermaid-node-id');
-          if (!nid || nid === cSourceId) continue;
-          if (displaySubgraphs?.has(nid)) continue; // skip subgraphs so inner nodes win
-          const r = cand.getBoundingClientRect();
-          const candX = (r.left - worldRect.left) / zoom;
-          const candY = (r.top - worldRect.top) / zoom;
-          const candW = r.width / zoom;
-          const candH = r.height / zoom;
-          const dx = Math.max(candX - dropX, 0, dropX - (candX + candW));
-          const dy = Math.max(candY - dropY, 0, dropY - (candY + candH));
-          const dist = Math.hypot(dx, dy);
-          if (dist < closestDist) {
-            closestDist = dist;
-            closestNodeEl = cand;
-          }
-        }
-        if (closestNodeEl) {
-          targetNodeEl = closestNodeEl;
+        if (snap) {
+          targetNodeEl = snap.element;
         }
       }
 
@@ -607,43 +547,21 @@ export function useCanvasMouseInteractions({
       const targetEdgeId = targetEdgeEl?.getAttribute('data-mermaid-edge-id');
 
       // Directional guard for start/end anchors.
-      const srcIsStart = isAnchorId(cSourceId) && cSourceKind === 'start';
-      const srcIsEnd = isAnchorId(cSourceId) && cSourceKind === 'end';
-      const tgtIsStart = isAnchorId(targetNodeId) && targetKind === 'start';
-      const tgtIsEnd = isAnchorId(targetNodeId) && targetKind === 'end';
-
-      const isBlockedAnchorEdge =
-        (isAnchorId(targetNodeId) && isAnchorId(cSourceId)) ||
-        srcIsEnd ||
-        tgtIsStart ||
-        (isAnchorId(targetNodeId) && !tgtIsEnd) ||
-        (isAnchorId(cSourceId) && !srcIsStart);
+      const blockedAnchor = isBlockedAnchorEdge(
+        cSourceId,
+        cSourceKind,
+        targetNodeId,
+        targetKind,
+        isAnchorId
+      );
 
       // Only outer nodes can point to composites; inner nodes cannot point to outer composite.
-      const isInnerToOuterBlocked = (() => {
-        if (!targetNodeId || !cSourceId || !displaySubgraphs) return false;
-        if (!displaySubgraphs.has(targetNodeId)) return false;
-        const subgraphs = displaySubgraphs;
-        const isSourceInsideTarget = (srcId: string, tgtSubId: string): boolean => {
-          if (srcId === tgtSubId) return true;
-          const node = displayNodes.get(srcId);
-          if (node?.subgraphId) {
-            if (node.subgraphId === tgtSubId) return true;
-            return isSourceInsideTarget(node.subgraphId, tgtSubId);
-          }
-          const sub = subgraphs.get(srcId);
-          if (sub) {
-            for (const parent of subgraphs.values()) {
-              if (parent.subgraphIds?.includes(srcId)) {
-                if (parent.id === tgtSubId) return true;
-                return isSourceInsideTarget(parent.id, tgtSubId);
-              }
-            }
-          }
-          return false;
-        };
-        return isSourceInsideTarget(cSourceId, targetNodeId);
-      })();
+      const innerToOuterBlocked = isInnerToOuterBlocked(
+        cSourceId,
+        targetNodeId,
+        displayNodes,
+        displaySubgraphs
+      );
 
       // Same driver predicate as the hover feedback: a refused drop skips the
       // mutation entirely instead of relying on the mutation no-op.
@@ -655,8 +573,8 @@ export function useCanvasMouseInteractions({
       if (
         targetNodeId &&
         targetNodeId !== cSourceId &&
-        !isBlockedAnchorEdge &&
-        !isInnerToOuterBlocked &&
+        !blockedAnchor &&
+        !innerToOuterBlocked &&
         !isDropBlocked
       ) {
         const worldRect = worldRef.current ? worldRef.current.getBoundingClientRect() : null;
@@ -664,38 +582,12 @@ export function useCanvasMouseInteractions({
         const startY = store.dragLine ? store.dragLine.y1 : dropY;
         const connectionY = (startY + dropY) / 2;
 
-        let insertAfterEdgeId: string | undefined = undefined;
-        let insertAtIndex: number | undefined = undefined;
-
-        if (svgMountRef?.current && getLocalRect && displayEdges && displayEdges.length > 0) {
-          const edgeYPositions: Array<{ id: string; y: number }> = [];
-          for (const edge of displayEdges) {
-            const edgeEl = svgMountRef.current.querySelector(
-              `[data-mermaid-edge-id="${edge.id}"]:not(.mermaid-edge-hit-area):not(.mermaid-edge-selected-clone):not(.mermaid-edge-hovered-clone)`
-            );
-            if (edgeEl) {
-              const r = getLocalRect(edgeEl);
-              if (r) {
-                edgeYPositions.push({ id: edge.id, y: r.y + r.height / 2 });
-              }
-            }
-          }
-
-          edgeYPositions.sort((a, b) => a.y - b.y);
-
-          if (edgeYPositions.length > 0) {
-            if (connectionY < edgeYPositions[0].y) {
-              insertAtIndex = 0;
-            } else {
-              for (let i = edgeYPositions.length - 1; i >= 0; i--) {
-                if (edgeYPositions[i].y <= connectionY) {
-                  insertAfterEdgeId = edgeYPositions[i].id;
-                  break;
-                }
-              }
-            }
-          }
-        }
+        const { insertAfterEdgeId, insertAtIndex } = resolveSequenceInsertion(
+          svgMountRef?.current ?? null,
+          displayEdges,
+          connectionY,
+          getLocalRect
+        );
 
         applyMutation((a) => {
           m.connect(a, cSourceId, targetNodeId, {

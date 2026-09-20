@@ -9,18 +9,13 @@ import {
   UndoIcon,
   RedoIcon,
   FitViewIcon,
-  CodeIcon,
   MerlayLogoIcon,
-  MaximizeIcon,
-  MinimizeIcon,
-  ExportIcon,
   PaletteIcon,
 } from '../icons/Icons';
-import { ExportPopover } from './ExportPopover';
 import { ThemePopover } from './ThemePopover';
+import { TopBarRightControls } from './TopBarRightControls';
 import { DiagramDriver } from '../../diagrams/types';
 import { MermaidTheme } from '../../diagrams/common';
-
 
 export interface CanvasTopBarProps {
   driver: DiagramDriver;
@@ -79,13 +74,11 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
 }) => {
   const { labels, capabilities } = driver;
   const isEditable = capabilities.editable !== false;
-  const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
   const [isThemeOpen, setIsThemeOpen] = useState<boolean>(false);
 
   const themeLabel = theme
     ? theme.charAt(0).toUpperCase() + theme.slice(1)
     : 'Auto';
-
 
   return (
     <div className="mermaid-native-top-bar nodrag">
@@ -251,68 +244,17 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
         </button>
       </div>
 
-      <div className="mermaid-top-bar-right">
-        <span
-          className={`mermaid-diagram-badge ${!isEditable ? 'is-view-only' : ''}`}
-          title={!isEditable ? 'Visual editing is not yet supported for this diagram type' : 'Diagram Type'}
-        >
-          {driver.displayName} {!isEditable ? '(View Only)' : ''}
-        </span>
-
-        {/* Syntax Drawer Toggle */}
-        <button
-          type="button"
-          className={`mermaid-tool-btn ${showCodeDrawer ? 'is-active' : ''}`}
-          onClick={onToggleCodeDrawer}
-          title="Toggle Mermaid Syntax Drawer"
-          aria-label="Toggle Mermaid Syntax Drawer"
-          aria-pressed={showCodeDrawer}
-        >
-          <CodeIcon size={14} />
-          <span>Syntax</span>
-        </button>
-
-        <div className="mermaid-bar-divider" />
-
-        {/* Export Popover Trigger */}
-        {svgMountRef && (
-          <div className="mermaid-export-wrapper" style={{ position: 'relative' }}>
-            <button
-              type="button"
-              className={`mermaid-tool-btn ${isExportOpen ? 'is-active' : ''}`}
-              onClick={() => setIsExportOpen(!isExportOpen)}
-              title="Export Diagram (PNG / SVG)"
-              aria-label="Export Diagram as PNG or SVG"
-              aria-haspopup="dialog"
-              aria-expanded={isExportOpen}
-            >
-              <ExportIcon size={14} />
-              <span>Export</span>
-            </button>
-            <ExportPopover
-              isOpen={isExportOpen}
-              onClose={() => setIsExportOpen(false)}
-              svgMountRef={svgMountRef}
-              app={app}
-              code={code}
-            />
-          </div>
-        )}
-
-        {/* Fullscreen / Maximize Toggle */}
-        {onToggleFullscreen && (
-          <button
-            type="button"
-            className={`mermaid-tool-btn icon-only ${isFullscreen ? 'is-active' : ''}`}
-            onClick={onToggleFullscreen}
-            title={isFullscreen ? 'Exit Fullscreen (Restore) — Shift+F' : 'Fullscreen (Maximize) — Shift+F'}
-            aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-            aria-pressed={isFullscreen}
-          >
-            {isFullscreen ? <MinimizeIcon size={14} /> : <MaximizeIcon size={14} />}
-          </button>
-        )}
-      </div>
+      <TopBarRightControls
+        driver={driver}
+        isEditable={isEditable}
+        showCodeDrawer={showCodeDrawer}
+        onToggleCodeDrawer={onToggleCodeDrawer}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={onToggleFullscreen}
+        svgMountRef={svgMountRef}
+        app={app}
+        code={code}
+      />
     </div>
   );
 };

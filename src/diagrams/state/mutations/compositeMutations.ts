@@ -15,6 +15,8 @@ import {
 } from './stateMutations';
 import { isNodeInsideComposite } from './transitionMutations';
 
+export { createCompositeWithMembers } from './compositeGroupMutations';
+
 export function setStateDiagramDirection(
   ast: MermaidStateAST,
   direction: StateDirection

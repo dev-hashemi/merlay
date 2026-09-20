@@ -8,6 +8,8 @@ import { MermaidNodeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
 import { SvgDomAdapter } from '../../diagrams/types';
 import { Rect } from '../types';
 import { attachTapGestures, guardClickAfterLongPress } from './touchGestures';
+import { matchNodeElementId } from './matchNodeElement';
+import { setupLifelineHitArea } from './lifelineInteractivity';
 
 export type StartEndKind = 'start' | 'end' | null;
 
@@ -40,7 +42,6 @@ export function setupNodeInteractivity({
 }: SetupNodeInteractivityOptions): void {
   const prefixes = dom.nodeIdPrefixes || ['node-', 'flowchart-'];
   const anchorNodeId = dom.anchorNodeId;
-  const isAnchorEl = dom.isAnchorElement;
 
   // Remove stale lifeline hit areas from previous render
   mountEl.querySelectorAll('.mermaid-lifeline-hit-area').forEach((el) => el.remove());
@@ -52,69 +53,9 @@ export function setupNodeInteractivity({
     htmlEl.setCssStyles({ cursor: 'pointer' });
 
     const idAttr = htmlEl.getAttribute('id') || '';
-    let matchedNodeId: string | null = null;
+    let matchedNodeId = matchNodeElementId(htmlEl, dom, displayNodes, prefixes);
 
-    // 0. Custom driver resolver (e.g. mindmap preorder sequential mapping)
-    if (dom.resolveNodeId) {
-      matchedNodeId = dom.resolveNodeId(htmlEl, displayNodes);
-    }
-
-    // 1. Direct name or data-id attribute (standard in Mermaid sequence participants, actors, lifelines)
-    if (!matchedNodeId) {
-      const directName =
-        htmlEl.getAttribute('name') ||
-        htmlEl.getAttribute('data-id') ||
-        htmlEl.getAttribute('data-actor-id');
-      if (directName && displayNodes.has(directName)) {
-        matchedNodeId = directName;
-      }
-    }
-
-    // 2. Closest ancestor with name or data-id (e.g. inner rect/text inside actor-man figure or top container)
-    if (!matchedNodeId) {
-      const containerName =
-        htmlEl.closest?.('[name]')?.getAttribute('name') ||
-        htmlEl.closest?.('[data-id]')?.getAttribute('data-id');
-      if (containerName && displayNodes.has(containerName)) {
-        matchedNodeId = containerName;
-      }
-    }
-
-    // 3. Anchor state [*] element
-    if (!matchedNodeId) {
-      if (isAnchorEl && isAnchorEl(htmlEl)) {
-        const compId = dom.getAnchorCompositeId?.(htmlEl) ?? null;
-        matchedNodeId = compId ? `${anchorNodeId || '[*]'}:${compId}` : (anchorNodeId || '[*]');
-      }
-    }
-
-    // 4. Prefix or exact ID matching (flowchart/state nodes)
-    if (!matchedNodeId) {
-      for (const nid of displayNodes.keys()) {
-        if (nid === anchorNodeId) continue;
-        if (
-          prefixes.some(
-            (p) => idAttr.includes(`${p}${nid}-`) || idAttr === `${p}${nid}`
-          ) ||
-          idAttr.endsWith(`-${nid}`) ||
-          idAttr === nid
-        ) {
-          matchedNodeId = nid;
-          break;
-        }
-      }
-    }
-
-    // 5. Indexed actor fallback (actor0, actor1)
-    if (!matchedNodeId && /^actor(\d+)$/.test(idAttr)) {
-      const idx = parseInt(idAttr.replace('actor', ''), 10);
-      const keys = Array.from(displayNodes.keys());
-      if (idx >= 0 && idx < keys.length) {
-        matchedNodeId = keys[idx];
-      }
-    }
-
-    // 6. Empty subgraphs degrade to plain `.node` elements with id `{diagramId}-{subId}`
+    // Empty subgraphs degrade to plain `.node` elements with id `{diagramId}-{subId}`
     if (!matchedNodeId && idAttr && !prefixes.some((p) => idAttr.includes(p))) {
       for (const subId of displaySubgraphs.keys()) {
         if (idAttr === subId || idAttr.endsWith(`-${subId}`) || prefixes.some((p) => idAttr.includes(`${p}${subId}-`))) {
@@ -133,17 +74,6 @@ export function setupNodeInteractivity({
             onDoubleTap: () => onStartEditingSubgraph(targetSubId, htmlEl),
           });
           return;
-        }
-      }
-    }
-
-    // 7. Text label content matching
-    if (!matchedNodeId) {
-      const labelText = htmlEl.querySelector('.label, text')?.textContent?.trim() || htmlEl.textContent?.trim();
-      for (const [nid, ndef] of displayNodes.entries()) {
-        if (ndef.label === labelText || nid === labelText) {
-          matchedNodeId = nid;
-          break;
         }
       }
     }
@@ -231,67 +161,15 @@ export function setupNodeInteractivity({
     // For vertical lifelines, attach an invisible 28px hit area overlay to make selection
     // and drag-to-connect dropping completely effortless anywhere along the column timeline.
     if (isLifeline) {
-      const lineEl = htmlEl as unknown as SVGLineElement;
-      const hitArea = createSvg('line');
-      hitArea.setAttribute('x1', lineEl.getAttribute('x1') || '0');
-      hitArea.setAttribute('y1', lineEl.getAttribute('y1') || '0');
-      hitArea.setAttribute('x2', lineEl.getAttribute('x2') || '0');
-      hitArea.setAttribute('y2', lineEl.getAttribute('y2') || '0');
-      hitArea.setAttribute('class', 'mermaid-lifeline-hit-area');
-      hitArea.setAttribute('data-mermaid-node-id', targetNodeId);
-      hitArea.setAttribute('fill', 'none');
-      hitArea.setAttribute('stroke', 'transparent');
-      hitArea.setAttribute('stroke-width', '28');
-      hitArea.setCssStyles({ cursor: 'pointer', pointerEvents: 'stroke' });
-
-      const updateLifelineHover = (e: MouseEvent) => {
-        const lineRect = getLocalRect(lineEl);
-        if (!lineRect) return;
-        const pt = getLocalPoint ? getLocalPoint(e.clientX, e.clientY) : null;
-        const lineCenterX = lineRect.x + lineRect.width / 2;
-        const targetY = pt ? pt.y : lineRect.y + lineRect.height / 2;
-
-        // Clamp to lifeline span with 12px margin
-        const clampedY = Math.max(
-          lineRect.y + 12,
-          Math.min(lineRect.y + lineRect.height - 12, targetY)
-        );
-
-        // When isLR is false, ConnectionHandle places handle at:
-        // posX = rect.x + rect.width / 2
-        // posY = rect.y + rect.height
-        // Setting width = 20, height = 10 puts the handle dot precisely at (lineCenterX, clampedY).
-        const handleRect: Rect = {
-          x: lineCenterX - 10,
-          y: clampedY - 10,
-          width: 20,
-          height: 10,
-        };
-        onHoverNode(targetNodeId, handleRect, null);
-      };
-
-      hitArea.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const isMulti = e.shiftKey || e.metaKey || e.ctrlKey;
-        onSelectNode(targetNodeId, isMulti, htmlEl);
-      };
-      hitArea.ondblclick = (e) => {
-        e.stopPropagation();
-        onStartEditingNode(targetNodeId, htmlEl);
-      };
-      const lifelineTap = attachTapGestures(hitArea, {
-        onDoubleTap: () => onStartEditingNode(targetNodeId, htmlEl),
-        onLongPress: () => onSelectNode(targetNodeId, true, htmlEl),
+      setupLifelineHitArea({
+        htmlEl,
+        targetNodeId,
+        getLocalRect,
+        getLocalPoint,
+        onSelectNode,
+        onStartEditingNode,
+        onHoverNode,
       });
-      guardClickAfterLongPress(hitArea, lifelineTap);
-
-      hitArea.onmouseenter = updateLifelineHover;
-      hitArea.onmousemove = updateLifelineHover;
-      lineEl.onmouseenter = updateLifelineHover;
-      lineEl.onmousemove = updateLifelineHover;
-
-      htmlEl.parentNode?.insertBefore(hitArea, htmlEl.nextSibling);
     }
   });
 

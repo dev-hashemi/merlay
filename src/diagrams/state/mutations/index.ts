@@ -4,6 +4,7 @@
  */
 
 export * from './stateMutations';
+export * from './statePruneMutations';
 export * from './transitionMutations';
 export * from './compositeMutations';
 export * from './styleMutations';
