@@ -1,9 +1,14 @@
-# Release checklist (Obsidian community directory):
-# 1. manifest.json `version` is x.y.z and EXACTLY equals the git tag (no `v` prefix).
-# 2. versions.json has an entry for the new version; bump minAppVersion only if new APIs are used.
-# 3. Tag only after `npm test` + `npm run build` pass — this workflow attaches
-#    main.js + manifest.json + styles.css to the GitHub release automatically.
-name: Release Obsidian Plugin
+# Release (Obsidian + VS Code, single lockstep version)
+#
+# One tag per release, bare version (e.g. 0.5.0), equal to the version in
+# package.json, packages/obsidian/manifest.json, packages/vscode/package.json
+# AND the manifest.json mirror at the repo root (which Obsidian reads to
+# discover new versions). No `vscode-` prefixed tags exist.
+#
+# Order is deliberate: Open VSX publishes BEFORE the GitHub release is
+# created, so a failed publish never leaves a half-shipped release.
+# The full checklist lives in RELEASING.md.
+name: Release
 
 on:
   push:
@@ -11,11 +16,13 @@ on:
       - '*'
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       discussions: write
+    env:
+      OVSX_PAT: ${{ secrets.OVSX_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -26,13 +33,46 @@ jobs:
           node-version: 20
           cache: 'npm'
 
+      - name: Verify tag matches every manifest
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          ROOT_PKG="$(node -p "require('./package.json').version")"
+          OBS_MANIFEST="$(node -p "require('./packages/obsidian/manifest.json').version")"
+          VSCODE_PKG="$(node -p "require('./packages/vscode/package.json').version")"
+          ROOT_MANIFEST="$(node -p "require('./manifest.json').version")"
+          for V in "$ROOT_PKG" "$OBS_MANIFEST" "$VSCODE_PKG" "$ROOT_MANIFEST"; do
+            if [ "$TAG" != "$V" ]; then
+              echo "Tag $TAG does not match a manifest version ($ROOT_PKG / $OBS_MANIFEST / $VSCODE_PKG / $ROOT_MANIFEST)"
+              exit 1
+            fi
+          done
+          if ! node -e "process.exit(require('./packages/obsidian/versions.json')['$TAG'] ? 0 : 1)"; then
+            echo "packages/obsidian/versions.json is missing an entry for $TAG"
+            exit 1
+          fi
+          cmp manifest.json packages/obsidian/manifest.json
+          cmp versions.json packages/obsidian/versions.json
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Build plugin
-        run: npm run build:obsidian
+      - name: Run tests
+        run: npm test
 
-      - name: Create Release
+      - name: Build both hosts
+        run: npm run build
+
+      - name: Package VS Code extension (.vsix)
+        # --no-dependencies is required: without it vsce follows the
+        # workspace symlink and bundles the whole monorepo (.env included).
+        run: npx -y @vscode/vsce package --no-dependencies
+        working-directory: packages/vscode
+
+      - name: Publish to Open VSX
+        run: npx -y ovsx publish *.vsix
+        working-directory: packages/vscode
+
+      - name: Create GitHub release (Obsidian assets + .vsix)
         uses: softprops/action-gh-release@v3
         with:
           name: Merlay ${{ github.ref_name }}
@@ -44,5 +84,6 @@ jobs:
             packages/obsidian/main.js
             packages/obsidian/manifest.json
             packages/obsidian/styles.css
+            packages/vscode/*.vsix
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

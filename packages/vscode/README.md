@@ -46,3 +46,6 @@ clean Mermaid code writes itself.
 - Source: [github.com/dev-hashemi/merlay](https://github.com/dev-hashemi/merlay)
 - Also available as an [Obsidian plugin](https://github.com/dev-hashemi/merlay),
   powered by the same portable core.
+
+⭐ Enjoying Merlay? Please [star it on GitHub](https://github.com/dev-hashemi/merlay) —
+it takes a second and helps others discover the project.

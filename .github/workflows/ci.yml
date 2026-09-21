@@ -27,3 +27,20 @@ jobs:
 
       - name: Build plugin
         run: npm run build
+
+      - name: Verify Obsidian root mirrors are in sync
+        # Obsidian discovers versions via manifest.json/versions.json at the
+        # repo root; packages/obsidian/ is the source of truth.
+        run: |
+          cmp manifest.json packages/obsidian/manifest.json
+          cmp versions.json packages/obsidian/versions.json
+
+      - name: Verify .vsix packaging stays lean
+        # Without --no-dependencies vsce follows the workspace symlink and
+        # bundles the whole monorepo (.env included) into the .vsix.
+        run: |
+          if npx -y @vscode/vsce ls --no-dependencies 2>/dev/null | grep -q '\.\./'; then
+            echo 'vsix packaging pulls in parent-dir files; package with --no-dependencies'
+            exit 1
+          fi
+        working-directory: packages/vscode
