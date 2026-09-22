@@ -1,9 +1,9 @@
 {
-  "name": "merlay-vscode",
+  "name": "merlay",
   "displayName": "Merlay",
   "description": "Visual overlay editor for Mermaid diagrams. Mermaid, your way.",
   "version": "0.5.0",
-  "publisher": "merlay",
+  "publisher": "dev-hashemi",
   "icon": "icon.png",
   "engines": {
     "vscode": "^1.85.0"

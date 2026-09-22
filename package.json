@@ -7,10 +7,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w merlay",
-    "build": "npm run build -w merlay && npm run build -w merlay-vscode",
-    "build:obsidian": "npm run build -w merlay",
-    "build:vscode": "npm run build -w merlay-vscode",
+    "dev": "npm run dev -w merlay-obsidian",
+    "build": "npm run build -w merlay-obsidian && npm run build -w merlay",
+    "build:obsidian": "npm run build -w merlay-obsidian",
+    "build:vscode": "npm run build -w merlay",
     "install:obsidian": "npm run build:obsidian && node scripts/install-obsidian.mjs",
     "install:vscode": "npm run build:vscode && node scripts/install-vscode.mjs",
     "test": "tsx --test packages/core/tests/*.test.ts packages/obsidian/tests/*.test.ts packages/vscode/tests/*.test.ts"

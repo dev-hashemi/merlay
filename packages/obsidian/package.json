@@ -1,5 +1,5 @@
 {
-  "name": "merlay",
+  "name": "merlay-obsidian",
   "version": "0.5.0",
   "description": "Visual overlay editor for Mermaid diagrams. Mermaid, your way.",
   "scripts": {
