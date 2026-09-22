@@ -15,7 +15,7 @@
 
 Everything you create is saved as **100% standard, clean Mermaid syntax** right inside your note. No proprietary lock-in, no layout drift, and fully compatible with Obsidian mobile, GitHub, and AI assistants.
 
-**Merlay is also available for VS Code** and its forks (Devin, Cursor, VSCodium) via [Open VSX](https://open-vsx.org/namespace/merlay) — same visual editor, same core.
+**Merlay is also available for VS Code** and its forks (Devin, Cursor, VSCodium) on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=dev-hashemi.merlay) and [Open VSX](https://open-vsx.org/extension/dev-hashemi/merlay) — same visual editor, same core.
 
 <p align="center">
   <img src="assets/demo-merlay.webp" alt="Merlay Demo — visual diagram editing in Obsidian" width="760">
@@ -95,8 +95,8 @@ Mermaid is a declarative, code-first diagramming language that computes its own 
 2. Place them in your vault under `.obsidian/plugins/merlay/`.
 3. Enable **Merlay** in **Settings → Community plugins**.
 
-### Via Open VSX (VS Code, Devin, Cursor, VSCodium)
-Search **Merlay** in the Extensions view, or download the `.vsix` from the [latest release](https://github.com/dev-hashemi/merlay/releases) and install via *Extensions → … → Install from VSIX*.
+### VS Code & Open VSX (Cursor, Devin, VSCodium)
+Install directly from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=dev-hashemi.merlay) or [Open VSX](https://open-vsx.org/extension/dev-hashemi/merlay), or download the `.vsix` from the [latest release](https://github.com/dev-hashemi/merlay/releases) and install via *Extensions → … → Install from VSIX*.
 
 ---
 
