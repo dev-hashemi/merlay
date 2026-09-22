@@ -2,6 +2,8 @@
  * Color extraction, theme detection, and dark-mode color transformation.
  */
 
+import { createDiv } from '../../../platform/dom';
+
 /**
  * Checks whether dark theme is currently active.
  */
@@ -68,8 +70,7 @@ export function resolveThemeBackgroundColor(
 
   // 3. Try reading Obsidian's CSS variable via probe element
   try {
-    const probe = document.createElement('div');
-    probe.className = 'merlay-color-probe';
+    const probe = createDiv('merlay-color-probe');
     document.body.appendChild(probe);
     const probeBg = window.getComputedStyle(probe).backgroundColor;
     probe.remove();
@@ -193,7 +194,7 @@ const COLOR_REGEX = /(#[0-9a-fA-F]{3,8}\b|rgba?\([^)]+\)|\b(?:white|black|red|gr
  * Safely avoids modifying CSS selectors, class names, and non-color properties.
  */
 export function transformCssColors(css: string): string {
-  return css.replace(/(:\s*)([^;\}]+)/g, (_match, prefix, val) => {
+  return css.replace(/(:\s*)([^;}]+)/g, (_match: string, prefix: string, val: string) => {
     return prefix + val.replace(COLOR_REGEX, (c: string) => transformColorForDarkMode(c));
   });
 }

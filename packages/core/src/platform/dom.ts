@@ -36,3 +36,13 @@ export function createSvgElement<K extends keyof SVGElementTagNameMap>(
 ): SVGElementTagNameMap[K] {
   return document.createElementNS('http://www.w3.org/2000/svg', tag);
 }
+
+/** Create a detached canvas (export rasterization). */
+export function createCanvasElement(): HTMLCanvasElement {
+  return document.createElement('canvas');
+}
+
+/** Create a detached anchor (export download links). */
+export function createAnchorElement(): HTMLAnchorElement {
+  return document.createElement('a');
+}

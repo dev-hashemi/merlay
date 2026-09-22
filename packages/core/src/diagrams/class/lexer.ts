@@ -74,7 +74,7 @@ export function parseMemberLine(line: string): ClassMember {
   };
 }
 
-const RELATION_REGEX = /^([A-Za-z0-9_~`-]+|\"[^\"]+\")\s*(?:\"([^\"]*)\")?\s*(<\||\*|o|<)?(--|\.\.)(\|>|\*|o|>)?\s*(?:\"([^\"]*)\")?\s*([A-Za-z0-9_~`-]+|\"[^\"]+\")(?:\s*:\s*(.+))?$/;
+const RELATION_REGEX = /^([A-Za-z0-9_~`-]+|"[^"]+")\s*(?:"([^"]*)")?\s*(<\||\*|o|<)?(--|\.\.)(\|>|\*|o|>)?\s*(?:"([^"]*)")?\s*([A-Za-z0-9_~`-]+|"[^"]+")(?:\s*:\s*(.+))?$/;
 
 function cleanId(id: string): string {
   const t = id.trim();

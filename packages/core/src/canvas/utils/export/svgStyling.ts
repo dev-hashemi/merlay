@@ -2,6 +2,8 @@
  * SVG Presentation, Theme Styling, Markers, and Background Injection for export.
  */
 
+import { createSvgElement } from '../../../platform/dom';
+
 export function injectThemeCssVariables(svg: SVGSVGElement, isDark: boolean = true): void {
   if (typeof document === 'undefined') return;
   const textNormal = isDark ? '#f1f5f9' : '#1e293b';
@@ -10,7 +12,7 @@ export function injectThemeCssVariables(svg: SVGSVGElement, isDark: boolean = tr
   const bgSecondary = isDark ? '#252525' : '#f8fafc';
   const accent = '#7c3aed';
 
-  const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+  const styleEl = createSvgElement('style');
   styleEl.setAttribute('type', 'text/css');
   styleEl.textContent = `
     :root {
@@ -83,7 +85,7 @@ export function applyThemeStyling(svg: SVGSVGElement, isDark: boolean): void {
   // 1. Ensure <defs> exists at the top of the SVG and contains all <marker> elements
   let defs = svg.querySelector('defs');
   if (!defs) {
-    defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    defs = createSvgElement('defs');
     const firstChild = svg.firstElementChild;
     if (firstChild) {
       svg.insertBefore(defs, firstChild);
@@ -217,7 +219,7 @@ export function injectSvgBackground(
     }
   }
 
-  const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  const bgRect = createSvgElement('rect');
   bgRect.setAttribute('class', 'mermaid-export-background');
   bgRect.setAttribute('x', String(bgX));
   bgRect.setAttribute('y', String(bgY));

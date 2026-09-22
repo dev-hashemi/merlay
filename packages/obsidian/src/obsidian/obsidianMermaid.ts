@@ -44,8 +44,7 @@ export async function renderMermaidSvg(app: App, code: string): Promise<string> 
   const mermaidApi = await getMermaidApi();
   if (mermaidApi && typeof mermaidApi.render === 'function') {
     const id = `vmm_${Date.now()}_${++renderSeq}`;
-    const scratch = document.createElement('div');
-    scratch.className = 'mermaid';
+    const scratch = createDiv({ cls: 'mermaid' });
     Object.assign(scratch.style, {
       position: 'absolute',
       visibility: 'hidden',
@@ -68,7 +67,7 @@ export async function renderMermaidSvg(app: App, code: string): Promise<string> 
   }
 
   // Fallback to MarkdownRenderer if direct API is unavailable
-  const tempContainer = document.createElement('div');
+  const tempContainer = createDiv();
   const comp = new Component();
   comp.load();
   try {

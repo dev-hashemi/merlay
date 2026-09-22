@@ -4,6 +4,7 @@
  */
 
 import { isDarkThemeActive } from './colorTransforms';
+import { createSvgElement } from '../../../platform/dom';
 
 /**
  * Extracts lines of text from an HTML container, converting <br> and block tags into newlines.
@@ -61,7 +62,7 @@ export function convertForeignObjectsToSvgText(
     const centerX = foX + foW / 2;
     const centerY = foY + foH / 2;
 
-    const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    const textEl = createSvgElement('text');
     textEl.setAttribute('x', String(centerX));
     textEl.setAttribute('y', String(centerY));
     textEl.setAttribute('text-anchor', 'middle');
@@ -124,7 +125,7 @@ export function convertForeignObjectsToSvgText(
       const startY = centerY - totalH / 2;
 
       lines.forEach((line, idx) => {
-        const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+        const tspan = createSvgElement('tspan');
         tspan.textContent = line;
         tspan.setAttribute('x', String(centerX));
         tspan.setAttribute('y', String(startY + idx * lineHeight));

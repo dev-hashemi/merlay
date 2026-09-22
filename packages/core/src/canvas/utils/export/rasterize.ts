@@ -10,6 +10,7 @@ import {
   normalizeTarget,
   parseSvgString,
 } from './svgNormalize';
+import { createAnchorElement, createCanvasElement } from '../../../platform/dom';
 
 /**
  * Converts an SVG string into a UTF-8 Base64 Data URL.
@@ -37,7 +38,7 @@ export async function rasterizeSvgToBlob(
   svgMountEl?: HTMLElement | null
 ): Promise<Blob | null> {
   const scale = options.scale || 2; // Default to 2x retina
-  const canvas = document.createElement('canvas');
+  const canvas = createCanvasElement();
   canvas.width = Math.max(1, Math.round(width * scale));
   canvas.height = Math.max(1, Math.round(height * scale));
   const ctx = canvas.getContext('2d');
@@ -120,7 +121,7 @@ export async function downloadSvg(
   try {
     const blob = new Blob([res.svgString], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = createAnchorElement();
     link.href = url;
     link.download = `${options.fileName || 'diagram'}.svg`;
     document.body.appendChild(link);
@@ -203,7 +204,7 @@ export async function downloadPng(
       return false;
     }
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = createAnchorElement();
     link.href = url;
     link.download = `${options.fileName || 'diagram'}.png`;
     document.body.appendChild(link);

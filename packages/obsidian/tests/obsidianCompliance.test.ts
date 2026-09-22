@@ -248,6 +248,27 @@ test('Obsidian compliance: never disable no-console (review-blocking error)', ()
   assert.deepStrictEqual(hits, [], `eslint-disable for no-console is rejected: ${hits.join(', ')}`);
 });
 
+test('Obsidian compliance: use window.setTimeout/clearTimeout for popout compatibility', () => {
+  assertNoMatch(
+    shippedFiles(),
+    /(^|[^.\w])setTimeout\s*\(/,
+    'use window.setTimeout() instead of setTimeout() for popout window compatibility'
+  );
+  assertNoMatch(
+    shippedFiles(),
+    /(^|[^.\w])clearTimeout\s*\(/,
+    'use window.clearTimeout() instead of clearTimeout() for popout window compatibility'
+  );
+});
+
+test('Obsidian compliance: no instanceof SVG checks (not cross-window safe)', () => {
+  assertNoMatch(
+    shippedFiles(),
+    /instanceof\s+SVG\w+/,
+    'use tagName/duck-type checks instead of instanceof SVGElement for popout window compatibility'
+  );
+});
+
 // --- Core purity: portable core must never touch host APIs ---
 
 function coreFiles(): { path: string; rel: string; code: string }[] {
@@ -280,11 +301,26 @@ test('Core purity: no host DOM extensions in portable core', () => {
     /\.empty\(\)/,
     'use clearElement() from src/platform/dom instead'
   );
-  assertNoMatch(
-    coreFiles(),
-    /(^|[^.\w])createDiv\s*\(/,
-    'use document.createElement or createDiv() from src/platform/dom instead',
-    ['packages/core/src/platform/dom.ts']
+  // createDiv() from src/platform/dom is the sanctioned replacement for the
+  // host global, so only flag callers that lack that import.
+  const createDivHits: string[] = [];
+  for (const f of coreFiles()) {
+    if (f.rel === 'packages/core/src/platform/dom.ts') continue;
+    const stripped = f.code
+      .split('\n')
+      .filter((line) => !line.trim().startsWith('*') && !line.trim().startsWith('//'))
+      .join('\n');
+    if (
+      /(^|[^.\w])createDiv\s*\(/m.test(stripped) &&
+      !/from\s+['"][^'"]*platform\/dom['"]/.test(f.code)
+    ) {
+      createDivHits.push(f.rel);
+    }
+  }
+  assert.deepStrictEqual(
+    createDivHits,
+    [],
+    'use document.createElement or createDiv() from src/platform/dom instead of the host global'
   );
   assertNoMatch(
     coreFiles(),
