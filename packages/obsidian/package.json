@@ -1,6 +1,6 @@
 {
   "name": "merlay-obsidian",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Visual overlay editor for Mermaid diagrams. Mermaid, your way.",
   "scripts": {
     "dev": "node esbuild.mjs",
