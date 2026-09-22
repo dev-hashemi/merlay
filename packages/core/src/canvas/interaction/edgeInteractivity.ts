@@ -24,6 +24,14 @@ export interface SetupEdgeInteractivityOptions {
   onStartEditingEdge: (edgeId: string, anchorEl: Element) => void;
 }
 
+/**
+ * Clicks landing within this distance (screen px) of an edge's visible
+ * centerline count as aiming at the edge itself, even inside a foreign
+ * cluster's bounds. The hit-area halo is 14px wide, so anything beyond this
+ * still defers to the underlying group (see findDeferCluster).
+ */
+const EDGE_ON_STROKE_PX = 4;
+
 export function setupEdgeInteractivity({
   mountEl,
   dom,
@@ -135,6 +143,23 @@ export function setupEdgeInteractivity({
     if (!targetEdge) return;
     const targetEdgeId = targetEdge.id;
 
+    /**
+     * Same as findDeferCluster, except a pointer landing directly on this
+     * edge's own stroke never defers: without this, any edge segment running
+     * over a group it isn't internal to is unselectable, because the click
+     * always lands on the (topmost) hit-area and gets re-dispatched to the
+     * group. Halo-margin clicks keep deferring so groups stay selectable.
+     */
+    const findDeferClusterForPointer = (clientX: number, clientY: number): Element | null => {
+      if (
+        clientX && clientY &&
+        getDistanceToSvgPath(pathEl as SVGPathElement, clientX, clientY) <= EDGE_ON_STROKE_PX
+      ) {
+        return null;
+      }
+      return findDeferCluster(clientX, clientY, targetEdgeId);
+    };
+
     pathEl.setAttribute('data-mermaid-edge-id', targetEdgeId);
     applyStyles(pathEl, { cursor: 'pointer' });
 
@@ -201,7 +226,7 @@ export function setupEdgeInteractivity({
     };
 
     hitArea.onclick = (e) => {
-      const dc = findDeferCluster(e.clientX, e.clientY, targetEdgeId);
+      const dc = findDeferClusterForPointer(e.clientX, e.clientY);
       if (dc) {
         e.stopPropagation();
         e.preventDefault();
@@ -216,7 +241,7 @@ export function setupEdgeInteractivity({
     };
 
     pathEl.onclick = (e) => {
-      const dc = findDeferCluster(e.clientX, e.clientY, targetEdgeId);
+      const dc = findDeferClusterForPointer(e.clientX, e.clientY);
       if (dc) {
         e.stopPropagation();
         e.preventDefault();
@@ -241,12 +266,12 @@ export function setupEdgeInteractivity({
     guardClickAfterLongPress(pathEl, edgeTap);
 
     hitArea.onmouseenter = (e) => {
-      if (findDeferCluster(e.clientX, e.clientY, targetEdgeId)) return;
+      if (findDeferClusterForPointer(e.clientX, e.clientY)) return;
       showEdgeHoverHalo(mountEl, pathEl, targetEdgeId);
     };
 
     hitArea.onmousemove = (e) => {
-      if (findDeferCluster(e.clientX, e.clientY, targetEdgeId)) {
+      if (findDeferClusterForPointer(e.clientX, e.clientY)) {
         clearEdgeHoverHalos(mountEl, targetEdgeId);
         return;
       }

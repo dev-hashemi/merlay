@@ -193,3 +193,112 @@ test('Cluster label foreignObject children get click handlers', async () => {
     );
   }
 });
+
+// ── Helpers for pointer-decision tests ───────────────────────────────────
+
+const CROSSING_CODE = `flowchart LR
+    subgraph grp ["My Group"]
+        a["A"]
+    end
+    b["B"]
+    c["C"]
+    b --> c`;
+
+function stubRect(el: Element, rect: { left: number; top: number; right: number; bottom: number }): void {
+  (el as any).getBoundingClientRect = () => ({
+    x: rect.left, y: rect.top,
+    width: rect.right - rect.left, height: rect.bottom - rect.top,
+    top: rect.top, left: rect.left, right: rect.right, bottom: rect.bottom,
+    toJSON: () => {},
+  });
+}
+
+/**
+ * Stub an edge path as a horizontal screen-space segment y=100, x=0..200
+ * so getDistanceToSvgPath() returns true pixel distances in JSDOM.
+ */
+function stubEdgeSegment(pathEl: Element): void {
+  stubRect(pathEl, { left: 0, top: 90, right: 200, bottom: 110 });
+  (pathEl as any).getScreenCTM = () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
+  (pathEl as any).getTotalLength = () => 200;
+  (pathEl as any).getPointAtLength = (len: number) => ({ x: len, y: 100 });
+}
+
+async function setupCrossingScene(): Promise<{
+  mountEl: HTMLElement;
+  hitArea: Element;
+  edgeId: string;
+  clusterId: string;
+  select: { edge: string | null; sub: string | null };
+}> {
+  const mountEl = await renderInto(CROSSING_CODE, 'test_edge_over_group');
+  const ast = FlowchartDriver.parse(CROSSING_CODE);
+  const proj = FlowchartDriver.project(ast);
+
+  const select = { edge: null as string | null, sub: null as string | null };
+  setupEdgeInteractivity({
+    mountEl: mountEl as any,
+    displayEdges: proj.edges as any,
+    displaySubgraphs: proj.subgraphs as any,
+    onSelectEdge: (e) => { select.edge = e.id; },
+    onStartEditingEdge: () => {},
+  });
+  setupClusterInteractivity({
+    mountEl: mountEl as any,
+    displaySubgraphs: proj.subgraphs as any,
+    getLocalRect: nullRect as any,
+    onSelectSubgraph: (id) => { select.sub = id; },
+    onStartEditingSubgraph: () => {},
+  });
+
+  const hitArea = mountEl.querySelector('.mermaid-edge-hit-area');
+  assert.ok(hitArea, 'a crossing edge hit-area must exist');
+  const edgeId = hitArea.getAttribute('data-mermaid-edge-id')!;
+  assert.ok(edgeId, 'hit-area must carry an edge id');
+
+  const clusterEl = mountEl.querySelector('[data-mermaid-subgraph-id]');
+  assert.ok(clusterEl, 'a bound cluster must exist');
+  const clusterId = clusterEl.getAttribute('data-mermaid-subgraph-id')!;
+
+  // The test is only meaningful when the edge merely passes over the
+  // cluster instead of being internal to it.
+  const internal = (proj.subgraphs.get(clusterId) as any)?.nodeIds ?? [];
+  const edge = (proj.edges as any[]).find((e: any) => e.id === edgeId);
+  assert.ok(
+    !(internal.includes(edge.from) && internal.includes(edge.to)),
+    `edge ${edgeId} must NOT be internal to cluster ${clusterId}`
+  );
+
+  // The cluster frame covers the click point; the edge stroke runs through it.
+  stubRect(clusterEl.querySelector(':scope > rect')!, { left: 0, top: 0, right: 400, bottom: 400 });
+  const pathEl = mountEl.querySelector(
+    `[data-mermaid-edge-id="${edgeId}"]:not(.mermaid-edge-hit-area)`
+  )!;
+  assert.ok(pathEl, 'the real edge path must exist');
+  stubEdgeSegment(pathEl);
+
+  return { mountEl, hitArea, edgeId, clusterId, select };
+}
+
+test('Click directly on an edge stroke over a foreign cluster selects the edge', async () => {
+  const { hitArea, edgeId, select } = await setupCrossingScene();
+
+  // (100,100) is exactly on the stubbed edge centerline, inside the cluster.
+  hitArea.dispatchEvent(
+    new dom.window.MouseEvent('click', { bubbles: true, clientX: 100, clientY: 100 })
+  );
+  assert.equal(select.edge, edgeId, 'on-stroke click over a group must select the edge');
+  assert.equal(select.sub, null, 'on-stroke click must NOT select the group');
+});
+
+test('Click in the edge halo margin over a foreign cluster still selects the group', async () => {
+  const { hitArea, clusterId, select } = await setupCrossingScene();
+
+  // (100,106) is 6px off the centerline: inside the 14px hit-area halo but
+  // clearly aimed at the group background, so deference must still apply.
+  hitArea.dispatchEvent(
+    new dom.window.MouseEvent('click', { bubbles: true, clientX: 100, clientY: 106 })
+  );
+  assert.equal(select.edge, null, 'halo-margin click must NOT select the edge');
+  assert.equal(select.sub, clusterId, 'halo-margin click over a group must select the group');
+});
