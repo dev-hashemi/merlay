@@ -219,6 +219,7 @@ function stubRect(el: Element, rect: { left: number; top: number; right: number;
  */
 function stubEdgeSegment(pathEl: Element): void {
   stubRect(pathEl, { left: 0, top: 90, right: 200, bottom: 110 });
+  (pathEl as any).getBBox = () => ({ x: 0, y: 100, width: 200, height: 0 });
   (pathEl as any).getScreenCTM = () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
   (pathEl as any).getTotalLength = () => 200;
   (pathEl as any).getPointAtLength = (len: number) => ({ x: len, y: 100 });

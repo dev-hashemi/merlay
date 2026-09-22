@@ -278,6 +278,27 @@ test('Edge Geometry: getDistanceToSvgPath calculates proximity correctly', async
   assert.ok(Math.abs(distToLong - 13) < 0.5);
 });
 
+test('Edge Geometry: distance stays correct under CSS zoom (bbox mapping wins over CTM)', async () => {
+  const { getDistanceToSvgPath } = await import('../src/utils/edgeGeometry');
+
+  // User-space segment (0,50)..(100,50) painted at 2x zoom, i.e. client
+  // (0,100)..(200,100). getScreenCTM does not see the wrapper's CSS zoom and
+  // wrongly claims identity — the getBBox mapping must take precedence.
+  const zoomedEl: any = {
+    getBoundingClientRect: () => ({
+      left: 0, right: 200, top: 98, bottom: 102, width: 200, height: 4,
+    }),
+    getBBox: () => ({ x: 0, y: 50, width: 100, height: 0 }),
+    getScreenCTM: () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }),
+    getTotalLength: () => 100,
+    getPointAtLength: (len: number) => ({ x: len, y: 50 }),
+  };
+
+  // Cursor at (100,102) is 2px below the zoomed line (identity CTM would say ~52px).
+  const dist = getDistanceToSvgPath(zoomedEl, 100, 102);
+  assert.ok(Math.abs(dist - 2) < 0.5, `Expected dist ~2 under zoom, got ${dist}`);
+});
+
 
 test('Edge Matching: parallel edges between same nodes resolve via numeric suffix', () => {
   const parallel: MermaidEdgeDef[] = [

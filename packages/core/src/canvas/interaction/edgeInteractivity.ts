@@ -30,7 +30,7 @@ export interface SetupEdgeInteractivityOptions {
  * cluster's bounds. The hit-area halo is 14px wide, so anything beyond this
  * still defers to the underlying group (see findDeferCluster).
  */
-const EDGE_ON_STROKE_PX = 4;
+const EDGE_ON_STROKE_PX = 5;
 
 export function setupEdgeInteractivity({
   mountEl,
