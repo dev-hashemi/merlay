@@ -176,8 +176,8 @@ export function setupEdgeInteractivity({
         let closestDist = Infinity;
         for (const p of edgePaths) {
           let dist = Infinity;
-          if (p instanceof SVGPathElement) {
-            dist = getDistanceToSvgPath(p, e.clientX, e.clientY);
+          if (p.tagName.toLowerCase() === 'path') {
+            dist = getDistanceToSvgPath(p as SVGPathElement, e.clientX, e.clientY);
           } else if (typeof p.getBoundingClientRect === 'function') {
             const bbox = p.getBoundingClientRect();
             const dx = Math.max(bbox.left - e.clientX, 0, e.clientX - bbox.right);

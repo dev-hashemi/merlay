@@ -55,7 +55,7 @@ export async function rasterizeSvgToBlob(
     const img = new Image();
     await new Promise<void>((resolve, reject) => {
       img.onload = () => resolve();
-      img.onerror = (e) => reject(new Error('Failed to load image from SVG: ' + e));
+      img.onerror = () => reject(new Error('Failed to load image from SVG'));
       img.src = dataUrl;
     });
 
@@ -70,7 +70,7 @@ export async function rasterizeSvgToBlob(
       const fallbackImg = new Image();
       await new Promise<void>((resolve, reject) => {
         fallbackImg.onload = () => resolve();
-        fallbackImg.onerror = (e) => reject(e);
+        fallbackImg.onerror = () => reject(new Error('Failed to load SVG fallback image'));
         fallbackImg.src = fallbackUrl;
       });
       ctx.drawImage(fallbackImg, 0, 0, canvas.width, canvas.height);

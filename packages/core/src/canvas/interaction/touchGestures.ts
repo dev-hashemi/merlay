@@ -53,7 +53,7 @@ export function attachTapGestures(
 
   const clearTimer = (): void => {
     if (longPressTimer !== null) {
-      clearTimeout(longPressTimer);
+      window.clearTimeout(longPressTimer);
       longPressTimer = null;
     }
   };
@@ -80,7 +80,7 @@ export function attachTapGestures(
     }
     if (handlers.onLongPress) {
       const delay = handlers.longPressDelay ?? LONG_PRESS_DELAY_MS;
-      longPressTimer = setTimeout(() => {
+      longPressTimer = window.setTimeout(() => {
         longPressTimer = null;
         longPressFiredAt = Date.now();
         handlers.onLongPress?.();

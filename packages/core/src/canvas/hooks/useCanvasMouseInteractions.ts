@@ -161,7 +161,7 @@ export function useCanvasMouseInteractions({
   } | null>(null);
 
   const clearTouchEmpty = (): void => {
-    if (touchEmptyRef.current?.timer) clearTimeout(touchEmptyRef.current.timer);
+    if (touchEmptyRef.current?.timer) window.clearTimeout(touchEmptyRef.current.timer);
     touchEmptyRef.current = null;
   };
 
@@ -256,7 +256,7 @@ export function useCanvasMouseInteractions({
         timer: null,
         marqueeArmed: false,
       };
-      touchEmptyRef.current.timer = setTimeout(() => {
+      touchEmptyRef.current.timer = window.setTimeout(() => {
         const t = touchEmptyRef.current;
         if (!t) return;
         t.timer = null;

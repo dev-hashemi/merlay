@@ -26,6 +26,8 @@ export class MermaidEditorProvider implements vscode.CustomTextEditorProvider {
         await vscode.workspace.applyEdit(edit);
       },
     });
-    webviewPanel.onDidDispose(() => wiring.dispose());
+    webviewPanel.onDidDispose(() => {
+      wiring.dispose();
+    });
   }
 }

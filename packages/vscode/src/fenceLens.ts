@@ -85,5 +85,7 @@ export async function openFenceEditor(
       await vscode.workspace.applyEdit(edit);
     },
   });
-  panel.onDidDispose(() => wiring.dispose());
+  panel.onDidDispose(() => {
+    wiring.dispose();
+  });
 }

@@ -72,7 +72,7 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
     svgMountEl: svgMountRef.current,
   };
 
-  const handleAction = async (action: () => Promise<unknown> | unknown) => {
+  const handleAction = async (action: () => unknown) => {
     if (isExporting) return;
     setIsExporting(true);
     try {
@@ -141,11 +141,11 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
           type="button"
           className="mermaid-export-btn"
           disabled={isExporting}
-          onClick={() =>
-            handleAction(() =>
+          onClick={() => {
+            void handleAction(() =>
               copyPngToClipboard(target, { includeBackground, scale, notify })
-            )
-          }
+            );
+          }}
           title="Copy PNG image to clipboard for easy pasting into notes or chat"
         >
           <div className="mermaid-export-btn-icon-group">
@@ -159,11 +159,11 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
           type="button"
           className="mermaid-export-btn"
           disabled={isExporting}
-          onClick={() =>
-            handleAction(() =>
+          onClick={() => {
+            void handleAction(() =>
               copySvgToClipboard(target, { includeBackground, notify })
-            )
-          }
+            );
+          }}
           title="Copy raw SVG vector XML to clipboard"
         >
           <div className="mermaid-export-btn-icon-group">
@@ -179,11 +179,11 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
           type="button"
           className="mermaid-export-btn"
           disabled={isExporting}
-          onClick={() =>
-            handleAction(() =>
+          onClick={() => {
+            void handleAction(() =>
               downloadPng(target, { includeBackground, scale, notify })
-            )
-          }
+            );
+          }}
           title="Download diagram as high-resolution PNG image file"
         >
           <div className="mermaid-export-btn-icon-group">
@@ -197,11 +197,11 @@ export const ExportPopover: React.FC<ExportPopoverProps> = ({
           type="button"
           className="mermaid-export-btn"
           disabled={isExporting}
-          onClick={() =>
-            handleAction(() =>
+          onClick={() => {
+            void handleAction(() =>
               downloadSvg(target, { includeBackground, notify })
-            )
-          }
+            );
+          }}
           title="Download diagram as scalable vector SVG file"
         >
           <div className="mermaid-export-btn-icon-group">
