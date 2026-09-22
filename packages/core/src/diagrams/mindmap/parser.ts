@@ -4,7 +4,7 @@
 
 import { splitFrontmatter } from '../common/diagramHeader';
 import { parseMindmapLine } from './lexer';
-import { MermaidMindmapAST, MindmapNode, RawMindmapLine } from './types';
+import { MermaidMindmapAST, MindmapNode } from './types';
 
 export function createEmptyMindmapAst(): MermaidMindmapAST {
   return {

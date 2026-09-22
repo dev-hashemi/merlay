@@ -65,7 +65,7 @@ export const THEME_OPTIONS: readonly ThemeOption[] = [
 export interface ThemePopoverProps {
   isOpen: boolean;
   onClose: () => void;
-  currentTheme?: MermaidTheme | string;
+  currentTheme?: string;
   onSelectTheme: (theme: MermaidTheme | null) => void;
 }
 

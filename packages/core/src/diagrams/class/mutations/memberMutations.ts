@@ -2,7 +2,7 @@
  * Class Diagram Member Mutations (attributes and methods)
  */
 
-import { ClassKind, ClassMember, MermaidClassAST } from '../types';
+import { ClassMember, MermaidClassAST } from '../types';
 import { parseMemberLine } from '../lexer';
 import { NodeMemberCapabilities, NodeMembersGroup } from '../../types';
 

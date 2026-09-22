@@ -5,15 +5,11 @@
 import { splitFrontmatter } from '../common/diagramHeader';
 import { parseClassLine, parseMemberLine } from './lexer';
 import {
-  ClassDirection,
   ClassKind,
-  ClassMember,
   ClassNamespace,
   ClassNode,
   ClassRelationship,
-  ClassStyleDef,
   MermaidClassAST,
-  RawLineEntry,
 } from './types';
 
 function parseStyleProperties(styleStr: string): Record<string, string> {

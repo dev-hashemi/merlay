@@ -91,7 +91,7 @@ export function getDiagramTheme(
  */
 export function setDiagramTheme(
   frontmatter: string | undefined,
-  theme: MermaidTheme | string | null | undefined
+  theme: string | null | undefined
 ): string | undefined {
   if (!theme) {
     if (!frontmatter) return undefined;

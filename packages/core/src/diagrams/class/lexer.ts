@@ -2,7 +2,7 @@
  * Class Diagram Lexer and Line Tokenizer
  */
 
-import { ClassDirection, ClassKind, ClassMember } from './types';
+import { ClassDirection, ClassMember } from './types';
 
 export type ClassLineTokenType =
   | 'header'

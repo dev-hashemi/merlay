@@ -5,7 +5,7 @@
  */
 
 import { DiagramDriver, ViewProjection } from '../types';
-import { ArrowType, FlowchartDirection, MermaidEdgeDef, MermaidNodeDef, MermaidSubgraphDef } from '../viewModel';
+import { ArrowType, MermaidEdgeDef, MermaidNodeDef, MermaidSubgraphDef } from '../viewModel';
 import { getDiagramTheme, matchesHeader, setDiagramTheme } from '../common/diagramHeader';
 import { findNodeLinkUrl } from '../nodeLinks';
 import { ClassDirection, MermaidClassAST } from './types';
@@ -138,7 +138,7 @@ export const ClassDiagramDriver: DiagramDriver<MermaidClassAST> = {
         type: 'subgraph',
         id,
         label: ns.label || id,
-        direction: (ast.direction || 'TD') as FlowchartDirection,
+        direction: ast.direction || 'TD',
         nodeIds: [...ns.classIds],
         subgraphIds: [],
       });

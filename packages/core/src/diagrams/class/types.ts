@@ -4,7 +4,9 @@
 
 export type ClassDirection = 'TB' | 'BT' | 'LR' | 'RL';
 
-export type ClassKind = 'class' | 'interface' | 'abstract' | 'service' | 'enum' | string;
+// Class kinds are open-ended stereotype strings (e.g. "interface", "abstract",
+// "service", "enum", or any custom <<stereotype>>), so this is plain string.
+export type ClassKind = string;
 
 export interface ClassMember {
   raw: string;

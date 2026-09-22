@@ -5,7 +5,6 @@
  */
 
 import * as vscode from 'vscode';
-import { MERLAY_EDITOR_VIEW_TYPE } from './protocol';
 import { attachVisualPanel, fullDocRange } from './panels';
 import { getWebviewHtml } from './webviewHtml';
 

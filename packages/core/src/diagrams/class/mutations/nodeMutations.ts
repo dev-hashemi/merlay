@@ -119,7 +119,7 @@ export function updateClassKind(
 ): void {
   const cls = ast.classes.get(classId);
   if (!cls) return;
-  cls.kind = kind as ClassKind;
+  cls.kind = kind;
   if (kind === 'class') {
     cls.annotations = [];
   } else {

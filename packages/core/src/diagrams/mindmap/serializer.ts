@@ -3,7 +3,7 @@
  */
 
 import { emitFrontmatter } from '../common/diagramHeader';
-import { MermaidMindmapAST, MindmapNode, MindmapShape } from './types';
+import { MermaidMindmapAST, MindmapNode } from './types';
 
 /**
  * Format a label safely for mindmap syntax.

@@ -3,7 +3,6 @@ import { useCanvasStore } from '../store/canvasStore';
 import {
   PopoverPos,
   Rect,
-  SelectedEdgePos,
 } from '../types';
 import {
   applySelectedEdgeHalos,
