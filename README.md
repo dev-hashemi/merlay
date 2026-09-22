@@ -85,18 +85,20 @@ Mermaid is a declarative, code-first diagramming language that computes its own 
 
 ## 🚀 Installation
 
-### Via BRAT (Beta)
-1. Install [Obsidian BRAT](https://github.com/TfTHacker/obsidian42-brat).
-2. In BRAT settings, click **Add Beta plugin** and enter:  
-   `https://github.com/dev-hashemi/merlay`
+### Obsidian
+Install directly inside Obsidian:
+1. Open **Settings → Community plugins** (ensure Restricted mode is turned off).
+2. Click **Browse** and search for **Merlay**.
+3. Click **Install**, then **Enable**.
 
-### Manual
-1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/dev-hashemi/merlay/releases).
-2. Place them in your vault under `.obsidian/plugins/merlay/`.
-3. Enable **Merlay** in **Settings → Community plugins**.
+*(Or view on the [Obsidian Community Directory](https://community.obsidian.md/plugins/merlay)).*
 
-### VS Code & Open VSX (Cursor, Devin, VSCodium)
-Install directly from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=dev-hashemi.merlay) or [Open VSX](https://open-vsx.org/extension/dev-hashemi/merlay), or download the `.vsix` from the [latest release](https://github.com/dev-hashemi/merlay/releases) and install via *Extensions → … → Install from VSIX*.
+### VS Code & Forks (Cursor, Devin, VSCodium)
+Install directly from:
+- [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=dev-hashemi.merlay)
+- [Open VSX Registry](https://open-vsx.org/extension/dev-hashemi/merlay)
+
+*(Or search **Merlay** in your editor's Extensions view).*
 
 ---
 

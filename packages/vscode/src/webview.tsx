@@ -39,13 +39,7 @@ function MerlayWebviewApp(): React.ReactElement {
     () => ({
       renderMermaid: renderMermaidWithNpm,
       notify: (message: string) => {
-        const api = apiRef.current;
-        if (api) {
-          api.postMessage({ type: 'merlay/notify', message });
-        } else {
-          // eslint-disable-next-line no-console -- no toast channel outside VS Code
-          console.log(`[Merlay] ${message}`);
-        }
+        apiRef.current?.postMessage({ type: 'merlay/notify', message });
       },
       subscribeTheme: (cb: () => void) => {
         themeSubsRef.current.add(cb);

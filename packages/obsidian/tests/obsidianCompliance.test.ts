@@ -212,6 +212,42 @@ test('Obsidian compliance: no telemetry / analytics identifiers', () => {
   assertNoMatch(srcFiles(), /\b(telemetry|analytics|trackingPixel)\b/i, 'no telemetry allowed');
 });
 
+// --- Review-blocking: Obsidian rejects eslint-disable for no-console as an
+// error and flags console.log, scanning the whole repo (including vscode) ---
+
+const VSCODE_SRC = join(REPO, 'packages', 'vscode', 'src');
+
+function shippedFiles(): { path: string; rel: string; code: string }[] {
+  return [CORE_SRC, OBSIDIAN_SRC, VSCODE_SRC]
+    .flatMap((dir) => collectTsFiles(dir))
+    .map((path) => ({
+      path,
+      rel: relative(REPO, path),
+      code: readFileSync(path, 'utf8'),
+    }));
+}
+
+test('Obsidian compliance: no console.log in shipped source (no-console)', () => {
+  assertNoMatch(
+    shippedFiles(),
+    /console\.log\s*\(/,
+    'remove console.log; console.warn/error only'
+  );
+});
+
+test('Obsidian compliance: never disable no-console (review-blocking error)', () => {
+  const hits: string[] = [];
+  for (const f of shippedFiles()) {
+    const lines = f.code.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      if (/eslint-disable/.test(lines[i]) && /no-console/.test(lines[i])) {
+        hits.push(`${f.rel}:${i + 1}`);
+      }
+    }
+  }
+  assert.deepStrictEqual(hits, [], `eslint-disable for no-console is rejected: ${hits.join(', ')}`);
+});
+
 // --- Core purity: portable core must never touch host APIs ---
 
 function coreFiles(): { path: string; rel: string; code: string }[] {
