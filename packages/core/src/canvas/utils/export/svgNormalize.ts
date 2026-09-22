@@ -26,13 +26,9 @@ export function normalizeTarget(target: ExportTarget): {
     return { svgMountEl: target };
   }
   if (target && typeof target === 'object' && 'nodeType' in target) {
-    return { svgMountEl: target as HTMLElement };
+    return { svgMountEl: target as unknown as HTMLElement };
   }
-  return (target || {}) as {
-    renderMermaid?: RenderMermaidFn;
-    code?: string;
-    svgMountEl?: HTMLElement | null;
-  };
+  return target || {};
 }
 
 /**
@@ -63,7 +59,7 @@ export function parseSvgString(rawSvg: string): SVGSVGElement | null {
       const parser = new DOMParser();
       const doc = parser.parseFromString(rawSvg, 'image/svg+xml');
       const svg = doc.querySelector('svg');
-      if (svg) return svg as unknown as SVGSVGElement;
+      if (svg) return svg;
     } catch {
       // Fallback to text/html
     }
@@ -72,7 +68,7 @@ export function parseSvgString(rawSvg: string): SVGSVGElement | null {
       const parser = new DOMParser();
       const doc = parser.parseFromString(rawSvg, 'text/html');
       const svg = doc.querySelector('svg');
-      if (svg) return svg as unknown as SVGSVGElement;
+      if (svg) return svg;
     } catch {
       // Fallback
     }

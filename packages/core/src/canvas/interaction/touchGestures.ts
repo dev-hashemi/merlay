@@ -38,7 +38,7 @@ export function attachTapGestures(
   handlers: TapGestureHandlers
 ): TapGestureHandle {
   let lastTapAt = 0;
-  let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+  let longPressTimer: number | null = null;
   let longPressFiredAt = 0;
   let activePointerId: number | null = null;
   let startX = 0;

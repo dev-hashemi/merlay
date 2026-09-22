@@ -94,7 +94,7 @@ export function applyThemeStyling(svg: SVGSVGElement, isDark: boolean): void {
 
   svg.querySelectorAll('marker').forEach((marker) => {
     if ((marker.parentElement as Element | null) !== (defs as Element | null)) {
-      defs!.appendChild(marker);
+      defs.appendChild(marker);
     }
   });
 
@@ -114,7 +114,7 @@ export function applyThemeStyling(svg: SVGSVGElement, isDark: boolean): void {
     const existingFill = marker.getAttribute('fill');
     const existingStroke = marker.getAttribute('stroke');
     const color = existingFill || existingStroke || defaultArrowColor;
-    applyMarkerColor(marker as SVGMarkerElement, color);
+    applyMarkerColor(marker, color);
   });
 
   svg

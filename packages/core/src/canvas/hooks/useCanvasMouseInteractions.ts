@@ -156,7 +156,7 @@ export function useCanvasMouseInteractions({
   const touchEmptyRef = useRef<{
     startClientX: number;
     startClientY: number;
-    timer: ReturnType<typeof setTimeout> | null;
+    timer: number | null;
     marqueeArmed: boolean;
   } | null>(null);
 

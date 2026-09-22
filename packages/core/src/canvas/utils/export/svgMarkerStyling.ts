@@ -15,7 +15,7 @@ export function findMarkerById(root: Element, id: string): SVGMarkerElement | nu
   const markers = root.querySelectorAll('marker');
   for (let i = 0; i < markers.length; i++) {
     if (markers[i].getAttribute('id') === id) {
-      return markers[i] as SVGMarkerElement;
+      return markers[i];
     }
   }
   return null;
