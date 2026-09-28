@@ -926,6 +926,88 @@ pre.language-mermaid {
   flex-shrink: 0;
 }
 
+/* Grouped + searchable shape picker (large drivers). Small drivers render the
+   flat grid above unchanged. */
+.mermaid-shape-popover-wrap {
+  min-width: 290px;
+  max-width: 340px;
+}
+
+.mermaid-shape-search {
+  padding: 2px 8px 8px;
+}
+
+.mermaid-shape-search input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  font-size: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--mermaid-border);
+  background: var(--background-primary, transparent);
+  color: var(--mermaid-text);
+  outline: none;
+}
+
+.mermaid-shape-search input:focus {
+  border-color: var(--mermaid-accent);
+}
+
+.mermaid-shape-group {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+details.mermaid-shape-group {
+  margin: 0;
+}
+
+.mermaid-shape-group-title {
+  padding: 6px 10px 2px;
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.55;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  list-style: none;
+  user-select: none;
+}
+
+summary.mermaid-shape-group-title {
+  cursor: pointer;
+}
+
+summary.mermaid-shape-group-title::-webkit-details-marker {
+  display: none;
+}
+
+.mermaid-shape-group-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(135px, 1fr));
+  gap: 4px;
+}
+
+.mermaid-shape-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  padding: 10px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.mermaid-shape-empty button {
+  padding: 4px 10px;
+  font-size: 11px;
+  border-radius: 6px;
+  border: 1px solid var(--mermaid-border);
+  background: transparent;
+  color: var(--mermaid-text);
+  cursor: pointer;
+}
+
 /* Style Popover */
 .mermaid-style-popover {
   min-width: 260px;
@@ -1777,6 +1859,14 @@ pre.language-mermaid {
     grid-template-columns: 1fr;
   }
 
+  .mermaid-shape-popover-wrap {
+    min-width: 0;
+  }
+
+  .mermaid-shape-group-grid {
+    grid-template-columns: 1fr;
+  }
+
   .mermaid-style-popover {
     min-width: 0;
   }
@@ -1791,6 +1881,7 @@ pre.language-mermaid {
   .mermaid-inline-member-input,
   .mermaid-inline-member-textarea,
   .mermaid-edge-input,
+  .mermaid-shape-search input,
   .mermaid-code-drawer-textarea {
     font-size: 16px;
   }

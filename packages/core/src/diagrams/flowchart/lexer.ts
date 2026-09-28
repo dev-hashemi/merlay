@@ -2,7 +2,7 @@
  * Tokenizer for Mermaid Flowcharts
  */
 
-import { matchArrow, matchShape } from './lexerMatchers';
+import { matchArrow, matchShape, matchShapeMeta } from './lexerMatchers';
 
 export type TokenType =
   | 'DIRECTIVE'       // flowchart, graph
@@ -12,6 +12,7 @@ export type TokenType =
   | 'END'             // end
   | 'IDENTIFIER'      // node ID or word
   | 'NODE_SHAPE'      // shape with text e.g. [My Node]
+  | 'SHAPE_META'      // @{ shape: docs, label: "..." } (Mermaid v11.3+)
   | 'ARROW'           // -->, -.->, ==>, etc.
   | 'ARROW_LABEL'     // |label|
   | 'STYLE'           // style
@@ -30,6 +31,8 @@ export interface Token {
   col: number;
   shapeType?: string;
   labelText?: string;
+  /** Raw inside of `@{ ... }` for SHAPE_META tokens. */
+  metaInner?: string;
 }
 
 export function tokenize(input: string): Token[] {
@@ -118,6 +121,22 @@ export function tokenize(input: string): Token[] {
         continue;
       }
 
+      // Check for @{ ... } shape metadata (must precede word scan so the
+      // `@` isn't swallowed into an identifier; e1@--> style edge ids don't
+      // match because matchShapeMeta requires `@{`).
+      const metaMatch = matchShapeMeta(rawLine, pos);
+      if (metaMatch) {
+        tokens.push({
+          type: 'SHAPE_META',
+          value: metaMatch.raw,
+          metaInner: metaMatch.inner,
+          line: lineIdx + 1,
+          col: pos + 1,
+        });
+        pos += metaMatch.length;
+        continue;
+      }
+
       // Check for shape delimiters starting at pos
       const shapeMatch = matchShape(rawLine, pos);
       if (shapeMatch) {
@@ -161,11 +180,12 @@ export function tokenize(input: string): Token[] {
         }
       }
 
-      // General word / identifier
+      // General word / identifier (stops before @{ shape meta)
       let wordEnd = pos;
       while (
         wordEnd < rawLine.length &&
         !/[\s[(){}|%">]/.test(rawLine[wordEnd]) &&
+        !(rawLine[wordEnd] === '@' && rawLine[wordEnd + 1] === '{') &&
         !matchArrow(rawLine, wordEnd) &&
         !rawLine.startsWith(':::', wordEnd)
       ) {

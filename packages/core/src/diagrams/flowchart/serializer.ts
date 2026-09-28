@@ -5,8 +5,10 @@
 import {
   ArrowType,
   MermaidFlowchartAST,
+  MermaidNodeDef,
   MermaidShapeType,
 } from './types';
+import { isClassicShape, shortNameFor } from './shapes';
 import { emitFrontmatter, emitDirectives } from '../common/diagramHeader';
 
 export function serializeMermaidFlowchart(ast: MermaidFlowchartAST): string {
@@ -49,7 +51,7 @@ export function serializeMermaidFlowchart(ast: MermaidFlowchartAST): string {
     for (const nodeId of subDef.nodeIds) {
       const node = ast.nodes.get(nodeId);
       if (node) {
-        lines.push(`${inner}${node.id}${formatShape(node.shape, node.label)}`);
+        lines.push(`${inner}${formatNode(node)}`);
         emittedNodeIds.add(node.id);
       }
     }
@@ -73,7 +75,7 @@ export function serializeMermaidFlowchart(ast: MermaidFlowchartAST): string {
   // 3. Standalone nodes (not part of any subgraph, or not yet defined with custom label)
   for (const [nodeId, node] of ast.nodes.entries()) {
     if (!node.subgraphId && !emittedNodeIds.has(nodeId)) {
-      lines.push(`    ${node.id}${formatShape(node.shape, node.label)}`);
+      lines.push(`    ${formatNode(node)}`);
       emittedNodeIds.add(nodeId);
     }
   }
@@ -178,6 +180,36 @@ export function serializeMermaidFlowchart(ast: MermaidFlowchartAST): string {
   }
 
   return lines.join('\n').trim() + '\n';
+}
+
+/**
+ * Format a full node definition. Classic shapes use delimiters
+ * (`A["x"]`); v11.3+ shapes use `A@{ shape: docs, label: "x" }`;
+ * icon/image shapes emit their preserved params.
+ */
+function formatNode(node: MermaidNodeDef): string {
+  if (isClassicShape(node.shape)) {
+    return `${node.id}${formatShape(node.shape, node.label)}`;
+  }
+  const safe = `"${escapeLabel(node.label)}"`;
+  const extra = node.shapeParams
+    ? Object.entries(node.shapeParams)
+        .map(([k, v]) => `, ${k}: "${escapeLabel(v)}"`)
+        .join('')
+    : '';
+  if (node.shape === 'icon' || node.shape === 'image') {
+    // Icon/image params (icon:/img:) live in shapeParams; no `shape:` key.
+    const params = node.shapeParams
+      ? Object.entries(node.shapeParams)
+          .map(([k, v]) => `${k}: "${escapeLabel(v)}"`)
+          .join(', ')
+      : '';
+    const labelPart = `, label: ${safe}`;
+    return params
+      ? `${node.id}@{ ${params}${labelPart} }`
+      : `${node.id}@{ label: ${safe} }`;
+  }
+  return `${node.id}@{ shape: ${shortNameFor(node.shape)}, label: ${safe}${extra} }`;
 }
 
 function formatShape(shape: MermaidShapeType, label: string): string {

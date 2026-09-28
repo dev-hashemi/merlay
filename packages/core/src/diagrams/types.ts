@@ -118,6 +118,16 @@ export interface NodeMembersGroup {
 export interface NodeKindOption {
   kind: string;
   label: string;
+  /**
+   * Picker section this entry belongs to (e.g. "Common", "Data & Documents").
+   * Absent = single flat section (small drivers render exactly as before).
+   */
+  group?: string;
+  /**
+   * Space-separated intent words matched by picker search
+   * (e.g. "form fill paper manual"). Absent = label + kind only.
+   */
+  keywords?: string;
 }
 
 /**

@@ -63,6 +63,12 @@ export interface CanvasStoreState {
   editingSubgraphRect: Rect | null;
   editingSubgraphLabel: string;
 
+  // Shape picker memory (preferences, not transient selection)
+  /** Most-recently applied node kinds, newest first (max 3). */
+  recentNodeKinds: string[];
+  /** Last applied node kind; sprouting reuses it when valid for the driver. */
+  lastNodeKind: string | null;
+
   // Actions
   setSelectedNodeIds: (ids: Set<string>) => void;
   setSelectedEdgeIds: (ids: Set<string>) => void;
@@ -134,6 +140,8 @@ export interface CanvasStoreState {
     label?: string
   ) => void;
   clearEditing: () => void;
+
+  pushRecentNodeKind: (kind: string) => void;
 
   clearSelection: () => void;
   clearPopovers: () => void;

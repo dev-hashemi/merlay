@@ -62,6 +62,34 @@ const SHAPES: Array<{
   { open: '{', close: '}', type: 'diamond' },
 ];
 
+export interface ShapeMetaMatch {
+  /** Full raw text including `@{` ... `}`. */
+  raw: string;
+  /** Text between the braces (key: value pairs). */
+  inner: string;
+  length: number;
+}
+
+/**
+ * Match `@{ ... }` shape metadata at pos (Mermaid v11.3+ node syntax).
+ * Respects double-quoted values so `label: "a } b"` doesn't end early.
+ * Returns null for `@` that isn't followed by `{` (e.g. edge ids `e1@-->`).
+ */
+export function matchShapeMeta(str: string, pos: number): ShapeMetaMatch | null {
+  if (str[pos] !== '@' || str[pos + 1] !== '{') return null;
+  let i = pos + 2;
+  let inQuotes = false;
+  while (i < str.length) {
+    const ch = str[i];
+    if (ch === '"' && str[i - 1] !== '\\') inQuotes = !inQuotes;
+    if (ch === '}' && !inQuotes) {
+      return { raw: str.substring(pos, i + 1), inner: str.substring(pos + 2, i), length: i + 1 - pos };
+    }
+    i++;
+  }
+  return null;
+}
+
 export function matchShape(str: string, pos: number): ShapeMatch | null {
   const sub = str.substring(pos);
 

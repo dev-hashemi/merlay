@@ -149,6 +149,20 @@ export function updateNodeShape(
   const node = ast.nodes.get(nodeId);
   if (!node) return false;
   node.shape = newShape;
+  if (newShape === 'icon' || newShape === 'image') {
+    // Seed the discriminator param so the serializer always emits valid
+    // standard Mermaid (`@{ icon: ... }` / `@{ img: ... }`) that round-trips.
+    // Full URL/name editing lives in the syntax drawer for now.
+    if (newShape === 'icon' && node.shapeParams?.icon === undefined) {
+      node.shapeParams = { ...(node.shapeParams ?? {}), icon: 'fa:circle' };
+    }
+    if (newShape === 'image' && node.shapeParams?.img === undefined) {
+      node.shapeParams = { ...(node.shapeParams ?? {}), img: '' };
+    }
+  } else {
+    // Stale @{ ... } params (e.g. an img: URL) must not linger on a morphed node.
+    delete node.shapeParams;
+  }
   return true;
 }
 
@@ -165,6 +179,16 @@ export function updateNodesShape(
     const node = ast.nodes.get(id);
     if (node) {
       node.shape = shape;
+      if (shape === 'icon' || shape === 'image') {
+        if (shape === 'icon' && node.shapeParams?.icon === undefined) {
+          node.shapeParams = { ...(node.shapeParams ?? {}), icon: 'fa:circle' };
+        }
+        if (shape === 'image' && node.shapeParams?.img === undefined) {
+          node.shapeParams = { ...(node.shapeParams ?? {}), img: '' };
+        }
+      } else {
+        delete node.shapeParams;
+      }
       count++;
     }
   }

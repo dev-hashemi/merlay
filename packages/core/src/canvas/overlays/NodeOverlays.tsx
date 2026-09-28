@@ -147,6 +147,7 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
             selectedNodeIds={new Set(selectedNodeId ? [selectedNodeId] : [])}
             viewNodes={viewNodes}
             onSelectKind={onSelectNodeKind}
+            onClose={() => onToggleNodePopover('shape')}
           />
         )}
 

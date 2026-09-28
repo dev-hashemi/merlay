@@ -18,6 +18,7 @@
 export type FlowchartDirection = 'TB' | 'TD' | 'BT' | 'RL' | 'LR';
 
 export type MermaidShapeType =
+  // Classic delimiter shapes (original 14)
   | 'rectangle'          // [text]
   | 'rounded'            // (text)
   | 'stadium'            // ([text])
@@ -31,7 +32,48 @@ export type MermaidShapeType =
   | 'parallelogram_alt'  // [\text\]
   | 'trapezoid'          // [/text\]
   | 'trapezoid_alt'      // [\text/]
-  | 'asymmetric';        // >text]
+  | 'asymmetric'         // >text]
+  // New @{ shape: } shapes (Mermaid v11.3+). The kind IS the short name.
+  | 'odd'
+  | 'datastore'
+  | 'text'
+  | 'notch-rect'
+  | 'lin-rect'
+  | 'sm-circ'
+  | 'fr-circ'
+  | 'fork'
+  | 'hourglass'
+  | 'brace'
+  | 'brace-r'
+  | 'braces'
+  | 'bolt'
+  | 'doc'
+  | 'delay'
+  | 'h-cyl'
+  | 'lin-cyl'
+  | 'curv-trap'
+  | 'div-rect'
+  | 'tri'
+  | 'win-pane'
+  | 'f-circ'
+  | 'lin-doc'
+  | 'notch-pent'
+  | 'flip-tri'
+  | 'sl-rect'
+  | 'docs'
+  | 'st-rect'
+  | 'flag'
+  | 'bow-rect'
+  | 'cross-circ'
+  | 'tag-doc'
+  | 'tag-rect'
+  | 'folder'
+  | 'bucket'
+  | 'console'
+  | 'person'
+  // Special shapes with extra params (icon:, img:)
+  | 'icon'
+  | 'image';
 
 export type ArrowType =
   | 'arrow'          // -->
@@ -54,6 +96,12 @@ export interface MermaidNodeDef {
   subgraphId?: string;
   style?: Record<string, string>;
   classes?: string[];
+  /**
+   * Extra `@{ ... }` params for shapes that carry them (icon/img and any
+   * future `@{ shape: x, key: value }` keys). Keys exclude `shape`/`label`.
+   * Preserved verbatim so visual edits never drop hand-written params.
+   */
+  shapeParams?: Record<string, string>;
 }
 
 export interface MermaidEdgeDef {

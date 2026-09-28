@@ -62,6 +62,10 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
   editingSubgraphRect: null,
   editingSubgraphLabel: '',
 
+  // Shape picker memory (survives selection clears and diagram switches)
+  recentNodeKinds: [],
+  lastNodeKind: null,
+
   // Actions
   setSelectedNodeIds: (ids) => set({ selectedNodeIds: ids }),
   setSelectedEdgeIds: (ids) => set({ selectedEdgeIds: ids }),
@@ -167,6 +171,12 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
       editingSubgraphRect: null,
       editingSubgraphLabel: '',
     }),
+
+  pushRecentNodeKind: (kind) =>
+    set((state) => ({
+      lastNodeKind: kind,
+      recentNodeKinds: [kind, ...state.recentNodeKinds.filter((k) => k !== kind)].slice(0, 3),
+    })),
 
   clearSelection: () =>
     set({

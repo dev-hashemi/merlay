@@ -333,6 +333,161 @@ export const ShapeIcons = {
   cloud: createShape(<path d="M17.5 19H7a4.5 4.5 0 0 1-.7-8.94A6 6 0 0 1 17.6 8.5 4 4 0 0 1 17.5 19Z" />),
   bang: createShape(<polygon points="12,2 14.5,7.5 20,4.5 18,10.5 23,12 18,13.5 20,19.5 14.5,16.5 12,22 9.5,16.5 4,19.5 6,13.5 1,12 6,10.5 4,4.5 9.5,7.5" />),
   default: createShape(<rect x="3" y="6" width="18" height="12" rx="3" strokeDasharray="3 3" />),
+  // --- v11.3+ flowchart shapes (schematic picker glyphs, stroke-only) ---
+  odd: createShape(<path d="M3 6h15l3 6-3 6H3z" />),
+  datastore: createShape(
+    <>
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+      <line x1="5" y1="6" x2="5" y2="18" />
+      <line x1="19" y1="6" x2="19" y2="18" />
+    </>
+  ),
+  text: createShape(
+    <>
+      <line x1="4" y1="7" x2="20" y2="7" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="17" x2="16" y2="17" />
+    </>
+  ),
+  'notch-rect': createShape(<polygon points="3,5 16,5 21,10 21,19 3,19" />),
+  'lin-rect': createShape(
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="1" />
+      <line x1="9" y1="5" x2="9" y2="19" />
+    </>
+  ),
+  'sm-circ': createShape(<circle cx="12" cy="12" r="5" />),
+  'fr-circ': createShape(
+    <>
+      <rect x="4" y="4" width="16" height="16" rx="1" />
+      <circle cx="12" cy="12" r="5" />
+    </>
+  ),
+  fork: createShape(<rect x="2" y="10" width="20" height="4" rx="2" fill="currentColor" stroke="none" />),
+  hourglass: createShape(<polygon points="6,3 18,3 12,11 18,21 6,21 12,13" />),
+  brace: createShape(<path d="M10 3c-3 0-4 2-4 5v3c0 1-1 1-2 1 1 0 2 0 2 1v3c0 3 1 5 4 5" />),
+  'brace-r': createShape(<path d="M14 3c3 0 4 2 4 5v3c0 1 1 1 2 1-1 0-2 0-2 1v3c0 3-1 5-4 5" />),
+  braces: createShape(
+    <>
+      <path d="M8 4c-2 0-3 1.5-3 4v2.5c0 .8-.5 1-1.5 1.5.9.4 1.5.7 1.5 1.5V16c0 2.5 1 4 3 4" />
+      <path d="M16 4c2 0 3 1.5 3 4v2.5c0 .8.5 1 1.5 1.5-.9.4-1.5.7-1.5 1.5V16c0 2.5-1 4-3 4" />
+    </>
+  ),
+  bolt: createShape(<polygon points="13,2 5,14 11,14 10,22 19,9 13,9" />),
+  doc: createShape(
+    <>
+      <path d="M6 2h8l5 5v15H6z" />
+      <path d="M14 2v5h5" />
+    </>
+  ),
+  delay: createShape(<path d="M3 5h11a6 6 0 0 1 0 14H3z" />),
+  'h-cyl': createShape(
+    <>
+      <ellipse cx="6" cy="12" rx="3" ry="7" />
+      <path d="M6 5h12a3 7 0 0 1 0 14H6" />
+    </>
+  ),
+  'lin-cyl': createShape(
+    <>
+      <ellipse cx="12" cy="6" rx="9" ry="3" />
+      <path d="M3 6v12c0 1.66 4.03 3 9 3s9-1.34 9-3V6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+    </>
+  ),
+  'curv-trap': createShape(<path d="M4 5h16c-2 4-2 10 0 14H4c2-4 2-10 0-14z" />),
+  'div-rect': createShape(
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="1" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+    </>
+  ),
+  tri: createShape(<polygon points="12,4 22,20 2,20" />),
+  'win-pane': createShape(
+    <>
+      <rect x="4" y="4" width="16" height="16" rx="1" />
+      <line x1="12" y1="4" x2="12" y2="20" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+    </>
+  ),
+  'f-circ': createShape(<circle cx="12" cy="12" r="6" fill="currentColor" stroke="none" />),
+  'lin-doc': createShape(
+    <>
+      <path d="M6 2h8l5 5v15H6z" />
+      <line x1="9" y1="12" x2="17" y2="12" />
+      <line x1="9" y1="16" x2="17" y2="16" />
+    </>
+  ),
+  'notch-pent': createShape(<polygon points="7,3 17,3 21,11 16,21 8,21 3,11" />),
+  'flip-tri': createShape(<polygon points="2,4 22,4 12,20" />),
+  'sl-rect': createShape(<polygon points="10,4 21,4 14,20 3,20" />),
+  docs: createShape(
+    <>
+      <path d="M8 5h8l4 4v11H8z" />
+      <path d="M4 7v12h12" />
+    </>
+  ),
+  'st-rect': createShape(
+    <>
+      <rect x="7" y="7" width="14" height="13" rx="1" />
+      <path d="M4 4h13v4" />
+    </>
+  ),
+  flag: createShape(
+    <>
+      <line x1="6" y1="2" x2="6" y2="22" />
+      <polygon points="6,3 20,3 17,7 20,11 6,11" />
+    </>
+  ),
+  'bow-rect': createShape(<polygon points="3,5 9,12 3,19 21,19 15,12 21,5" />),
+  'cross-circ': createShape(
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <line x1="7" y1="7" x2="17" y2="17" />
+      <line x1="17" y1="7" x2="7" y2="17" />
+    </>
+  ),
+  'tag-doc': createShape(
+    <>
+      <path d="M6 2h8l5 5v15H6z" />
+      <polygon points="14,2 19,2 19,7" />
+    </>
+  ),
+  'tag-rect': createShape(
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="1" />
+      <polygon points="15,5 21,5 21,11" />
+    </>
+  ),
+  folder: createShape(<path d="M2 6h7l2 3h11v10H2z" />),
+  bucket: createShape(
+    <>
+      <path d="M4 9h16l-2 11H6z" />
+      <path d="M7 9a5 5 0 0 1 10 0" />
+    </>
+  ),
+  console: createShape(
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <line x1="3" y1="9" x2="21" y2="9" />
+      <polyline points="7,13 9,15 7,17" />
+      <line x1="11" y1="17" x2="15" y2="17" />
+    </>
+  ),
+  person: createShape(
+    <>
+      <circle cx="12" cy="7" r="3.5" />
+      <path d="M5 20c0-4 3-6 7-6s7 2 7 6" />
+    </>
+  ),
+  icon: createShape(<polygon points="12,3 14,10 21,10 15,14 17,21 12,17 7,21 9,14 3,10 10,10" />),
+  image: createShape(
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="9" cy="10" r="1.6" />
+      <path d="M4 18l5-5 3 3 3-3 5 5" />
+    </>
+  ),
 };
 
 export const StateTypeIcons = {

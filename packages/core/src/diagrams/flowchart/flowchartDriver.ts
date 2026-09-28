@@ -10,35 +10,31 @@ import {
   MermaidFlowchartAST,
   MermaidShapeType,
 } from './types';
+import { FLOWCHART_SHAPES } from './shapes';
 import { parseMermaidFlowchart } from './parser';
 import { serializeMermaidFlowchart } from './serializer';
 import { findNodeLinkUrl } from '../nodeLinks';
 import { matchesHeader, getDiagramTheme, setDiagramTheme } from '../common/diagramHeader';
 import * as fc from './mutations';
 
-export const FLOWCHART_KIND_OPTIONS = [
-  { kind: 'rectangle', label: 'Rectangle [ ]' },
-  { kind: 'rounded', label: 'Rounded ( )' },
-  { kind: 'stadium', label: 'Stadium ([ ])' },
-  { kind: 'subroutine', label: 'Subroutine [[ ]]' },
-  { kind: 'cylinder', label: 'Database [( )]' },
-  { kind: 'circle', label: 'Circle (( ))' },
-  { kind: 'double_circle', label: 'Double Circle ((( )))' },
-  { kind: 'diamond', label: 'Decision { }' },
-  { kind: 'hexagon', label: 'Hexagon {{ }}' },
-  { kind: 'parallelogram', label: 'Parallelogram [/ /]' },
-  { kind: 'parallelogram_alt', label: 'Parallelogram [\\ \\]' },
-  { kind: 'trapezoid', label: 'Trapezoid [/ \\]' },
-  { kind: 'trapezoid_alt', label: 'Inv. Trapezoid [\\ /]' },
-  { kind: 'asymmetric', label: 'Banner > ]' },
-] as const;
+export const FLOWCHART_KIND_OPTIONS = FLOWCHART_SHAPES.map((d) => ({
+  kind: d.kind as string,
+  label: d.label,
+  group: d.category,
+  keywords: d.keywords,
+}));
 
 function cloneFlowchartAst(ast: MermaidFlowchartAST): MermaidFlowchartAST {
   return {
     ...ast,
     frontmatter: ast.frontmatter,
     directives: ast.directives ? [...ast.directives] : undefined,
-    nodes: new Map(Array.from(ast.nodes, ([id, n]) => [id, { ...n }])),
+    nodes: new Map(
+      Array.from(ast.nodes, ([id, n]) => [
+        id,
+        { ...n, shapeParams: n.shapeParams ? { ...n.shapeParams } : undefined },
+      ])
+    ),
     edges: ast.edges.map((e) => ({ ...e })),
     subgraphs: new Map(
       Array.from(ast.subgraphs, ([id, s]) => [

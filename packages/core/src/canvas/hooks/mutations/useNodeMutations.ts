@@ -34,8 +34,18 @@ export function useNodeMutations({
   const handleSproutNextStep = useCallback(
     (parentId: string) => {
       let createdChildId: string | null = null;
+      // Reuse the last applied shape when the driver offers it, so users
+      // building e.g. a document flow don't re-pick the shape every sprout.
+      const lastKind = useCanvasStore.getState().lastNodeKind;
+      const reuseKind =
+        lastKind && driver.nodeKindOptions.some((o) => o.kind === lastKind)
+          ? lastKind
+          : undefined;
       applyMutation((currentAst) => {
         createdChildId = m.addChildNode(currentAst, parentId, driver.labels.addChild);
+        if (reuseKind && createdChildId) {
+          m.updateNodesKind(currentAst, [createdChildId], reuseKind);
+        }
       }, parentId);
       if (createdChildId) {
         setSelectedNodeId(createdChildId);
@@ -83,6 +93,7 @@ export function useNodeMutations({
       applyMutation((a) => {
         m.updateNodesKind(a, targets, kind);
       }, specificId || getSelectedNodeId() || undefined);
+      useCanvasStore.getState().pushRecentNodeKind(kind);
       useCanvasStore.getState().setActiveNodePopover(null);
     },
     [m, applyMutation]
@@ -98,6 +109,7 @@ export function useNodeMutations({
       applyMutation((a) => {
         m.updateNodesKind(a, filtered, kind);
       });
+      useCanvasStore.getState().pushRecentNodeKind(kind);
       useCanvasStore.getState().setActiveMultiPopover(null);
     },
     [anchors, m, applyMutation]

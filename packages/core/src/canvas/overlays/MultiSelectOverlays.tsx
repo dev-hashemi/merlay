@@ -110,6 +110,7 @@ export const MultiSelectOverlays: React.FC<MultiSelectOverlaysProps> = ({
             selectedNodeIds={selectedNodeIds}
             viewNodes={viewNodes}
             onSelectKind={onBatchSelectNodeKind}
+            onClose={() => onToggleMultiPopover('shape')}
           />
         )}
 
