@@ -1471,24 +1471,6 @@ pre.language-mermaid {
   padding: 1px;
 }
 
-/* Distinct default look for group containers (unstyled subgraphs).
-   CSS-only so explicit `style <subId>` user styles (inline) still win;
-   the mount-id-scoped selection highlight below outranks the theme. */
-.mermaid-native-svg-mount .cluster > rect {
-  fill: var(--mermaid-accent-subtle);
-  stroke: var(--mermaid-accent);
-  stroke-width: 1.5px;
-  stroke-dasharray: 5 5;
-}
-
-/* Same container look for empty groups, which mermaid degrades to plain nodes */
-.mermaid-native-svg-mount .node[data-mermaid-subgraph-id] :is(rect, circle, polygon, ellipse, path):not(.mermaid-node-selection-halo) {
-  fill: var(--mermaid-accent-subtle);
-  stroke: var(--mermaid-accent);
-  stroke-width: 1.5px;
-  stroke-dasharray: 5 5;
-}
-
 /* Subgraph SVG Selection Highlight */
 #merlay-svg-mount.mermaid-native-svg-mount .mermaid-cluster-selected rect {
   stroke: var(--mermaid-accent);
