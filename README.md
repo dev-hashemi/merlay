@@ -11,6 +11,13 @@
 > **Mermaid, your way.**  
 > A visual overlay editor for [Mermaid](https://mermaid.js.org/) diagrams in [Obsidian](https://obsidian.md).
 
+[![GitHub release](https://img.shields.io/github/v/release/dev-hashemi/merlay?label=version&logo=github)](https://github.com/dev-hashemi/merlay/releases)
+[![Obsidian](https://img.shields.io/badge/Obsidian-Community%20Plugin-7C3AED?logo=obsidian&logoColor=white)](https://community.obsidian.md/plugins/merlay)
+[![VS Code Marketplace](https://img.shields.io/badge/VS_Code_Marketplace-007ACC?logo=visualstudiocode&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=dev-hashemi.merlay)
+[![Open VSX](https://img.shields.io/open-vsx/v/dev-hashemi/merlay?label=Open%20VSX)](https://open-vsx.org/extension/dev-hashemi/merlay)
+[![License: MIT](https://img.shields.io/github/license/dev-hashemi/merlay)](https://github.com/dev-hashemi/merlay/blob/main/LICENSE)
+[![CI](https://github.com/dev-hashemi/merlay/actions/workflows/ci.yml/badge.svg)](https://github.com/dev-hashemi/merlay/actions/workflows/ci.yml)
+
 **Merlay** lets you create and edit Mermaid diagrams visually directly inside your Obsidian notes. Build **Flowcharts**, **State Diagrams**, **Sequence Diagrams**, and **Mindmaps** with single-click relational sprouting, drag-and-drop connections, and inline renaming — without writing code or fighting diagram syntax.
 
 Everything you create is saved as **100% standard, clean Mermaid syntax** right inside your note. No proprietary lock-in, no layout drift, and fully compatible with Obsidian mobile, GitHub, and AI assistants.
@@ -119,6 +126,12 @@ npm run install:vscode     # build + package + install into VS Code (then reload
 ```
 
 For architecture details, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
+---
+
+## Support
+
+If Merlay saves you time, consider starring the repo — it helps others discover it.
 
 ---
 
