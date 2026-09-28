@@ -33,7 +33,7 @@ import {
 export { parseStyleDeclarations };
 
 export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
-  const { frontmatter, body } = splitFrontmatter(input);
+  const { frontmatter, directives, body } = splitFrontmatter(input);
   const tokens = tokenize(body);
   const inputLines = body.split('\n');
   let cursor = 0;
@@ -41,6 +41,7 @@ export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
   const ast: MermaidFlowchartAST = {
     diagramType: 'flowchart',
     frontmatter,
+    directives,
     direction: 'TD',
     nodes: new Map(),
     edges: [],
@@ -70,6 +71,10 @@ export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
 
   // Parse header
   skipNewlines();
+  while (currentToken().type === 'COMMENT') {
+    ast.rawLines.push({ type: 'raw', text: advance().value });
+    skipNewlines();
+  }
   if (currentToken().type === 'DIRECTIVE') {
     const dirToken = advance();
     ast.diagramType = dirToken.value.toLowerCase() as 'flowchart' | 'graph';

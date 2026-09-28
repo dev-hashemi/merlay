@@ -25,6 +25,7 @@ function cloneClassAst(ast: MermaidClassAST): MermaidClassAST {
   return {
     ...ast,
     frontmatter: ast.frontmatter,
+    directives: ast.directives ? [...ast.directives] : undefined,
     classes: new Map(
       Array.from(ast.classes.entries(), ([id, c]) => [
         id,

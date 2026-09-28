@@ -12,7 +12,9 @@ export * from './diagramTheme';
 export interface SplitFrontmatterResult {
   /** Inner YAML lines (without the `---` delimiters), if a leading block exists. */
   frontmatter?: string;
-  /** Original input with only the frontmatter block removed (comments kept). */
+  /** Extracted leading directives (e.g. `%%{init: ...}%%`), preserved verbatim. */
+  directives?: string[];
+  /** Original input with only the frontmatter and leading directive blocks removed (comments kept). */
   body: string;
 }
 
@@ -21,42 +23,95 @@ function isBlankOrComment(trimmed: string): boolean {
 }
 
 /**
- * Extract a leading YAML frontmatter block (`--- ... ---`).
+ * Extract a leading YAML frontmatter block (`--- ... ---`) and any leading
+ * Mermaid directives (`%%{ ... }%%`, single or multi-line).
  *
- * Allows leading blank lines and `%%` comments before the block (matching
- * state/sequence lexer behavior). Only the FIRST block counts; a `---`
- * line after real code is content, not frontmatter. Unclosed blocks are
- * ignored (returned as body) so a diagram is never swallowed silently.
+ * Allows leading blank lines and `%%` comments before/between blocks.
+ * Only the FIRST frontmatter block counts; a `---` line after real code is
+ * content, not frontmatter. Unclosed blocks are ignored (returned as body) so
+ * a diagram is never swallowed silently.
  */
 export function splitFrontmatter(input: string): SplitFrontmatterResult {
   const lines = input.split('\n');
+  const removedLineIndices = new Set<number>();
+  let frontmatter: string | undefined = undefined;
+  const directives: string[] = [];
 
-  let start = -1;
-  for (let i = 0; i < lines.length; i++) {
+  let i = 0;
+  while (i < lines.length) {
     const trimmed = lines[i].trim();
-    if (isBlankOrComment(trimmed)) continue;
-    if (trimmed === '---') start = i;
-    break;
-  }
-  if (start === -1) return { frontmatter: undefined, body: input };
 
-  let end = -1;
-  for (let i = start + 1; i < lines.length; i++) {
-    if (lines[i].trim() === '---') {
-      end = i;
+    // Skip empty lines
+    if (trimmed === '') {
+      i++;
+      continue;
+    }
+
+    // Directives: %%{ ... }%% (single-line or multi-line)
+    if (trimmed.startsWith('%%{')) {
+      let dirEnd = -1;
+      for (let j = i; j < lines.length; j++) {
+        if (lines[j].includes('}%%')) {
+          dirEnd = j;
+          break;
+        }
+      }
+      if (dirEnd !== -1) {
+        directives.push(lines.slice(i, dirEnd + 1).join('\n'));
+        for (let k = i; k <= dirEnd; k++) {
+          removedLineIndices.add(k);
+        }
+        i = dirEnd + 1;
+        continue;
+      }
+      // If unclosed, do not treat as directive, treat as real content and stop
       break;
     }
-  }
-  if (end === -1) return { frontmatter: undefined, body: input };
 
-  const frontmatter = lines.slice(start + 1, end).join('\n');
-  const body = [...lines.slice(0, start), ...lines.slice(end + 1)].join('\n');
-  return { frontmatter, body };
+    // Regular comments: %% ... (keep in body, allowed in preamble)
+    if (trimmed.startsWith('%%')) {
+      i++;
+      continue;
+    }
+
+    // Frontmatter: --- ... --- (only the first block counts)
+    if (trimmed === '---' && frontmatter === undefined) {
+      let fmEnd = -1;
+      for (let j = i + 1; j < lines.length; j++) {
+        if (lines[j].trim() === '---') {
+          fmEnd = j;
+          break;
+        }
+      }
+      if (fmEnd !== -1) {
+        frontmatter = lines.slice(i + 1, fmEnd).join('\n');
+        for (let k = i; k <= fmEnd; k++) {
+          removedLineIndices.add(k);
+        }
+        i = fmEnd + 1;
+        continue;
+      }
+      // If unclosed, do not treat as frontmatter, stop
+      break;
+    }
+
+    // Any other substantive code line means we have reached the diagram body
+    break;
+  }
+
+  const bodyLines = lines.filter((_, idx) => !removedLineIndices.has(idx));
+  const body = bodyLines.join('\n');
+
+  return {
+    frontmatter,
+    directives: directives.length > 0 ? directives : undefined,
+    body,
+  };
 }
 
 /**
- * First substantive line of a diagram: skips blanks, `%%` comments, and a
- * leading frontmatter block. Used for header detection (`flowchart`,
+ * First substantive line of a diagram: skips blanks, `%%` comments, and any
+ * leading frontmatter or directive blocks. Used for header detection (`flowchart`,
  * `stateDiagram-v2`, `sequenceDiagram`, ...).
  */
 export function findFirstCodeLine(code: string): string | undefined {
@@ -81,6 +136,14 @@ export function emitFrontmatter(lines: string[], frontmatter?: string): void {
   lines.push('---');
   lines.push(frontmatter);
   lines.push('---');
+}
+
+/** Append leading directives to serializer output lines, if present. */
+export function emitDirectives(lines: string[], directives?: string[]): void {
+  if (!directives || directives.length === 0) return;
+  for (const directive of directives) {
+    lines.push(directive);
+  }
 }
 
 /**

@@ -2,7 +2,7 @@
  * Mermaid Class Diagram Clean Serializer
  */
 
-import { emitFrontmatter } from '../common/diagramHeader';
+import { emitFrontmatter, emitDirectives } from '../common/diagramHeader';
 import { ClassNode, MermaidClassAST } from './types';
 
 function formatStyleProperties(styles: Record<string, string>): string {
@@ -46,6 +46,9 @@ export function serializeMermaidClassDiagram(ast: MermaidClassAST): string {
 
   // 1. YAML Frontmatter
   emitFrontmatter(lines, ast.frontmatter);
+
+  // 1b. Directives (%%{init: ...}%%)
+  emitDirectives(lines, ast.directives);
 
   // 2. Header
   lines.push(ast.diagramType || 'classDiagram');

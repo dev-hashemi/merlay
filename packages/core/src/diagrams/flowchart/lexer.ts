@@ -45,6 +45,28 @@ export function tokenize(input: string): Token[] {
       continue;
     }
 
+    if (trimmed.startsWith('%%{')) {
+      const directiveLines: string[] = [trimmed];
+      if (!trimmed.includes('}%%')) {
+        while (lineIdx + 1 < lines.length) {
+          lineIdx++;
+          const nextTrimmed = lines[lineIdx].trim();
+          directiveLines.push(lines[lineIdx]);
+          if (nextTrimmed.includes('}%%')) {
+            break;
+          }
+        }
+      }
+      tokens.push({
+        type: 'COMMENT',
+        value: directiveLines.join('\n'),
+        line: lineIdx + 1,
+        col: rawLine.indexOf('%') + 1,
+      });
+      tokens.push({ type: 'NEWLINE', value: '\n', line: lineIdx + 1, col: rawLine.length + 1 });
+      continue;
+    }
+
     if (trimmed.startsWith('%%')) {
       tokens.push({
         type: 'COMMENT',

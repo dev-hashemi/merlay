@@ -12,13 +12,13 @@ import {
 } from './types';
 
 export function parseMermaidSequenceDiagram(input: string): MermaidSequenceAST {
-  const { frontmatter, body } = splitFrontmatter(input);
+  const { frontmatter, directives, body } = splitFrontmatter(input);
   const tokens = tokenizeSequenceDiagram(body);
 
   const ast: MermaidSequenceAST = {
     diagramType: 'sequenceDiagram',
     frontmatter,
-    directives: [],
+    directives: directives ? [...directives] : [],
     participants: new Map(),
     messages: [],
     boxes: new Map(),

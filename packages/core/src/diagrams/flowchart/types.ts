@@ -45,6 +45,8 @@ export interface MermaidFlowchartAST {
   diagramType: 'flowchart' | 'graph';
   /** Raw YAML lines between leading `--- ... ---` (without delimiters). */
   frontmatter?: string;
+  /** Leading Mermaid directives (e.g. `%%{init: ...}%%`), preserved verbatim. */
+  directives?: string[];
   direction: FlowchartDirection;
   nodes: Map<string, MermaidNodeDef>;
   edges: MermaidEdgeDef[];

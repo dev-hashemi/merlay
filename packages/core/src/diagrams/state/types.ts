@@ -48,6 +48,7 @@ export interface MermaidCompositeStateDef {
 export interface MermaidStateAST {
   diagramType: 'stateDiagram-v2' | 'stateDiagram';
   frontmatter?: string;
+  directives?: string[];
   direction?: StateDirection;
   states: Map<string, MermaidStateDef>;
   transitions: MermaidTransitionDef[];

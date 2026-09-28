@@ -38,11 +38,12 @@ function normalizeKind(stereotype: string): ClassKind {
 }
 
 export function parseMermaidClassDiagram(input: string): MermaidClassAST {
-  const { frontmatter, body } = splitFrontmatter(input);
+  const { frontmatter, directives, body } = splitFrontmatter(input);
 
   const ast: MermaidClassAST = {
     diagramType: 'classDiagram',
     frontmatter,
+    directives,
     direction: undefined,
     classes: new Map<string, ClassNode>(),
     relationships: [],

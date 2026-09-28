@@ -92,6 +92,24 @@ test('Diagram Registry: detectDiagramType for all 20+ mermaid diagrams', () => {
     'pie'
   );
 
+  // Directive handling (single-line and multi-line)
+  assert.strictEqual(
+    detectDiagramType("%%{init: {'theme': 'dark'}}%%\nflowchart TD\n  A --> B"),
+    'flowchart'
+  );
+  assert.strictEqual(
+    detectDiagramType("%%{init: {\n  'theme': 'dark'\n}}%%\nstateDiagram-v2\n  [*] --> S1"),
+    'stateDiagram'
+  );
+  assert.strictEqual(
+    detectDiagramType("%%{init: {'theme': 'forest'}}%%\nsequenceDiagram\n  Alice->>Bob: Hi"),
+    'sequenceDiagram'
+  );
+  assert.strictEqual(
+    detectDiagramType("%%{init: {'theme': 'dark'}}%%\npie\n  \"A\": 50"),
+    'pie'
+  );
+
   // Unknown
   assert.strictEqual(detectDiagramType(''), 'unknown');
   assert.strictEqual(detectDiagramType('%% only comments\n%% here'), 'unknown');

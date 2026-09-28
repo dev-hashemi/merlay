@@ -37,6 +37,7 @@ function cloneFlowchartAst(ast: MermaidFlowchartAST): MermaidFlowchartAST {
   return {
     ...ast,
     frontmatter: ast.frontmatter,
+    directives: ast.directives ? [...ast.directives] : undefined,
     nodes: new Map(Array.from(ast.nodes, ([id, n]) => [id, { ...n }])),
     edges: ast.edges.map((e) => ({ ...e })),
     subgraphs: new Map(

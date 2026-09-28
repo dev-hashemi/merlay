@@ -87,13 +87,23 @@ export function tokenizeSequenceDiagram(input: string): SequenceToken[] {
       continue;
     }
 
-    // 3. Comments
-    if (trimmed.startsWith('%%')) {
-      if (trimmed.startsWith('%%{init:')) {
-        tokens.push({ type: 'DIRECTIVE', value: rawLine, line: idx });
-      } else {
-        tokens.push({ type: 'COMMENT', value: rawLine, line: idx });
+    // 3. Comments and Directives
+    if (trimmed.startsWith('%%{')) {
+      const directiveLines: string[] = [rawLine];
+      if (!trimmed.includes('}%%')) {
+        while (idx + 1 < lines.length) {
+          idx++;
+          directiveLines.push(lines[idx]);
+          if (lines[idx].includes('}%%')) {
+            break;
+          }
+        }
       }
+      tokens.push({ type: 'DIRECTIVE', value: directiveLines.join('\n'), line: idx });
+      continue;
+    }
+    if (trimmed.startsWith('%%')) {
+      tokens.push({ type: 'COMMENT', value: rawLine, line: idx });
       continue;
     }
 

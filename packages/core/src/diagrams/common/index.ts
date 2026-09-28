@@ -3,6 +3,7 @@ export {
   findFirstCodeLine,
   matchesHeader,
   emitFrontmatter,
+  emitDirectives,
   generateUniqueId,
   getDiagramTheme,
   setDiagramTheme,

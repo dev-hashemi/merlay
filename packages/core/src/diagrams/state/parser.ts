@@ -18,13 +18,14 @@ import {
 } from './parserHelpers';
 
 export function parseMermaidStateDiagram(input: string): MermaidStateAST {
-  const { frontmatter, body } = splitFrontmatter(input);
+  const { frontmatter, directives, body } = splitFrontmatter(input);
   const tokens = tokenizeStateDiagram(body);
   let cursor = 0;
 
   const ast: MermaidStateAST = {
     diagramType: 'stateDiagram-v2',
     frontmatter,
+    directives,
     states: new Map(),
     transitions: [],
     compositeStates: new Map(),
@@ -53,6 +54,15 @@ export function parseMermaidStateDiagram(input: string): MermaidStateAST {
 
   // Parse Header
   skipNewlines();
+  while (currentToken().type === 'COMMENT' || currentToken().type === 'RAW_LINE') {
+    const t = advance();
+    ast.rawLines.push({
+      text: t.value,
+      compositeId: compositeStack[compositeStack.length - 1],
+      order: stmtOrder++,
+    });
+    skipNewlines();
+  }
   if (currentToken().type === 'DIRECTIVE') {
     const dirToken = advance();
     ast.diagramType = dirToken.value.toLowerCase() === 'statediagram'

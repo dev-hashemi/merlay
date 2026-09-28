@@ -38,6 +38,7 @@ export function cloneMindmapAst(ast: MermaidMindmapAST): MermaidMindmapAST {
   return {
     diagramType: 'mindmap',
     frontmatter: ast.frontmatter,
+    directives: ast.directives ? [...ast.directives] : undefined,
     root: ast.root ? (nodes.get(ast.root.id) ?? null) : null,
     nodes,
     rawLines: ast.rawLines.map((r) => ({ ...r })),

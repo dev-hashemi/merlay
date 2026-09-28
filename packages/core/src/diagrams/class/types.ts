@@ -59,6 +59,7 @@ export interface RawLineEntry {
 export interface MermaidClassAST {
   diagramType: 'classDiagram' | 'classDiagram-v2';
   frontmatter?: string;
+  directives?: string[];
   direction?: ClassDirection;
   classes: Map<string, ClassNode>;
   relationships: ClassRelationship[];

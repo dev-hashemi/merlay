@@ -246,3 +246,85 @@ test('Phase 1: shared header helpers handle edge cases safely', () => {
     'p_4'
   );
 });
+
+test('Mermaid Directives: multi-line %%{init: ...}%% directive survives visual edits verbatim', () => {
+  const userSnippet = [
+    "%%{init: {'theme': 'dark', 'themeVariables': { 'darkMode': true, 'background': 'transparent',",
+    "  'mainBkg': '#1e293b', 'primaryColor': '#1e293b', 'primaryBorderColor': '#3b82f6', 'primaryTextColor':",
+    "  '#f8fafc', 'lineColor': '#38bdf8', 'edgeLabelBackground': '#1e293b' }}}%%",
+    '    flowchart TD',
+    '        subgraph Gaps ["⚠ Identified Critical Gaps"]',
+    '            G1["1. Embedding Engine Choice\\nTorch vs Lightweight ONNX"]',
+    '            G2["2. Chunking & Breadcrumbs\\nNaive ## vs Heading Path Hierarchy"]',
+    '            G3["3. Dual-Store Incremental Sync\\nKeeping LadybugDB & LanceDB in Lockstep"]',
+    '            G4["4. Graph-to-Chunk Boost Math\\nNote-level hops → Chunk-level scoring"]',
+    '            G5["5. Search Modes & Fallback\\nDense vs Sparse vs Hybrid toggling"]',
+    '        end',
+    '',
+    '        Gaps --> Solution["🎯 Refined Phase 2 Architecture"]',
+    '        style Solution fill:#14532d,stroke:#22c55e,color:#e2e8f0',
+  ].join('\n');
+
+  // 1. Detection
+  assert.strictEqual(detectDiagramType(userSnippet), 'flowchart');
+
+  // 2. Driver parse
+  const ast = flowchartDriver.parse(userSnippet);
+  assert.strictEqual(ast.diagramType, 'flowchart');
+  assert.strictEqual(ast.direction, 'TD');
+
+  // 3. Verify no bogus nodes from directive
+  assert.ok(!ast.nodes.has("'mainBkg':"));
+  assert.ok(!ast.nodes.has('mainBkg'));
+  assert.ok(!ast.nodes.has('primaryColor'));
+  assert.ok(ast.nodes.has('G1'));
+  assert.ok(ast.nodes.has('G5'));
+  assert.ok(ast.nodes.has('Solution'));
+
+  // 4. Verify directives stored
+  assert.ok(ast.directives && ast.directives.length === 1);
+  assert.ok(ast.directives[0].includes('themeVariables'));
+
+  // 5. Serialize: directive is emitted at the top
+  const serialized = flowchartDriver.serialize(ast);
+  assert.ok(serialized.startsWith('%%{init:'));
+  assert.ok(serialized.includes("'mainBkg': '#1e293b'"));
+  assert.ok(serialized.includes('flowchart TD'));
+
+  // 6. Visual edit (addNode)
+  flowchartDriver.mutations.addNode(ast, 'New Phase');
+  const edited = flowchartDriver.serialize(ast);
+  assert.ok(edited.startsWith('%%{init:'));
+  assert.ok(edited.includes('New Phase'));
+
+  // 7. Idempotent round-trip
+  const reparsed = flowchartDriver.parse(edited);
+  assert.strictEqual(flowchartDriver.serialize(reparsed), edited);
+});
+
+test('Mermaid Directives: single-line and multi-line directives across diagram types', () => {
+  // State diagram with directive
+  const stateCode = "%%{init: {'theme': 'dark'}}%%\nstateDiagram-v2\n    [*] --> S1\n    S1 --> [*]";
+  assert.strictEqual(detectDiagramType(stateCode), 'stateDiagram');
+  const stateAst = stateDriver.parse(stateCode);
+  assert.ok(stateAst.directives && stateAst.directives.length === 1);
+  const stateOut = stateDriver.serialize(stateAst);
+  assert.ok(stateOut.startsWith("%%{init: {'theme': 'dark'}}%%\nstateDiagram-v2"));
+
+  // Sequence diagram with directive
+  const seqCode = "%%{init: {'theme': 'forest'}}%%\nsequenceDiagram\n    Alice->>Bob: Hello";
+  assert.strictEqual(detectDiagramType(seqCode), 'sequenceDiagram');
+  const seqAst = sequenceDriver.parse(seqCode);
+  const seqOut = sequenceDriver.serialize(seqAst);
+  assert.ok(seqOut.startsWith("%%{init: {'theme': 'forest'}}%%\nsequenceDiagram"));
+
+  // Directive + frontmatter combination
+  const combo = "---\ntitle: Flow\n---\n%%{init: {'theme': 'neutral'}}%%\nflowchart LR\n    A --> B";
+  assert.strictEqual(detectDiagramType(combo), 'flowchart');
+  const comboAst = flowchartDriver.parse(combo);
+  assert.ok(comboAst.frontmatter?.includes('title: Flow'));
+  assert.ok(comboAst.directives?.[0]?.includes('neutral'));
+  const comboOut = flowchartDriver.serialize(comboAst);
+  assert.ok(comboOut.startsWith('---\ntitle: Flow\n---\n%%{init:'));
+});
+

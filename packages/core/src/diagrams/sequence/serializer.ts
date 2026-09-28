@@ -7,7 +7,7 @@ import {
   SequenceArrowType,
   SequenceParticipantDef,
 } from './types';
-import { emitFrontmatter } from '../common/diagramHeader';
+import { emitFrontmatter, emitDirectives } from '../common/diagramHeader';
 
 export function arrowToToken(arrow: SequenceArrowType): string {
   switch (arrow) {
@@ -64,6 +64,11 @@ export function serializeMermaidSequenceDiagram(ast: MermaidSequenceAST): string
   // 1. Frontmatter (shared YAML block, same as every diagram kind)
   emitFrontmatter(lines, ast.frontmatter);
 
+  // 1b. Leading directives (%%{init: ...}%%)
+  const initDirectives = (ast.directives || []).filter((d) => d.trim().startsWith('%%{'));
+  const bodyDirectives = (ast.directives || []).filter((d) => !d.trim().startsWith('%%{'));
+  emitDirectives(lines, initDirectives);
+
   // 2. Header
   lines.push('sequenceDiagram');
 
@@ -72,9 +77,9 @@ export function serializeMermaidSequenceDiagram(ast: MermaidSequenceAST): string
     lines.push('    autonumber');
   }
 
-  // 4. Directives (accTitle, accDescr, %%{init: ...}%%)
-  if (ast.directives && ast.directives.length > 0) {
-    for (const d of ast.directives) {
+  // 4. Directives (accTitle, accDescr, title)
+  if (bodyDirectives.length > 0) {
+    for (const d of bodyDirectives) {
       lines.push(`    ${d.trim()}`);
     }
   }

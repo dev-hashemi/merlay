@@ -2,7 +2,7 @@
  * Mermaid Mindmap Serializer
  */
 
-import { emitFrontmatter } from '../common/diagramHeader';
+import { emitFrontmatter, emitDirectives } from '../common/diagramHeader';
 import { MermaidMindmapAST, MindmapNode } from './types';
 
 /**
@@ -63,6 +63,7 @@ function serializeNodeContent(node: MindmapNode): string {
 export function serializeMermaidMindmap(ast: MermaidMindmapAST): string {
   const lines: string[] = [];
   emitFrontmatter(lines, ast.frontmatter);
+  emitDirectives(lines, ast.directives);
 
   lines.push('mindmap');
 

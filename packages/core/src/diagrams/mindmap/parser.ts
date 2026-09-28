@@ -18,8 +18,9 @@ export function createEmptyMindmapAst(): MermaidMindmapAST {
 
 export function parseMermaidMindmap(code: string): MermaidMindmapAST {
   const ast = createEmptyMindmapAst();
-  const { frontmatter, body } = splitFrontmatter(code);
+  const { frontmatter, directives, body } = splitFrontmatter(code);
   ast.frontmatter = frontmatter;
+  ast.directives = directives;
 
   const lines = body.split(/\r?\n/);
   let inMindmap = false;

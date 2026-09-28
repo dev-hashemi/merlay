@@ -28,6 +28,7 @@ export function cloneStateAst(ast: MermaidStateAST): MermaidStateAST {
   return {
     ...ast,
     frontmatter: ast.frontmatter,
+    directives: ast.directives ? [...ast.directives] : undefined,
     states: new Map(Array.from(ast.states, ([id, s]) => [id, { ...s }])),
     transitions: ast.transitions.map((t) => ({ ...t })),
     compositeStates: new Map(

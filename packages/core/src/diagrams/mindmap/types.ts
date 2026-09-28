@@ -32,6 +32,7 @@ export interface RawMindmapLine {
 export interface MermaidMindmapAST {
   diagramType: 'mindmap';
   frontmatter?: string;
+  directives?: string[];
   root: MindmapNode | null;
   nodes: Map<string, MindmapNode>;
   rawLines: RawMindmapLine[];
