@@ -235,6 +235,16 @@ export function useNodeMutations({
     [m, applyMutation]
   );
 
+  const handleSetNodeShapeParam = useCallback(
+    (nodeId: string, key: string, value: string | null) => {
+      // Pin for camera: image loads change node size after render.
+      applyMutation((a) => {
+        m.setNodeShapeParam?.(a, nodeId, key, value);
+      }, nodeId);
+    },
+    [m, applyMutation]
+  );
+
   const getNodeLinkDetails = useCallback(
     (nodeId: string): NodeLinkDetails | undefined => {
       return m.getNodeLinkDetails?.(ast, nodeId);
@@ -308,6 +318,7 @@ export function useNodeMutations({
     hasEndState: anchors ? anchors.has(ast, 'end') : false,
     handleSetNodeLink,
     getNodeLinkDetails,
+    handleSetNodeShapeParam,
     isAutonumbered,
     handleToggleAutonumber,
     diagramTitle,

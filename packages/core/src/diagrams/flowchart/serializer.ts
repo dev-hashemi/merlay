@@ -199,15 +199,18 @@ function formatNode(node: MermaidNodeDef): string {
     : '';
   if (node.shape === 'icon' || node.shape === 'image') {
     // Icon/image params (icon:/img:) live in shapeParams; no `shape:` key.
-    const params = node.shapeParams
-      ? Object.entries(node.shapeParams)
-          .map(([k, v]) => `${k}: "${escapeLabel(v)}"`)
-          .join(', ')
-      : '';
-    const labelPart = `, label: ${safe}`;
-    return params
-      ? `${node.id}@{ ${params}${labelPart} }`
-      : `${node.id}@{ label: ${safe} }`;
+    // A param-less node still needs its discriminator so the shape survives
+    // the round-trip (`shape: icon` is valid Mermaid; image needs `img:`).
+    const params =
+      node.shapeParams && Object.keys(node.shapeParams).length > 0
+        ? node.shapeParams
+        : node.shape === 'icon'
+          ? { icon: 'fa:circle' }
+          : { img: '' };
+    const paramStr = Object.entries(params)
+      .map(([k, v]) => `${k}: "${escapeLabel(v)}"`)
+      .join(', ');
+    return `${node.id}@{ ${paramStr}, label: ${safe} }`;
   }
   return `${node.id}@{ shape: ${shortNameFor(node.shape)}, label: ${safe}${extra} }`;
 }

@@ -10,6 +10,7 @@ import {
   UngroupIcon,
   CopyIcon,
   LinkIcon,
+  ImageIcon,
   StickyNoteIcon,
   ShapeIcons,
   StateTypeIcons,
@@ -39,7 +40,9 @@ export interface NodeActionHudProps {
   activeNodePopover: ActiveNodePopover;
   onSproutNextStep: () => void;
   onRename: () => void;
-  onTogglePopover: (popover: 'shape' | 'style' | 'subgraph' | 'link' | 'note') => void;
+  onTogglePopover: (
+    popover: 'shape' | 'style' | 'subgraph' | 'link' | 'note' | 'shapedata'
+  ) => void;
   onRemoveFromGroup?: () => void;
   onDelete: () => void;
   /** Duplicate without a keyboard (Ctrl+D on desktop). */
@@ -52,6 +55,16 @@ export interface NodeActionHudProps {
   onOpenNodeLink?: () => void;
   /** Whether the node currently has an attached note. */
   hasNote?: boolean;
+  /**
+   * Editable shape-data field for special shapes (image URL, icon name).
+   * Shown as an image button; absent for shapes without editable params.
+   */
+  shapeDataField?: {
+    key: string;
+    label: string;
+    placeholder: string;
+    value: string;
+  } | null;
 
   // Member additions directly from HUD
   onAddAttribute?: () => void;
@@ -83,6 +96,7 @@ export const NodeActionHud: React.FC<NodeActionHudProps> = ({
   nodeLinkUrl,
   onOpenNodeLink,
   hasNote,
+  shapeDataField,
   onAddAttribute,
   onAddMethod,
   supportsAttributes = true,
@@ -261,6 +275,24 @@ export const NodeActionHud: React.FC<NodeActionHudProps> = ({
           title={hasNote ? 'Edit Note' : 'Add Note'}
         >
           <StickyNoteIcon size={13} />
+        </button>
+      )}
+
+      {/* Shape Data Button (image URL, icon name — only for shapes with params) */}
+      {shapeDataField && !isAnchor && (
+        <button
+          type="button"
+          className={`mermaid-hud-btn icon-only ${
+            activeNodePopover === 'shapedata' ? 'is-active' : ''
+          } ${shapeDataField.value ? 'has-link' : ''}`}
+          onClick={() => onTogglePopover('shapedata')}
+          title={
+            shapeDataField.value
+              ? `Edit ${shapeDataField.label}: ${shapeDataField.value}`
+              : `Set ${shapeDataField.label}`
+          }
+        >
+          <ImageIcon size={13} />
         </button>
       )}
 

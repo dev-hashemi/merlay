@@ -15,6 +15,7 @@ import { NodeStylePopover } from '../components/NodeStylePopover';
 import { SubgraphPopover } from '../components/SubgraphPopover';
 import { LinkPopover } from '../components/LinkPopover';
 import { NotePopover } from '../components/NotePopover';
+import { ShapeDataPopover } from '../components/ShapeDataPopover';
 
 export interface NodeOverlaysProps {
   selectedNodeRect: Rect | null;
@@ -30,7 +31,9 @@ export interface NodeOverlaysProps {
   activeNodePopover: ActiveNodePopover;
   onSproutNextStep: (nodeId: string) => void;
   onStartEditingNode: (nodeId: string) => void;
-  onToggleNodePopover: (popover: 'shape' | 'style' | 'subgraph' | 'link' | 'note') => void;
+  onToggleNodePopover: (
+    popover: 'shape' | 'style' | 'subgraph' | 'link' | 'note' | 'shapedata'
+  ) => void;
   onDeleteNode: () => void;
   onDuplicateNode?: () => void;
   canRenameNode?: boolean;
@@ -40,6 +43,7 @@ export interface NodeOverlaysProps {
   onOpenNodeLink?: () => void;
   nodeNotes?: DiagramNoteDetails[];
   onSetNodeNote?: (targetId: string, note: DiagramNoteDetails | null) => void;
+  onSetNodeShapeParam?: (nodeId: string, key: string, value: string | null) => void;
 
   popoverPos: PopoverPos | null;
   onSelectNodeKind: (kind: string) => void;
@@ -91,6 +95,7 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
   onOpenNodeLink,
   nodeNotes,
   onSetNodeNote,
+  onSetNodeShapeParam,
   popoverPos,
   onSelectNodeKind,
   onApplyNodePreset,
@@ -114,6 +119,28 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
   onRemoveNodeFromGroup,
   onCloseSubgraphMembership,
 }) => {
+  // Editable shape-data field for special shapes (image URL, icon name).
+  // Gated on the driver offering the mutation; the key map is view-model
+  // data (shape value), never a diagram-type branch.
+  const shapeDataField =
+    selectedNodeId && currentNode && driver.mutations.setNodeShapeParam
+      ? currentNode.shape === 'image'
+        ? {
+            key: 'img',
+            label: 'Image URL',
+            placeholder: 'https://...',
+            value: currentNode.shapeParams?.img ?? '',
+          }
+        : currentNode.shape === 'icon'
+          ? {
+              key: 'icon',
+              label: 'Icon name',
+              placeholder: 'fa:user',
+              value: currentNode.shapeParams?.icon ?? '',
+            }
+          : null
+      : null;
+
   return (
     <>
       {/* Single Node Relational Sprout HUD */}
@@ -141,6 +168,7 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
           nodeLinkUrl={nodeLinkUrl}
           onOpenNodeLink={onOpenNodeLink}
           hasNote={Boolean(nodeNotes && nodeNotes.length > 0)}
+          shapeDataField={shapeDataField}
           onAddAttribute={
             onAddNodeAttribute ? () => onAddNodeAttribute(selectedNodeId) : undefined
           }
@@ -248,6 +276,24 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
             onApply={(note) => onSetNodeNote?.(selectedNodeId, note)}
             onRemove={() => onSetNodeNote?.(selectedNodeId, null)}
             onClose={() => onToggleNodePopover('note')}
+          />
+        )}
+
+      {/* Shape Data Popover (image URL, icon name) */}
+      {activeNodePopover === 'shapedata' &&
+        shapeDataField &&
+        popoverPos &&
+        selectedNodeId && (
+          <ShapeDataPopover
+            popoverPos={popoverPos}
+            fieldLabel={shapeDataField.label}
+            placeholder={shapeDataField.placeholder}
+            initialValue={shapeDataField.value}
+            onApply={(value) =>
+              onSetNodeShapeParam?.(selectedNodeId, shapeDataField.key, value)
+            }
+            onClear={() => onSetNodeShapeParam?.(selectedNodeId, shapeDataField.key, null)}
+            onClose={() => onToggleNodePopover('shapedata')}
           />
         )}
     </>

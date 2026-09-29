@@ -139,6 +139,13 @@ export const KindPopover: React.FC<KindPopoverProps> = ({
         zIndex: 200,
       }}
       onClick={(e) => e.stopPropagation()}
+      // Contain scrolling/pinch gestures to the picker list: the canvas root
+      // listens for wheel (zoom/pan) and pointer drags (marquee/pan), and
+      // React synthetic stopPropagation here prevents those handlers from
+      // firing while interacting with the picker. Clicks still work.
+      onWheel={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onPointerMove={(e) => e.stopPropagation()}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {
           e.stopPropagation();

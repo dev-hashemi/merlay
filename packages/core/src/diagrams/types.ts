@@ -286,6 +286,11 @@ export interface DiagramMutations<TAst = unknown> {
   getNodeLinkDetails?(ast: TAst, nodeId: string): NodeLinkDetails | undefined;
   setNodeLink?(ast: TAst, nodeId: string, link: NodeLinkDetails | null): void;
 
+  // Shape data params (optional — shapes carrying @{ ... } params,
+  // e.g. image/img URL, icon/icon name). Null clears the key.
+  getNodeShapeParam?(ast: TAst, nodeId: string, key: string): string | undefined;
+  setNodeShapeParam?(ast: TAst, nodeId: string, key: string, value: string | null): void;
+
   // Autonumber (optional — supportsAutonumber)
   isAutonumbered?(ast: TAst): boolean;
   setAutonumbered?(ast: TAst, enabled: boolean): void;

@@ -153,6 +153,10 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
     updateNodesKind: (ast, nodeIds, kind) => {
       fc.updateNodesShape(ast, nodeIds, kind as MermaidShapeType);
     },
+    getNodeShapeParam: (ast, nodeId, key) => fc.getNodeShapeParam(ast, nodeId, key),
+    setNodeShapeParam: (ast, nodeId, key, value) => {
+      fc.setNodeShapeParam(ast, nodeId, key, value);
+    },
 
     connect: (ast, fromId, toId) => {
       fc.connectNodes(ast, fromId, toId);

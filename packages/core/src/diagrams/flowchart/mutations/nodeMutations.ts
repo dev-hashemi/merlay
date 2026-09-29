@@ -201,3 +201,38 @@ export function setDiagramDirection(
 ): void {
   ast.direction = direction;
 }
+
+/**
+ * Read one `@{ ... }` param (e.g. img URL, icon name) for shape-data editing.
+ */
+export function getNodeShapeParam(
+  ast: MermaidFlowchartAST,
+  nodeId: string,
+  key: string
+): string | undefined {
+  return ast.nodes.get(nodeId)?.shapeParams?.[key];
+}
+
+/**
+ * Write/clear one `@{ ... }` param. Never changes the node's shape, so an
+ * image node with a cleared URL stays an image node (serializer still emits
+ * a valid discriminator).
+ */
+export function setNodeShapeParam(
+  ast: MermaidFlowchartAST,
+  nodeId: string,
+  key: string,
+  value: string | null
+): boolean {
+  const node = ast.nodes.get(nodeId);
+  if (!node || !key) return false;
+  if (value === null || value.trim() === '') {
+    if (node.shapeParams) {
+      delete node.shapeParams[key];
+      if (Object.keys(node.shapeParams).length === 0) delete node.shapeParams;
+    }
+    return true;
+  }
+  node.shapeParams = { ...(node.shapeParams ?? {}), [key]: value.trim() };
+  return true;
+}

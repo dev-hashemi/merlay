@@ -164,6 +164,7 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         }
         nodeNotes={selectedNodeNotes}
         onSetNodeNote={mutations.handleSetNote}
+        onSetNodeShapeParam={mutations.handleSetNodeShapeParam}
         popoverPos={selection.popoverPos}
         onSelectNodeKind={mutations.handleUpdateNodeKind}
         onApplyNodePreset={mutations.handleApplyNodePreset}
