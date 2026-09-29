@@ -43,6 +43,13 @@ export const LinkIcon = createIcon(
 
 export const CardIcon = createIcon(<rect width="18" height="18" x="3" y="3" rx="2" />);
 
+export const StickyNoteIcon = createIcon(
+  <>
+    <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" />
+    <path d="M15 3v5h5" />
+  </>
+);
+
 export const UserIcon = createIcon(
   <>
     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />

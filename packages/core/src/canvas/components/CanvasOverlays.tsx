@@ -65,6 +65,7 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
     selectedSubgraphStyle,
     selectedNodeLink,
     selectedNodeLinkDetails,
+    selectedNodeNotes,
     nodeMemberCapabilities,
     canAddStart,
     canAddEnd,
@@ -160,6 +161,8 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
             ? () => window.open(selectedNodeLink, '_blank', 'noopener')
             : undefined
         }
+        nodeNotes={selectedNodeNotes}
+        onSetNodeNote={mutations.handleSetNote}
         popoverPos={selection.popoverPos}
         onSelectNodeKind={mutations.handleUpdateNodeKind}
         onApplyNodePreset={mutations.handleApplyNodePreset}

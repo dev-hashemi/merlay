@@ -8,11 +8,13 @@ import { ThemePreset } from '../constants';
 import { MermaidNodeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
 import { DiagramDriver, NodeMemberCapabilities } from '../../diagrams/types';
 import { NodeLinkDetails } from '../../diagrams/nodeLinks';
+import { DiagramNoteDetails } from '../../diagrams/common';
 import { NodeActionHud } from '../components/NodeActionHud';
 import { KindPopover } from '../components/KindPopover';
 import { NodeStylePopover } from '../components/NodeStylePopover';
 import { SubgraphPopover } from '../components/SubgraphPopover';
 import { LinkPopover } from '../components/LinkPopover';
+import { NotePopover } from '../components/NotePopover';
 
 export interface NodeOverlaysProps {
   selectedNodeRect: Rect | null;
@@ -28,7 +30,7 @@ export interface NodeOverlaysProps {
   activeNodePopover: ActiveNodePopover;
   onSproutNextStep: (nodeId: string) => void;
   onStartEditingNode: (nodeId: string) => void;
-  onToggleNodePopover: (popover: 'shape' | 'style' | 'subgraph' | 'link') => void;
+  onToggleNodePopover: (popover: 'shape' | 'style' | 'subgraph' | 'link' | 'note') => void;
   onDeleteNode: () => void;
   onDuplicateNode?: () => void;
   canRenameNode?: boolean;
@@ -36,6 +38,8 @@ export interface NodeOverlaysProps {
   nodeLinkDetails?: NodeLinkDetails;
   onSetNodeLink?: (nodeId: string, details: NodeLinkDetails | null) => void;
   onOpenNodeLink?: () => void;
+  nodeNotes?: DiagramNoteDetails[];
+  onSetNodeNote?: (targetId: string, note: DiagramNoteDetails | null) => void;
 
   popoverPos: PopoverPos | null;
   onSelectNodeKind: (kind: string) => void;
@@ -80,6 +84,8 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
   nodeLinkDetails,
   onSetNodeLink,
   onOpenNodeLink,
+  nodeNotes,
+  onSetNodeNote,
   popoverPos,
   onSelectNodeKind,
   onApplyNodePreset,
@@ -124,6 +130,7 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
           canRename={canRenameNode}
           nodeLinkUrl={nodeLinkUrl}
           onOpenNodeLink={onOpenNodeLink}
+          hasNote={Boolean(nodeNotes && nodeNotes.length > 0)}
           onAddAttribute={
             onAddNodeAttribute ? () => onAddNodeAttribute(selectedNodeId) : undefined
           }
@@ -210,6 +217,22 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
                 ? () => onOpenNodeLink()
                 : (url) => window.open(url, '_blank', 'noopener')
             }
+          />
+        )}
+
+      {/* Note Popover */}
+      {activeNodePopover === 'note' &&
+        driver.capabilities.supportsNotes &&
+        popoverPos &&
+        selectedNodeId && (
+          <NotePopover
+            popoverPos={popoverPos}
+            initialNote={nodeNotes && nodeNotes.length > 0 ? nodeNotes[0] : undefined}
+            notePositions={driver.capabilities.notePositions}
+            targetLabel={currentNode?.label || selectedNodeId}
+            onApply={(note) => onSetNodeNote?.(selectedNodeId, note)}
+            onRemove={() => onSetNodeNote?.(selectedNodeId, null)}
+            onClose={() => onToggleNodePopover('note')}
           />
         )}
     </>

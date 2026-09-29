@@ -14,7 +14,9 @@ import {
   setDiagramTheme,
   getDiagramTitle,
   setDiagramTitle,
-} from '../common/diagramHeader';
+  findNotesForTarget,
+  updateNoteInRawLines,
+} from '../common';
 import { findNodeLinkUrl } from '../nodeLinks';
 import * as st from './mutations';
 
@@ -62,6 +64,8 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
     supportsDefaultStyles: true,
     supportsGroupDirection: true,
     supportsTitle: true,
+    supportsNotes: true,
+    notePositions: ['left', 'right'] as const,
   },
 
   labels: {
@@ -223,6 +227,14 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
     getTitle: (ast) => getDiagramTitle(ast.frontmatter, ast.rawLines),
     setTitle: (ast, title) => {
       ast.frontmatter = setDiagramTitle(ast.frontmatter, title);
+    },
+
+    getNotes: (ast, targetId) => {
+      if (!targetId) return [];
+      return findNotesForTarget(ast.rawLines, targetId, 'state');
+    },
+    setNote: (ast, targetId, note) => {
+      updateNoteInRawLines(ast.rawLines, targetId, note, 'state');
     },
 
     anchors: {

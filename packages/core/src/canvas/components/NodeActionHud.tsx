@@ -10,6 +10,7 @@ import {
   UngroupIcon,
   CopyIcon,
   LinkIcon,
+  StickyNoteIcon,
   ShapeIcons,
   StateTypeIcons,
   UserIcon,
@@ -38,7 +39,7 @@ export interface NodeActionHudProps {
   activeNodePopover: ActiveNodePopover;
   onSproutNextStep: () => void;
   onRename: () => void;
-  onTogglePopover: (popover: 'shape' | 'style' | 'subgraph' | 'link') => void;
+  onTogglePopover: (popover: 'shape' | 'style' | 'subgraph' | 'link' | 'note') => void;
   onRemoveFromGroup?: () => void;
   onDelete: () => void;
   /** Duplicate without a keyboard (Ctrl+D on desktop). */
@@ -49,6 +50,8 @@ export interface NodeActionHudProps {
   /** External hyperlink from a preserved click/link statement (edit-mode clicks select, so the link opens from here). */
   nodeLinkUrl?: string;
   onOpenNodeLink?: () => void;
+  /** Whether the node currently has an attached note. */
+  hasNote?: boolean;
 
   // Member additions directly from HUD
   onAddAttribute?: () => void;
@@ -79,6 +82,7 @@ export const NodeActionHud: React.FC<NodeActionHudProps> = ({
   hideDelete = false,
   nodeLinkUrl,
   onOpenNodeLink,
+  hasNote,
   onAddAttribute,
   onAddMethod,
   supportsAttributes = true,
@@ -243,6 +247,20 @@ export const NodeActionHud: React.FC<NodeActionHudProps> = ({
           title={`Open link: ${nodeLinkUrl}`}
         >
           <LinkIcon size={13} />
+        </button>
+      )}
+
+      {/* Attached Note Button */}
+      {capabilities.supportsNotes && !isAnchor && (
+        <button
+          type="button"
+          className={`mermaid-hud-btn icon-only ${
+            activeNodePopover === 'note' ? 'is-active' : ''
+          } ${hasNote ? 'has-note' : ''}`}
+          onClick={() => onTogglePopover('note')}
+          title={hasNote ? 'Edit Note' : 'Add Note'}
+        >
+          <StickyNoteIcon size={13} />
         </button>
       )}
 

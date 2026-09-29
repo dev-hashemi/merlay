@@ -53,6 +53,8 @@ test('Driver surface: state capabilities, labels, and projection', () => {
     supportsDefaultStyles: true,
     supportsGroupDirection: true,
     supportsTitle: true,
+    supportsNotes: true,
+    notePositions: ['left', 'right'],
   });
   assert.strictEqual(stateDriver.labels.node, 'State');
   assert.strictEqual(stateDriver.mutations.updateEdgeType, undefined);
@@ -139,6 +141,8 @@ test('Driver surface: sequence capabilities, labels, and projection', () => {
     supportsAutonumber: true,
     supportsNodeLinks: true,
     supportsTitle: true,
+    supportsNotes: true,
+    notePositions: ['left', 'over', 'right'],
   });
   assert.strictEqual(sequenceDriver.labels.node, 'Participant');
   assert.strictEqual(sequenceDriver.labels.edge, 'Message');
@@ -229,6 +233,7 @@ test('Driver surface: class diagram capabilities, labels, and projection', () =>
     supportsNodeMembers: true,
     supportsNodeLinks: true,
     supportsTitle: true,
+    supportsNotes: true,
   });
   assert.strictEqual(classDriver.labels.node, 'Class');
   assert.strictEqual(classDriver.labels.group, 'Namespace');

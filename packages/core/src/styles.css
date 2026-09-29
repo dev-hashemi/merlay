@@ -1890,8 +1890,102 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
   background: var(--background-modifier-error, rgba(239, 68, 68, 0.15));
 }
 
-.mermaid-hud-btn.has-link {
+.mermaid-hud-btn.has-link,
+.mermaid-hud-btn.has-note {
   color: var(--mermaid-accent);
+}
+
+/* Note Popover */
+.mermaid-note-popover {
+  min-width: 280px;
+  max-width: 360px;
+  padding: 10px 12px;
+}
+
+.mermaid-note-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mermaid-note-pos-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.mermaid-note-pos-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--mermaid-text-muted);
+}
+
+.mermaid-note-pos-segmented {
+  display: flex;
+  gap: 2px;
+  background: var(--mermaid-bg-secondary);
+  padding: 2px;
+  border-radius: 6px;
+  border: 1px solid var(--mermaid-border);
+}
+
+.mermaid-note-pos-btn {
+  flex: 1;
+  padding: 3px 8px;
+  font-size: 11px;
+  border: none;
+  background: transparent;
+  color: var(--mermaid-text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mermaid-note-pos-btn:hover {
+  color: var(--mermaid-text);
+  background: var(--background-modifier-hover);
+}
+
+.mermaid-note-pos-btn.is-active {
+  background: var(--mermaid-bg);
+  color: var(--mermaid-text);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.mermaid-note-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.mermaid-note-textarea {
+  width: 100%;
+  min-height: 68px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 6px 8px;
+  border: 1px solid var(--mermaid-border);
+  border-radius: 6px;
+  background: var(--mermaid-bg);
+  color: var(--mermaid-text);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mermaid-note-textarea:focus {
+  border-color: var(--mermaid-accent);
+  box-shadow: 0 0 0 2px var(--mermaid-accent-subtle);
+}
+
+.mermaid-note-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
 }
 
 /* In-Canvas Diagram Title Header */
@@ -2125,6 +2219,7 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
   .mermaid-edge-input,
   .mermaid-shape-search input,
   .mermaid-link-input,
+  .mermaid-note-textarea,
   .mermaid-canvas-title-input,
   .mermaid-code-drawer-textarea {
     font-size: 16px;

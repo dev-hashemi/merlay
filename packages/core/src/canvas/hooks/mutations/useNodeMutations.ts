@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { useDiagramAst } from './useDiagramAst';
 import { useNodeStyleMutations } from './useNodeStyleMutations';
-import { MermaidTheme } from '../../../diagrams/common';
+import { MermaidTheme, DiagramNoteDetails } from '../../../diagrams/common';
 import { NodeLinkDetails } from '../../../diagrams/nodeLinks';
 
 export interface UseNodeMutationsOptions {
@@ -261,6 +261,22 @@ export function useNodeMutations({
     [m, applyMutation]
   );
 
+  const handleSetNote = useCallback(
+    (targetId: string, note: DiagramNoteDetails | null) => {
+      applyMutation((a) => {
+        m.setNote?.(a, targetId, note);
+      });
+    },
+    [m, applyMutation]
+  );
+
+  const getNodeNotes = useCallback(
+    (targetId: string): DiagramNoteDetails[] => {
+      return m.getNotes ? m.getNotes(ast, targetId) : [];
+    },
+    [m, ast]
+  );
+
   return {
     handleSproutNextStep,
     handleDeleteSelectedNode,
@@ -286,5 +302,7 @@ export function useNodeMutations({
     handleToggleAutonumber,
     diagramTitle,
     handleSetDiagramTitle,
+    handleSetNote,
+    getNodeNotes,
   };
 }

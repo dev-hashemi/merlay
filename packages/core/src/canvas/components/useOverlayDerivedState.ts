@@ -3,6 +3,7 @@ import { useCanvasSelection } from '../hooks/useCanvasSelection';
 import { useDiagramMutations } from '../hooks/useDiagramMutations';
 
 import { NodeLinkDetails } from '../../diagrams/nodeLinks';
+import { DiagramNoteDetails } from '../../diagrams/common';
 
 export interface OverlayDerivedState {
   selectedStarKind: string | null;
@@ -12,6 +13,7 @@ export interface OverlayDerivedState {
   selectedSubgraphStyle: ReturnType<typeof useDiagramMutations>['displaySubgraphs'] extends Map<string, infer V> ? (V extends { style?: infer S } ? S : undefined) : unknown;
   selectedNodeLink: string | undefined;
   selectedNodeLinkDetails: NodeLinkDetails | undefined;
+  selectedNodeNotes: DiagramNoteDetails[];
   nodeMemberCapabilities: ReturnType<NonNullable<ReturnType<typeof useDiagramMutations>['driver']['mutations']['getNodeMemberCapabilities']>> | undefined;
   canAddStart: boolean;
   canAddEnd: boolean;
@@ -64,6 +66,11 @@ export function useOverlayDerivedState(
         (selectedNodeLink ? { url: selectedNodeLink } : undefined)
       : undefined;
 
+  const selectedNodeNotes =
+    selectedNodeId && !selection.isMultiSelect && driver.capabilities.supportsNotes
+      ? mutations.getNodeNotes(selectedNodeId)
+      : [];
+
   const nodeMemberCapabilities =
     selectedNodeId &&
     driver.capabilities.supportsNodeMembers &&
@@ -91,6 +98,7 @@ export function useOverlayDerivedState(
     selectedSubgraphStyle,
     selectedNodeLink,
     selectedNodeLinkDetails,
+    selectedNodeNotes,
     nodeMemberCapabilities,
     canAddStart,
     canAddEnd,

@@ -23,7 +23,12 @@ import {
   setDiagramTheme,
   getDiagramTitle,
   setDiagramTitle,
-} from '../common/diagramHeader';
+  findNotesForTarget,
+  updateNoteInRawLines as updateNoteInCommonRawLines,
+  parseSequenceNote,
+  formatSequenceNote,
+  DiagramNoteDetails,
+} from '../common';
 import {
   cloneSequenceAst,
   createEmptySequenceAst,
@@ -74,6 +79,8 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
     supportsAutonumber: true,
     supportsNodeLinks: true,
     supportsTitle: true,
+    supportsNotes: true,
+    notePositions: ['left', 'over', 'right'] as const,
   },
 
   canvasHint: {
@@ -258,6 +265,52 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
     getTitle: (ast) => getDiagramTitle(ast.frontmatter, ast.rawLines),
     setTitle: (ast, title) => {
       ast.frontmatter = setDiagramTitle(ast.frontmatter, title);
+    },
+
+    getNotes: (ast, targetId) => {
+      if (!targetId) return [];
+      const timelineNotes = ast.timeline
+        .filter((it): it is { type: 'raw'; text: string; boxId?: string } => it.type === 'raw')
+        .map((it) => parseSequenceNote(it.text))
+        .filter((n): n is DiagramNoteDetails => n !== null && (n.targetId === targetId || n.secondTargetId === targetId));
+      if (timelineNotes.length > 0) return timelineNotes;
+      return findNotesForTarget(ast.rawLines, targetId, 'sequence');
+    },
+    setNote: (ast, targetId, note) => {
+      updateNoteInCommonRawLines(ast.rawLines, targetId, note, 'sequence');
+
+      const isTargetTimeline = (text: string) => {
+        const p = parseSequenceNote(text);
+        return p !== null && (p.targetId === targetId || p.secondTargetId === targetId);
+      };
+      const timelineIdx = ast.timeline.findIndex(
+        (item) => item.type === 'raw' && isTargetTimeline(item.text)
+      );
+
+      if (!note || !note.text.trim()) {
+        if (timelineIdx !== -1) {
+          ast.timeline.splice(timelineIdx, 1);
+        }
+      } else {
+        const stmt = formatSequenceNote({ ...note, targetId });
+        if (timelineIdx !== -1) {
+          ast.timeline[timelineIdx] = { type: 'raw', text: stmt };
+        } else {
+          let insertIdx = -1;
+          for (let i = ast.timeline.length - 1; i >= 0; i--) {
+            const item = ast.timeline[i];
+            if (item.type === 'message' && (item.message.from === targetId || item.message.to === targetId)) {
+              insertIdx = i + 1;
+              break;
+            }
+          }
+          if (insertIdx !== -1) {
+            ast.timeline.splice(insertIdx, 0, { type: 'raw', text: stmt });
+          } else {
+            ast.timeline.push({ type: 'raw', text: stmt });
+          }
+        }
+      }
     },
   },
 

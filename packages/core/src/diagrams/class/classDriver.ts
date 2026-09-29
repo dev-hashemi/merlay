@@ -12,7 +12,9 @@ import {
   setDiagramTheme,
   getDiagramTitle,
   setDiagramTitle,
-} from '../common/diagramHeader';
+  findNotesForTarget,
+  updateNoteInRawLines as updateNoteInCommonRawLines,
+} from '../common';
 import { findNodeLinkUrl, findNodeLinkDetails, updateNodeLinkInRawLines } from '../nodeLinks';
 import { ClassDirection, MermaidClassAST } from './types';
 import { parseMermaidClassDiagram } from './parser';
@@ -178,6 +180,7 @@ export const ClassDiagramDriver: DiagramDriver<MermaidClassAST> = {
     supportsNodeMembers: true,
     supportsNodeLinks: true,
     supportsTitle: true,
+    supportsNotes: true,
   },
 
   labels: {
@@ -268,6 +271,14 @@ export const ClassDiagramDriver: DiagramDriver<MermaidClassAST> = {
     getTitle: (ast) => getDiagramTitle(ast.frontmatter, ast.rawLines),
     setTitle: (ast, title) => {
       ast.frontmatter = setDiagramTitle(ast.frontmatter, title);
+    },
+
+    getNotes: (ast, targetId) => {
+      if (!targetId) return [];
+      return findNotesForTarget(ast.rawLines, targetId, 'class');
+    },
+    setNote: (ast, targetId, note) => {
+      updateNoteInCommonRawLines(ast.rawLines, targetId, note, 'class');
     },
   },
 

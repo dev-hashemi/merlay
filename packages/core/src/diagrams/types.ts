@@ -13,7 +13,7 @@ import {
   MermaidNodeDef,
   MermaidSubgraphDef,
 } from './viewModel';
-import { MermaidTheme } from './common';
+import { MermaidTheme, NotePosition, DiagramNoteDetails } from './common';
 import { NodeLinkDetails } from './nodeLinks';
 
 
@@ -92,6 +92,10 @@ export interface DiagramCapabilities {
   supportsGroupDirection?: boolean;
   /** Whether diagram supports title editing. Defaults to true. */
   supportsTitle?: boolean;
+  /** Whether the diagram supports attached notes (sequence, state, class). */
+  supportsNotes?: boolean;
+  /** Available placement options for notes in this diagram (e.g. ['left', 'over', 'right']). */
+  notePositions?: readonly NotePosition[];
 }
 
 /** UI vocabulary so components never hard-code diagram-specific nouns. */
@@ -285,6 +289,10 @@ export interface DiagramMutations<TAst = unknown> {
   // Diagram title (optional — supportsTitle)
   getTitle?(ast: TAst): string | undefined;
   setTitle?(ast: TAst, title: string | null): void;
+
+  // Attached notes (optional — supportsNotes)
+  getNotes?(ast: TAst, targetId?: string): DiagramNoteDetails[];
+  setNote?(ast: TAst, targetId: string, note: DiagramNoteDetails | null): void;
 
   // Start/end anchors (optional — hasAnchors)
   anchors?: AnchorApi<TAst>;
