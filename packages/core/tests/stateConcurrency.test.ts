@@ -28,6 +28,10 @@ test('State Concurrency: adds divider to composite state and round-trips', () =>
   // Parse serialized output and verify divider preservation
   const reast = parseMermaidStateDiagram(serialized);
   assert.equal(getConcurrencyDividerCount(reast, 'Active'), 1);
+
+  // Must have a state after divider so Mermaid dagre layout doesn't crash with "No such shape: divider"
+  const comp = reast.compositeStates.get('Active');
+  assert.ok(comp && comp.stateIds.length >= 2, 'Must have states on both tracks');
 });
 
 test('State Concurrency: removes divider from composite state', () => {

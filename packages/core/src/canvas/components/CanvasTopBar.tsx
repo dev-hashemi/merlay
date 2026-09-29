@@ -15,7 +15,7 @@ import {
 import { ThemePopover } from './ThemePopover';
 import { TopBarRightControls } from './TopBarRightControls';
 import { DiagramDriver } from '../../diagrams/types';
-import { MermaidTheme } from '../../diagrams/common';
+import { MermaidTheme, DiagramAccessibility } from '../../diagrams/common';
 
 export interface CanvasTopBarProps {
   driver: DiagramDriver;
@@ -46,6 +46,9 @@ export interface CanvasTopBarProps {
   onSetTheme?: (theme: MermaidTheme | null) => void;
   isAutonumbered?: boolean;
   onToggleAutonumber?: () => void;
+  title?: string;
+  accessibility?: DiagramAccessibility;
+  onUpdateMetadata?: (data: { title: string | null; accessibility: DiagramAccessibility | null }) => void;
 }
 
 export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
@@ -77,10 +80,14 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
   onSetTheme,
   isAutonumbered = false,
   onToggleAutonumber,
+  title,
+  accessibility,
+  onUpdateMetadata,
 }) => {
   const { labels, capabilities } = driver;
   const isEditable = capabilities.editable !== false;
   const [isThemeOpen, setIsThemeOpen] = useState<boolean>(false);
+  const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
 
   const themeLabel = theme
     ? theme.charAt(0).toUpperCase() + theme.slice(1)
@@ -286,6 +293,11 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
         renderMermaid={renderMermaid}
         code={code}
         notify={notify}
+        title={title}
+        accessibility={accessibility}
+        onUpdateMetadata={onUpdateMetadata}
+        isInfoOpen={isInfoOpen}
+        onToggleInfo={() => setIsInfoOpen(!isInfoOpen)}
       />
     </div>
   );

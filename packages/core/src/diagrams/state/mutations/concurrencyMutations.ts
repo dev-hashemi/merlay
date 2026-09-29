@@ -1,8 +1,5 @@
-/**
- * Concurrency Divider (--) mutations for Mermaid State Diagrams
- */
-
 import { MermaidStateAST } from '../types';
+import { generateStateId } from './stateMutations';
 
 /**
  * Add a concurrency divider (--) to a composite state to split concurrent tracks.
@@ -15,6 +12,20 @@ export function addConcurrencyDivider(
   if (!comp) return false;
 
   let maxOrder = comp.order ?? 0;
+
+  // If composite has no states yet, add an initial state in track 1
+  if (comp.stateIds.length === 0) {
+    const s1Id = generateStateId('s', ast);
+    ast.states.set(s1Id, {
+      type: 'state',
+      id: s1Id,
+      label: s1Id,
+      stateType: 'normal',
+      compositeId: compositeStateId,
+      order: ++maxOrder,
+    });
+    comp.stateIds.push(s1Id);
+  }
 
   for (const sid of comp.stateIds) {
     const s = ast.states.get(sid);
@@ -40,11 +51,24 @@ export function addConcurrencyDivider(
     }
   }
 
+  // 1. Add divider
   ast.rawLines.push({
     text: '--',
     compositeId: compositeStateId,
     order: maxOrder + 1,
   });
+
+  // 2. Add an initial state for the new track so Mermaid never sees an empty track
+  const s2Id = generateStateId('s', ast);
+  ast.states.set(s2Id, {
+    type: 'state',
+    id: s2Id,
+    label: s2Id,
+    stateType: 'normal',
+    compositeId: compositeStateId,
+    order: maxOrder + 2,
+  });
+  comp.stateIds.push(s2Id);
 
   return true;
 }

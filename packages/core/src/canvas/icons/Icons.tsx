@@ -212,6 +212,13 @@ export const FitViewIcon = createIcon(
 );
 
 export const ChevronDownIcon = createIcon(<path d="m6 9 6 6 6-6" />);
+export const MoreHorizontalIcon = createIcon(
+  <>
+    <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+    <circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none" />
+    <circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none" />
+  </>
+);
 export const CloseIcon = createIcon(
   <>
     <line x1="18" y1="6" x2="6" y2="18" />
@@ -307,9 +314,9 @@ export const ArrowInvisibleIcon = createIcon(
 
 export const InfoIcon = createIcon(
   <>
-    <circle cx="12" cy="12" r="9" />
-    <line x1="12" y1="16" x2="12" y2="12" />
-    <circle cx="12" cy="8" r="0.8" fill="currentColor" />
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 16v-4" />
+    <path d="M12 8h.01" />
   </>
 );
 

@@ -2014,130 +2014,7 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
   margin-top: 2px;
 }
 
-/* In-Canvas Diagram Title Header */
-.mermaid-canvas-title-wrapper {
-  position: absolute;
-  top: 56px;
-  left: 16px;
-  z-index: 100;
-  pointer-events: all;
-  display: flex;
-  align-items: center;
-}
 
-.mermaid-canvas-title-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: var(--mermaid-bg-secondary);
-  border: 1px solid var(--mermaid-border);
-  border-radius: 8px;
-  box-shadow: var(--mermaid-shadow);
-  color: var(--mermaid-text);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: default;
-  transition: all 0.15s ease;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.mermaid-canvas-title-badge.is-clickable {
-  cursor: pointer;
-}
-
-.mermaid-canvas-title-badge.is-clickable:hover {
-  border-color: var(--mermaid-accent);
-  background: var(--background-modifier-hover);
-}
-
-.mermaid-canvas-title-edit-hint {
-  opacity: 0;
-  color: var(--mermaid-text-muted);
-  transition: opacity 0.15s ease;
-  display: flex;
-  align-items: center;
-}
-
-.mermaid-canvas-title-badge:hover .mermaid-canvas-title-edit-hint {
-  opacity: 1;
-}
-
-.mermaid-canvas-add-title-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  background: transparent;
-  border: 1px dashed var(--mermaid-border);
-  border-radius: 6px;
-  color: var(--mermaid-text-muted);
-  font-size: 11px;
-  cursor: pointer;
-  opacity: 0.7;
-  transition: all 0.15s ease;
-}
-
-.mermaid-canvas-add-title-btn:hover {
-  opacity: 1;
-  border-color: var(--mermaid-accent);
-  color: var(--mermaid-accent);
-  background: var(--mermaid-bg-secondary);
-}
-
-.mermaid-canvas-title-edit-box {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: var(--mermaid-bg-secondary);
-  border: 1px solid var(--mermaid-accent);
-  border-radius: 8px;
-  box-shadow: var(--mermaid-shadow);
-  padding: 3px 6px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.mermaid-canvas-title-input {
-  border: none;
-  background: transparent;
-  color: var(--mermaid-text);
-  font-size: 13px;
-  font-weight: 600;
-  outline: none;
-  padding: 2px 4px;
-  min-width: 140px;
-}
-
-.mermaid-canvas-info-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  border: 1px solid var(--mermaid-border);
-  background: var(--mermaid-bg-secondary);
-  color: var(--mermaid-text-muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  margin-left: 6px;
-  box-shadow: var(--mermaid-shadow);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.mermaid-canvas-info-btn:hover {
-  color: var(--mermaid-text);
-  background: var(--background-modifier-hover);
-  border-color: var(--mermaid-accent);
-}
-
-.mermaid-canvas-info-btn.is-active,
-.mermaid-canvas-info-btn.has-a11y {
-  color: var(--mermaid-accent);
-}
 
 /* Edge Type Popover */
 .mermaid-edge-type-popover {
@@ -2426,17 +2303,18 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
 .mermaid-classdef-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
 }
 
 .mermaid-classdef-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 8px;
-  font-size: 11px;
-  border-radius: 12px;
-  background: var(--mermaid-bg);
+  gap: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--radius-m, 6px);
+  background: var(--mermaid-bg-secondary);
   border: 1px solid var(--mermaid-border);
   color: var(--mermaid-text);
   cursor: pointer;
@@ -2445,7 +2323,8 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
 }
 
 .mermaid-classdef-chip:hover {
-  border-color: var(--mermaid-muted);
+  border-color: var(--mermaid-accent);
+  background: var(--background-modifier-hover);
 }
 
 .mermaid-classdef-chip.is-active {
@@ -2455,31 +2334,40 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
   font-weight: 600;
 }
 
-.mermaid-classdef-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+.mermaid-classdef-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1.5px solid var(--mermaid-border);
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .mermaid-classdef-name {
-  max-width: 100px;
+  max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .mermaid-classdef-delete-btn {
-  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
   border: none;
-  color: var(--mermaid-muted);
+  background: transparent;
+  color: var(--mermaid-text-muted);
   cursor: pointer;
   padding: 0;
-  font-size: 12px;
-  line-height: 1;
+  margin-left: 2px;
+  transition: all 0.12s ease;
 }
 
 .mermaid-classdef-delete-btn:hover {
+  background: var(--background-modifier-hover);
   color: var(--mermaid-danger);
 }
 
@@ -2664,7 +2552,6 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
   .mermaid-shape-search input,
   .mermaid-link-input,
   .mermaid-note-textarea,
-  .mermaid-canvas-title-input,
   .mermaid-info-input,
   .mermaid-info-textarea,
   .mermaid-frame-input,

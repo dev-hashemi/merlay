@@ -297,6 +297,16 @@ export function useNodeMutations({
     [m, applyMutation]
   );
 
+  const handleUpdateDiagramMetadata = useCallback(
+    (data: { title: string | null; accessibility: DiagramAccessibility | null }) => {
+      applyMutation((a) => {
+        m.setTitle?.(a, data.title);
+        m.setAccessibility?.(a, data.accessibility);
+      });
+    },
+    [m, applyMutation]
+  );
+
   return {
     handleSproutNextStep,
     handleDeleteSelectedNode,
@@ -325,6 +335,7 @@ export function useNodeMutations({
     handleSetDiagramTitle,
     diagramAccessibility,
     handleSetAccessibility,
+    handleUpdateDiagramMetadata,
     handleSetNote,
     getNodeNotes,
   };

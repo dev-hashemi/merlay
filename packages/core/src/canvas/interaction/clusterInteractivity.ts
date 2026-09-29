@@ -276,6 +276,43 @@ export function setupClusterInteractivity({
     if (qIdx !== -1) subQueue.splice(qIdx, 1);
     bindCluster(htmlEl, targetSubId);
   }
+
+  // Pass 4: Fallback matching for sequence frames and other unassigned control structures
+  const remainingFrameSubIds = Array.from(displaySubgraphs.keys()).filter(
+    (id) => !usedSubIds.has(id) && id.startsWith('frame_')
+  );
+
+  if (remainingFrameSubIds.length > 0) {
+    for (let i = pendingLabelClusters.length - 1; i >= 0 && remainingFrameSubIds.length > 0; i--) {
+      const el = pendingLabelClusters[i];
+      const htmlEl = el as SVGGraphicsElement;
+      if (htmlEl.hasAttribute('data-mermaid-subgraph-id')) continue;
+
+      const labelText =
+        htmlEl.querySelector('.label, text, .cluster-label')?.textContent?.trim() ?? '';
+
+      // Try matching by substring first
+      let matchedIdx = remainingFrameSubIds.findIndex((sid) => {
+        const sub = displaySubgraphs.get(sid);
+        if (!sub) return false;
+        return (
+          sub.label &&
+          (labelText.includes(sub.label) || sub.label.includes(labelText))
+        );
+      });
+
+      // If no substring match, take the first remaining frame in order
+      if (matchedIdx === -1) {
+        matchedIdx = 0;
+      }
+
+      const targetSubId = remainingFrameSubIds.splice(matchedIdx, 1)[0];
+      usedSubIds.add(targetSubId);
+      bindCluster(htmlEl, targetSubId);
+      pendingLabelClusters.splice(i, 1);
+    }
+  }
+
   for (const el of pendingLabelClusters) {
     const htmlEl = el as SVGGraphicsElement;
     if (!htmlEl.onclick) {

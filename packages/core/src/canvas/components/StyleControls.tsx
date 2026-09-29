@@ -140,20 +140,58 @@ export const ColorPickerRow: React.FC<ColorPickerRowProps> = ({
   value,
   title,
   onChange,
-}) => (
-  <div className="mermaid-style-control-row">
-    <span>{label}</span>
-    <div className="mermaid-color-input-wrapper">
-      <input
-        type="color"
-        className="mermaid-color-picker-input"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        title={title || label}
-      />
+}) => {
+  const [localColor, setLocalColor] = React.useState(value);
+  const timeoutRef = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    setLocalColor(value);
+  }, [value]);
+
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleChange = (newVal: string) => {
+    setLocalColor(newVal);
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = window.setTimeout(() => {
+      onChange(newVal);
+    }, 60);
+  };
+
+  const handleBlur = () => {
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (localColor !== value) {
+      onChange(localColor);
+    }
+  };
+
+  return (
+    <div className="mermaid-style-control-row">
+      <span>{label}</span>
+      <div className="mermaid-color-input-wrapper">
+        <input
+          type="color"
+          className="mermaid-color-picker-input"
+          value={localColor}
+          onChange={(e) => handleChange(e.target.value)}
+          onBlur={handleBlur}
+          title={title || label}
+        />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export interface ResetStyleButtonProps {
   label: string;

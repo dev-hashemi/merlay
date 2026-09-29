@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { parseMermaidSequenceDiagram } from '../src/diagrams/sequence/parser';
 import { serializeMermaidSequenceDiagram } from '../src/diagrams/sequence/serializer';
 import { wrapMessagesInFrame } from '../src/diagrams/sequence/mutations/frameMutations';
+import { projectSequenceAst } from '../src/diagrams/sequence/sequenceProjection';
+import { SequenceDiagramDriver } from '../src/diagrams/sequence/sequenceDriver';
 
 test('Sequence Frames: wraps a single message in a loop block', () => {
   const code = `sequenceDiagram
@@ -71,4 +73,42 @@ test('Sequence Frames: wraps messages in a rect color block', () => {
 
   assert.match(serialized, /rect rgb\(200, 220, 255\)/);
   assert.match(serialized, /end/);
+});
+
+test('Sequence Frames: renameFrame updates frame label', () => {
+  const code = `sequenceDiagram
+    loop Every 5s
+        Alice->>Bob: Ping
+    end
+`;
+  const ast = parseMermaidSequenceDiagram(code);
+  const projection = projectSequenceAst(ast);
+  const frameSub = Array.from(projection.subgraphs.values()).find((s) => s.id.startsWith('frame_'));
+  assert.ok(frameSub, 'Frame should be projected as a subgraph');
+  assert.equal(frameSub.label, 'Every 5s');
+
+  SequenceDiagramDriver.mutations.renameGroup(ast, frameSub.id, 'Every 10s');
+  const serialized = serializeMermaidSequenceDiagram(ast);
+  assert.match(serialized, /loop Every 10s/);
+  assert.doesNotMatch(serialized, /loop Every 5s/);
+});
+
+test('Sequence Frames: deleteFrame removes frame boundaries while keeping messages', () => {
+  const code = `sequenceDiagram
+    loop Every 5s
+        Alice->>Bob: Ping
+    end
+    Bob-->>Alice: Pong
+`;
+  const ast = parseMermaidSequenceDiagram(code);
+  const projection = projectSequenceAst(ast);
+  const frameSub = Array.from(projection.subgraphs.values()).find((s) => s.id.startsWith('frame_'));
+  assert.ok(frameSub);
+
+  SequenceDiagramDriver.mutations.deleteGroup(ast, frameSub.id, false);
+  const serialized = serializeMermaidSequenceDiagram(ast);
+  assert.doesNotMatch(serialized, /loop/);
+  assert.doesNotMatch(serialized, /end/);
+  assert.match(serialized, /Alice->>Bob: Ping/);
+  assert.match(serialized, /Bob-->>Alice: Pong/);
 });

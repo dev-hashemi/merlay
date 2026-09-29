@@ -31,6 +31,16 @@ test('diagramNotes: sequence note parse and format', () => {
   });
   assert.equal(formatSequenceNote(overBoth!), 'Note over Alice,Bob: Shared state sync');
 
+  const overSingle = parseSequenceNote('Note over Alice: Single target note');
+  assert.deepEqual(overSingle, {
+    position: 'over',
+    targetId: 'Alice',
+    secondTargetId: undefined,
+    text: 'Single target note',
+  });
+  // Must NOT include an extra "of"
+  assert.equal(formatSequenceNote(overSingle!), 'Note over Alice: Single target note');
+
   const multiline = formatSequenceNote({
     targetId: 'Alice',
     position: 'right',

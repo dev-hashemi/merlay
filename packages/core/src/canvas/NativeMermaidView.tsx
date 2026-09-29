@@ -24,7 +24,6 @@ import { useNodeMemberEditing } from './hooks/useNodeMemberEditing';
 import { useDiagramHistorySync } from './hooks/useDiagramHistorySync';
 
 import { CanvasTopBar } from './components/CanvasTopBar';
-import { CanvasTitleHeader } from './components/CanvasTitleHeader';
 import { CanvasOverlays } from './components/CanvasOverlays';
 import { SelectionMarquee } from './components/SelectionMarquee';
 import { SyntaxDrawer } from './components/SyntaxDrawer';
@@ -544,19 +543,10 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
         onSetTheme={mutations.handleSetTheme}
         isAutonumbered={mutations.isAutonumbered}
         onToggleAutonumber={mutations.handleToggleAutonumber}
+        title={driver.capabilities.supportsTitle !== false ? mutations.diagramTitle : undefined}
+        accessibility={driver.capabilities.supportsAccessibility !== false ? mutations.diagramAccessibility : undefined}
+        onUpdateMetadata={mutations.handleUpdateDiagramMetadata}
       />
-
-      {/* Optional In-Canvas Title Header */}
-      {driver.capabilities.supportsTitle !== false && (
-        <CanvasTitleHeader
-          title={mutations.diagramTitle}
-          isEditable={isEditable}
-          accessibility={mutations.diagramAccessibility}
-          supportsAccessibility={driver.capabilities.supportsAccessibility}
-          onUpdateTitle={mutations.handleSetDiagramTitle}
-          onUpdateAccessibility={mutations.handleSetAccessibility}
-        />
-      )}
 
       {/* Interactive World Canvas */}
       <div

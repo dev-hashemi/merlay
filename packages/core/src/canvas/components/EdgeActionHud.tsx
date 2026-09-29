@@ -6,7 +6,7 @@ import {
   ArrowOpenIcon,
   ArrowSolidIcon,
   ArrowThickIcon,
-  ArrowCircleIcon,
+  MoreHorizontalIcon,
   InsertStepIcon,
   PaletteIcon,
   ReverseIcon,
@@ -107,9 +107,18 @@ export const EdgeActionHud: React.FC<EdgeActionHudProps> = ({
                 : ''
             }`}
             onClick={onToggleTypePopover}
-            title="All Arrowheads & Line Types (Circle, Cross, Both, Invisible...)"
+            title={
+              selectedEdgePos.arrowType !== 'arrow' &&
+              selectedEdgePos.arrowType !== 'dotted' &&
+              selectedEdgePos.arrowType !== 'thick'
+                ? `Custom Arrow Type (${selectedEdgePos.arrowType}) — Click for all types & length`
+                : 'All Arrow Types & Line Length (Circle, Cross, Both, Invisible...)'
+            }
+            aria-label="All Arrow Types and Line Length"
+            aria-haspopup="dialog"
+            aria-expanded={activeEdgePopover === 'type'}
           >
-            <ArrowCircleIcon size={14} />
+            <MoreHorizontalIcon size={14} />
           </button>
 
           <div className="mermaid-hud-divider" />

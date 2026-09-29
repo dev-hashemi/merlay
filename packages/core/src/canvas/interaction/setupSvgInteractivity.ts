@@ -28,6 +28,7 @@ export interface SetupSvgInteractivityOptions {
   onStartEditingEdge: (edgeId: string, anchorEl: Element) => void;
   onStartEditingSubgraph: (subId: string, subEl: Element) => void;
   onHoverNode: (nodeId: string, rect: Rect | null, startEndKind?: StartEndKind) => void;
+  onSelectNote?: (targetNodeId: string, noteEl: Element) => void;
 }
 
 export function setupSvgInteractivity(options: SetupSvgInteractivityOptions): void {
@@ -46,6 +47,7 @@ export function setupSvgInteractivity(options: SetupSvgInteractivityOptions): vo
     onStartEditingEdge,
     onStartEditingSubgraph,
     onHoverNode,
+    onSelectNote,
   } = options;
 
   // 1. Nodes & start/end anchors
@@ -61,6 +63,7 @@ export function setupSvgInteractivity(options: SetupSvgInteractivityOptions): vo
     onStartEditingNode,
     onStartEditingSubgraph,
     onHoverNode,
+    onSelectNote,
   });
 
   // 2. Edges & edge labels

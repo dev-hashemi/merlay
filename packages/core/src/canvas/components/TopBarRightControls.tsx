@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import type { NotifyFn, RenderMermaidFn } from '../../platform/types';
+import { DiagramAccessibility } from '../../diagrams/common';
 import { DiagramDriver } from '../../diagrams/types';
-import { CodeIcon, ExportIcon, MaximizeIcon, MinimizeIcon } from '../icons/Icons';
+import { CodeIcon, ExportIcon, InfoIcon, MaximizeIcon, MinimizeIcon } from '../icons/Icons';
 import { ExportPopover } from './ExportPopover';
+import { DiagramInfoPopover } from './DiagramInfoPopover';
 
 export interface TopBarRightControlsProps {
   driver: DiagramDriver;
@@ -15,6 +17,11 @@ export interface TopBarRightControlsProps {
   renderMermaid?: RenderMermaidFn;
   code?: string;
   notify?: NotifyFn;
+  title?: string;
+  accessibility?: DiagramAccessibility;
+  onUpdateMetadata?: (data: { title: string | null; accessibility: DiagramAccessibility | null }) => void;
+  isInfoOpen?: boolean;
+  onToggleInfo?: () => void;
 }
 
 export const TopBarRightControls: React.FC<TopBarRightControlsProps> = ({
@@ -28,8 +35,19 @@ export const TopBarRightControls: React.FC<TopBarRightControlsProps> = ({
   renderMermaid,
   code,
   notify,
+  title,
+  accessibility,
+  onUpdateMetadata,
+  isInfoOpen = false,
+  onToggleInfo,
 }) => {
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
+
+  const hasInfoData = Boolean(
+    (title && title.trim()) ||
+      (accessibility?.accTitle && accessibility.accTitle.trim()) ||
+      (accessibility?.accDescr && accessibility.accDescr.trim())
+  );
 
   return (
     <div className="mermaid-top-bar-right">
@@ -52,6 +70,38 @@ export const TopBarRightControls: React.FC<TopBarRightControlsProps> = ({
         <CodeIcon size={14} />
         <span>Syntax</span>
       </button>
+
+      {/* Diagram Info & Accessibility */}
+      {isEditable && onToggleInfo && (
+        <div className="mermaid-info-wrapper" style={{ position: 'relative' }}>
+          <button
+            type="button"
+            className={`mermaid-tool-btn ${isInfoOpen ? 'is-active' : ''} ${hasInfoData ? 'has-data' : ''}`}
+            onClick={onToggleInfo}
+            title={
+              hasInfoData
+                ? `Diagram Info & Accessibility (${title || accessibility?.accTitle || 'Description set'})`
+                : 'Diagram Info & Accessibility (Title, accTitle, accDescr)'
+            }
+            aria-label="Diagram Info and Accessibility"
+            aria-haspopup="dialog"
+            aria-expanded={isInfoOpen}
+          >
+            <InfoIcon size={14} />
+            <span>Info</span>
+          </button>
+          {isInfoOpen && (
+            <DiagramInfoPopover
+              initialTitle={title}
+              initialAccessibility={accessibility}
+              onApply={(data) => {
+                onUpdateMetadata?.(data);
+              }}
+              onClose={onToggleInfo}
+            />
+          )}
+        </div>
+      )}
 
       <div className="mermaid-bar-divider" />
 

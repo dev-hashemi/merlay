@@ -17,6 +17,7 @@ import {
   SequenceParticipantDef,
   SequenceTimelineItem,
 } from './types';
+import { isFrameStart } from './mutations/frameMutations';
 
 export function sequenceArrowToViewModel(arrow: SequenceArrowType): ArrowType {
   switch (arrow) {
@@ -127,6 +128,24 @@ export function projectSequenceAst(ast: MermaidSequenceAST): ViewProjection {
       subgraphIds: [],
       style: b.color ? { color: b.color } : undefined,
     });
+  }
+
+  // Control frames (loop, alt, opt, par, critical, break, rect)
+  for (let i = 0; i < ast.timeline.length; i++) {
+    const item = ast.timeline[i];
+    if (item.type === 'raw' && isFrameStart(item.text)) {
+      const text = item.text.trim();
+      const match = text.match(/^(loop|alt|opt|par|critical|break|rect)\s*(.*)$/i);
+      const label = match ? (match[2].trim() || match[1]) : text;
+      const frameId = `frame_${i}`;
+      subgraphs.set(frameId, {
+        type: 'subgraph',
+        id: frameId,
+        label,
+        nodeIds: [],
+        subgraphIds: [],
+      });
+    }
   }
 
   return {

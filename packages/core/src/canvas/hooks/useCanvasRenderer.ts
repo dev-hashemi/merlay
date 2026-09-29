@@ -106,6 +106,10 @@ export function useCanvasRenderer({
       onHoverNode: (nodeId, rect, kind) => {
         useCanvasStore.getState().setHoveredNode(nodeId, rect, kind ?? null);
       },
+      onSelectNote: (targetNodeId, noteEl) => {
+        onSelectNode(targetNodeId, false, noteEl);
+        useCanvasStore.getState().setActiveNodePopover('note');
+      },
     });
   }, [
     svgMountRef,

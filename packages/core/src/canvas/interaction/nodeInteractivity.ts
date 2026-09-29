@@ -26,6 +26,7 @@ export interface SetupNodeInteractivityOptions {
   onStartEditingNode: (nodeId: string, nodeEl: Element, event?: MouseEvent | TouchEvent) => void;
   onStartEditingSubgraph: (subId: string, subEl: Element) => void;
   onHoverNode: (nodeId: string, rect: Rect | null, startEndKind?: StartEndKind) => void;
+  onSelectNote?: (targetNodeId: string, noteEl: Element) => void;
 }
 
 export function setupNodeInteractivity({
@@ -40,6 +41,7 @@ export function setupNodeInteractivity({
   onStartEditingNode,
   onStartEditingSubgraph,
   onHoverNode,
+  onSelectNote,
 }: SetupNodeInteractivityOptions): void {
   const prefixes = dom.nodeIdPrefixes || ['node-', 'flowchart-'];
   const anchorNodeId = dom.anchorNodeId;
@@ -217,6 +219,56 @@ export function setupNodeInteractivity({
       container.onmouseenter = () => {
         const rect = getLocalRect(container);
         onHoverNode(targetAnchorId, rect, kind);
+      };
+    });
+  }
+
+  // 3. Notes (sequence, state, class diagrams)
+  if (onSelectNote) {
+    const rawNoteElements = Array.from(
+      mountEl.querySelectorAll('.note, [class*="note"], text.noteText, rect.note')
+    );
+    const handledNotes = new Set<Element>();
+
+    rawNoteElements.forEach((rawEl) => {
+      const container = (rawEl.closest('g.note, g[id*="Note"], g') || rawEl) as SVGGraphicsElement;
+      if (handledNotes.has(container)) return;
+      handledNotes.add(container);
+
+      applyStyles(container, { cursor: 'pointer' });
+
+      container.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const noteBox = getLocalRect(container);
+        let nearestNodeId: string | null = null;
+        let minDistance = Infinity;
+
+        if (noteBox) {
+          const noteCenterX = noteBox.x + noteBox.width / 2;
+          const noteCenterY = noteBox.y + noteBox.height / 2;
+
+          for (const [nodeId] of displayNodes) {
+            const nodeEl = mountEl.querySelector(`[data-mermaid-node-id="${nodeId}"]`);
+            if (nodeEl) {
+              const nodeRect = getLocalRect(nodeEl);
+              if (nodeRect) {
+                const nodeCenterX = nodeRect.x + nodeRect.width / 2;
+                const nodeCenterY = nodeRect.y + nodeRect.height / 2;
+                const dist = Math.hypot(noteCenterX - nodeCenterX, noteCenterY - nodeCenterY);
+                if (dist < minDistance) {
+                  minDistance = dist;
+                  nearestNodeId = nodeId;
+                }
+              }
+            }
+          }
+        }
+
+        if (nearestNodeId) {
+          onSelectNote(nearestNodeId, container);
+        }
       };
     });
   }

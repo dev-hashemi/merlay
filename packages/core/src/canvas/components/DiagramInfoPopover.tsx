@@ -11,7 +11,7 @@ import { PopoverPos } from '../types';
 import { InfoIcon, CheckIcon, CloseIcon, TrashIcon } from '../icons/Icons';
 
 export interface DiagramInfoPopoverProps {
-  popoverPos: PopoverPos | null;
+  popoverPos?: PopoverPos | null;
   initialTitle?: string;
   initialAccessibility?: DiagramAccessibility;
   onApply: (data: { title: string | null; accessibility: DiagramAccessibility | null }) => void;
@@ -30,6 +30,7 @@ export const DiagramInfoPopover: React.FC<DiagramInfoPopoverProps> = ({
   const [accDescr, setAccDescr] = useState<string>(initialAccessibility?.accDescr || '');
 
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setTitle(initialTitle || '');
@@ -43,7 +44,18 @@ export const DiagramInfoPopover: React.FC<DiagramInfoPopoverProps> = ({
     }, 50);
   }, [initialTitle, initialAccessibility]);
 
-  if (!popoverPos) return null;
+  // Click outside to close
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    window.addEventListener('mousedown', handleClickOutside, true);
+    return () => {
+      window.removeEventListener('mousedown', handleClickOutside, true);
+    };
+  }, [onClose]);
 
   const handleSave = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -90,16 +102,28 @@ export const DiagramInfoPopover: React.FC<DiagramInfoPopoverProps> = ({
 
   return (
     <div
+      ref={popoverRef}
       className="mermaid-popover-menu mermaid-info-popover nodrag"
-      style={{
-        position: 'absolute',
-        left: popoverPos.left,
-        top: popoverPos.top,
-        transform: popoverPos.transform,
-        zIndex: 200,
-      }}
+      style={
+        popoverPos
+          ? {
+              position: 'absolute',
+              left: popoverPos.left,
+              top: popoverPos.top,
+              transform: popoverPos.transform,
+              zIndex: 200,
+            }
+          : {
+              position: 'absolute',
+              right: 0,
+              top: 'calc(100% + 8px)',
+              zIndex: 200,
+            }
+      }
       onClick={(e) => e.stopPropagation()}
       onKeyDown={handleKeyDown}
+      role="dialog"
+      aria-label="Diagram Info and Accessibility"
     >
       <div className="mermaid-popover-header">
         <span className="mermaid-popover-title">

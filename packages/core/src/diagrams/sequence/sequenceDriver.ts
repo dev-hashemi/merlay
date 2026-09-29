@@ -210,10 +210,18 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
       return seq.createBoxWithMembers(ast, label, nodeIds);
     },
     deleteGroup: (ast, groupId, deleteMembers) => {
-      seq.deleteBox(ast, groupId, deleteMembers);
+      if (groupId.startsWith('frame_')) {
+        seq.deleteFrame(ast, groupId);
+      } else {
+        seq.deleteBox(ast, groupId, deleteMembers);
+      }
     },
     renameGroup: (ast, groupId, label) => {
-      seq.renameBox(ast, groupId, label);
+      if (groupId.startsWith('frame_')) {
+        seq.renameFrame(ast, groupId, label);
+      } else {
+        seq.renameBox(ast, groupId, label);
+      }
     },
     moveNodeToGroup: (ast, nodeId, groupId) => {
       seq.moveParticipantToBox(ast, nodeId, groupId);
@@ -348,5 +356,7 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
     nodeSelector: '.node, [class*="node "], .actor, [class*="actor"]',
     edgeSelector:
       '.edgePaths path, .edgePath path, path.flowchart-link, [class*="flowchart-link"], line.messageLine0, line.messageLine1, [class*="messageLine"], path.messageLine0, path.messageLine1',
+    clusterSelector:
+      'g[data-et="control-structure"], g.loopGroup, rect.rect, rect.box, g.box',
   },
 };

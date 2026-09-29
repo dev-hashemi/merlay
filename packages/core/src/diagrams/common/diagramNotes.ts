@@ -58,8 +58,10 @@ export function formatSequenceNote(note: DiagramNoteDetails): string {
   const target = note.targetId || 'Alice';
   const text = note.text.replace(/\r?\n/g, '<br/>');
 
-  if (pos === 'over' && note.secondTargetId) {
-    return `Note over ${target},${note.secondTargetId}: ${text}`;
+  if (pos === 'over') {
+    return note.secondTargetId
+      ? `Note over ${target},${note.secondTargetId}: ${text}`
+      : `Note over ${target}: ${text}`;
   }
   return `Note ${pos} of ${target}: ${text}`;
 }

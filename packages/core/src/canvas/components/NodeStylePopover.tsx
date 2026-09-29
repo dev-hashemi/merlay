@@ -8,6 +8,7 @@ import {
   ColorPickerRow,
   ResetStyleButton,
 } from './StyleControls';
+import { CloseIcon } from '../icons/Icons';
 
 export interface NodeStylePopoverProps {
   popoverPos: PopoverPos | null;
@@ -124,7 +125,8 @@ export const NodeStylePopover: React.FC<NodeStylePopoverProps> = ({
             <div className="mermaid-classdef-chips">
               {classDefs.map((cd) => {
                 const isActive = nodeClasses?.includes(cd.name);
-                const dotColor = cd.styles.fill || cd.styles.stroke || 'var(--mermaid-accent)';
+                const fillColor = cd.styles.fill || 'transparent';
+                const strokeColor = cd.styles.stroke || 'var(--mermaid-border)';
                 return (
                   <div
                     key={cd.name}
@@ -133,8 +135,11 @@ export const NodeStylePopover: React.FC<NodeStylePopoverProps> = ({
                     title={`Click to ${isActive ? 'remove' : 'apply'} class ${cd.name}`}
                   >
                     <span
-                      className="mermaid-classdef-dot"
-                      style={{ backgroundColor: dotColor }}
+                      className="mermaid-classdef-swatch"
+                      style={{
+                        backgroundColor: fillColor,
+                        borderColor: strokeColor,
+                      }}
                     />
                     <span className="mermaid-classdef-name">{cd.name}</span>
                     {onDeleteClassDef && (
@@ -146,8 +151,9 @@ export const NodeStylePopover: React.FC<NodeStylePopoverProps> = ({
                           onDeleteClassDef(cd.name);
                         }}
                         title={`Delete classDef ${cd.name}`}
+                        aria-label={`Delete class ${cd.name}`}
                       >
-                        ×
+                        <CloseIcon size={11} />
                       </button>
                     )}
                   </div>
