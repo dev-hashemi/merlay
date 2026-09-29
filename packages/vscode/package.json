@@ -2,7 +2,7 @@
   "name": "merlay",
   "displayName": "Merlay",
   "description": "Visual overlay editor for Mermaid diagrams. Mermaid, your way.",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "publisher": "dev-hashemi",
   "icon": "icon.png",
   "engines": {
