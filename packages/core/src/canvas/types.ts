@@ -31,7 +31,7 @@ export interface SelectionBox {
   currentY: number;
 }
 
-export type ActiveNodePopover = 'shape' | 'style' | 'subgraph' | 'link' | 'note' | null;
+export type ActiveNodePopover = 'shape' | 'style' | 'subgraph' | 'link' | 'note' | 'shapedata' | null;
 export type ActiveEdgePopover = 'style' | 'type' | 'frame' | null;
 export type ActiveMultiPopover = 'shape' | 'style' | 'edgeType' | 'frame' | null;
 

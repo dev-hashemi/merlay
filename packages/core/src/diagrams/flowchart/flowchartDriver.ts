@@ -298,5 +298,8 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
 
   dom: {
     nodeIdPrefixes: ['flowchart-'],
+    // Mermaid renders icon/image specials as g.icon-shape / g.image-shape
+    // (not g.node) with the same flowchart-<id>-<n> id scheme.
+    nodeSelector: '.node, .icon-shape, .image-shape, [class*="node "]',
   },
 };
