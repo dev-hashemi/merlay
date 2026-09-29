@@ -10,7 +10,7 @@ import {
   MermaidFlowchartAST,
   MermaidShapeType,
 } from './types';
-import { FLOWCHART_SHAPES } from './shapes';
+import { FLOWCHART_SHAPES, versionGatedKinds } from './shapes';
 import { parseMermaidFlowchart } from './parser';
 import { serializeMermaidFlowchart } from './serializer';
 import { findNodeLinkUrl, findNodeLinkDetails, updateNodeLinkInRawLines } from '../nodeLinks';
@@ -133,6 +133,11 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
   },
 
   nodeKindOptions: FLOWCHART_KIND_OPTIONS.map((o) => ({ ...o })),
+
+  // Shapes newer than the 11.3 baseline (person/bucket/console/browser need
+  // mermaid ≥11.17.0). The canvas probes these against the host renderer
+  // and hides the unsupported ones from the picker.
+  compatProbeKinds: versionGatedKinds() as string[],
 
   mutations: {
     addNode: (ast, label) => fc.addNode(ast, label),

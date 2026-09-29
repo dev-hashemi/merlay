@@ -68,6 +68,10 @@ export interface CanvasStoreState {
   recentNodeKinds: string[];
   /** Last applied node kind; sprouting reuses it when valid for the driver. */
   lastNodeKind: string | null;
+  /** Node kinds the host renderer failed to render (hidden from picker). */
+  unsupportedShapeKinds: string[];
+  /** Whether the compat probe already ran this session. */
+  shapeCompatProbed: boolean;
 
   // Actions
   setSelectedNodeIds: (ids: Set<string>) => void;
@@ -142,6 +146,7 @@ export interface CanvasStoreState {
   clearEditing: () => void;
 
   pushRecentNodeKind: (kind: string) => void;
+  setShapeCompatResult: (unsupportedKinds: string[]) => void;
 
   clearSelection: () => void;
   clearPopovers: () => void;

@@ -70,6 +70,7 @@ export type MermaidShapeType =
   | 'folder'
   | 'bucket'
   | 'console'
+  | 'browser'
   | 'person'
   // Special shapes with extra params (icon:, img:)
   | 'icon'

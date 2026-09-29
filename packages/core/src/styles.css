@@ -1837,6 +1837,13 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
   box-shadow: 0 0 0 2px var(--mermaid-accent-subtle);
 }
 
+.mermaid-link-hint {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--mermaid-text-muted);
+  opacity: 0.9;
+}
+
 .mermaid-link-checkbox-row {
   display: flex;
   align-items: center;

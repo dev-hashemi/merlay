@@ -3,10 +3,12 @@
  * diagrams) driven by the driver's nodeKindOptions — no diagram-type branching.
  *
  * Search-first, browse-second: drivers with ≤12 options render the original
- * flat list unchanged. Larger sets get a sticky search field, a recents row
- * (from the canvas store), and native collapsible category sections grouped
- * by `option.group`. Keyboard: type to filter, Enter picks the first match,
- * Esc closes.
+ * flat list unchanged. Larger sets get a sticky search field, a recents
+ * shortcut row, and native collapsible category sections grouped by
+ * `option.group`. Recents stay in their groups too. Kinds the host renderer
+ * cannot draw (see shapeCompat) are hidden. Keyboard: type to filter, Enter
+ * picks the first match, Esc closes. Wheel/pointer gestures are contained so
+ * the canvas underneath never zooms or pans while scrolling the list.
  */
 
 import React, { useMemo, useState } from 'react';
@@ -14,6 +16,7 @@ import { MermaidNodeDef } from '../../diagrams/viewModel';
 import { NodeKindOption } from '../../diagrams/types';
 import { PopoverPos } from '../types';
 import { useCanvasStore } from '../store/canvasStore';
+import { partitionKindOptions } from './kindPickerModel';
 import { ShapeIcons, StateTypeIcons, UserIcon } from '../icons/Icons';
 
 export interface KindPopoverProps {
@@ -27,10 +30,6 @@ export interface KindPopoverProps {
   /** Close the popover (Esc key). Absent = Esc does nothing. */
   onClose?: () => void;
 }
-
-/** Flat list stays for small drivers so their UI is byte-for-byte unchanged. */
-const SEARCH_THRESHOLD = 12;
-const MAX_RECENTS = 3;
 
 type KindIcon = React.FC<{ size?: number }>;
 
@@ -56,15 +55,6 @@ function isCurrentKind(
   return Array.from(selectedNodeIds).every((id) => kindOf(id) === optKind);
 }
 
-function matchesQuery(opt: NodeKindOption, q: string): boolean {
-  const hay = `${opt.label} ${opt.kind} ${opt.keywords ?? ''}`.toLowerCase();
-  return q
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean)
-    .every((word) => hay.includes(word));
-}
-
 export const KindPopover: React.FC<KindPopoverProps> = ({
   popoverPos,
   options,
@@ -77,34 +67,14 @@ export const KindPopover: React.FC<KindPopoverProps> = ({
 }) => {
   const [query, setQuery] = useState('');
   const recentKinds = useCanvasStore((s) => s.recentNodeKinds);
+  const unsupportedKinds = useCanvasStore((s) => s.unsupportedShapeKinds);
 
-  const searchable = options.length > SEARCH_THRESHOLD;
+  const { searchable, filtered, recents, groups, grouped } = useMemo(
+    () => partitionKindOptions(options, query, recentKinds, unsupportedKinds),
+    [options, query, recentKinds, unsupportedKinds]
+  );
   const trimmed = query.trim();
-  const filtered = searchable && trimmed ? options.filter((o) => matchesQuery(o, trimmed)) : options;
   const firstMatch = filtered[0];
-
-  // Recents: valid, de-duplicated kinds the user applied before (not in search mode).
-  const recents = useMemo(() => {
-    if (!searchable || trimmed) return [];
-    const valid = new Set(options.map((o) => o.kind));
-    return recentKinds.filter((k) => valid.has(k)).slice(0, MAX_RECENTS);
-  }, [searchable, trimmed, recentKinds, options]);
-
-  // Group preserving driver order; single group renders without headers.
-  const groups = useMemo(() => {
-    const order: string[] = [];
-    const byGroup = new Map<string, NodeKindOption[]>();
-    for (const opt of filtered) {
-      const g = opt.group ?? '';
-      if (!byGroup.has(g)) {
-        byGroup.set(g, []);
-        order.push(g);
-      }
-      byGroup.get(g)!.push(opt);
-    }
-    return order.map((g) => ({ name: g, items: byGroup.get(g)! }));
-  }, [filtered]);
-  const grouped = groups.length > 1;
 
   if (!popoverPos) return null;
 
@@ -189,10 +159,7 @@ export const KindPopover: React.FC<KindPopoverProps> = ({
           <div className="mermaid-shape-group" role="group" aria-label="Recent">
             <div className="mermaid-shape-group-title">Recent</div>
             <div className="mermaid-shape-group-grid">
-              {recents.map((kind) => {
-                const opt = options.find((o) => o.kind === kind)!;
-                return renderItem(opt);
-              })}
+              {recents.map((opt) => renderItem(opt))}
             </div>
           </div>
         )}
@@ -205,9 +172,7 @@ export const KindPopover: React.FC<KindPopoverProps> = ({
           </div>
         )}
         {trimmed || !grouped
-          ? filtered
-              .filter((o) => !recents.includes(o.kind) || trimmed)
-              .map(renderItem)
+          ? filtered.map(renderItem)
           : groups.map((g, gi) => (
               <details
                 key={g.name || 'all'}
@@ -215,9 +180,7 @@ export const KindPopover: React.FC<KindPopoverProps> = ({
                 open={gi === 0}
               >
                 <summary className="mermaid-shape-group-title">{g.name}</summary>
-                <div className="mermaid-shape-group-grid">
-                  {g.items.filter((o) => !recents.includes(o.kind)).map(renderItem)}
-                </div>
+                <div className="mermaid-shape-group-grid">{g.items.map(renderItem)}</div>
               </details>
             ))}
       </div>

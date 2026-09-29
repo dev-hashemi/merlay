@@ -2,7 +2,7 @@
  * Overlays for Selected Nodes: HUD, Kind Popover, Node Style Popover, Group Membership.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ActiveNodePopover, PopoverPos, Rect } from '../types';
 import { ThemePreset } from '../constants';
 import { MermaidNodeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
@@ -122,24 +122,50 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
   // Editable shape-data field for special shapes (image URL, icon name).
   // Gated on the driver offering the mutation; the key map is view-model
   // data (shape value), never a diagram-type branch.
-  const shapeDataField =
-    selectedNodeId && currentNode && driver.mutations.setNodeShapeParam
-      ? currentNode.shape === 'image'
+  const shapeDataCapable = !!driver.mutations.setNodeShapeParam;
+  // The projection is one render behind a just-picked kind, so remember it
+  // until the popover closes (also drives auto-open after picking).
+  const [pendingShapeKind, setPendingShapeKind] = useState<string | null>(null);
+  const shapeKindForData = pendingShapeKind ?? currentNode?.shape;
+  const shapeDataValue =
+    currentNode?.shape === shapeKindForData ? (currentNode?.shapeParams ?? {}) : {};
+  const shapeDataField: {
+    key: string;
+    label: string;
+    placeholder: string;
+    value: string;
+    hint?: string;
+    suggestions?: string[];
+  } | null =
+    selectedNodeId && shapeDataCapable
+      ? shapeKindForData === 'image'
         ? {
             key: 'img',
             label: 'Image URL',
             placeholder: 'https://...',
-            value: currentNode.shapeParams?.img ?? '',
+            value: (shapeDataValue as Record<string, string>).img ?? '',
           }
-        : currentNode.shape === 'icon'
+        : shapeKindForData === 'icon'
           ? {
               key: 'icon',
               label: 'Icon name',
               placeholder: 'fa:user',
-              value: currentNode.shapeParams?.icon ?? '',
+              value: (shapeDataValue as Record<string, string>).icon ?? '',
+              hint: 'Font Awesome names (fa:user, fa:star…). The glyph renders only when the host app registered icon packs; the label always shows.',
+              suggestions: [
+                'fa:user', 'fa:users', 'fa:home', 'fa:star', 'fa:heart',
+                'fa:check', 'fa:xmark', 'fa:bell', 'fa:cog', 'fa:calendar',
+                'fa:file', 'fa:folder', 'fa:image', 'fa:music', 'fa:car',
+                'fa:circle', 'fa:flag', 'fa:lock', 'fa:magnifying-glass',
+              ],
             }
           : null
       : null;
+
+  const closeShapeData = () => {
+    setPendingShapeKind(null);
+    onToggleNodePopover('shapedata');
+  };
 
   return (
     <>
@@ -197,7 +223,16 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
             selectedNodeId={selectedNodeId}
             selectedNodeIds={new Set(selectedNodeId ? [selectedNodeId] : [])}
             viewNodes={viewNodes}
-            onSelectKind={onSelectNodeKind}
+            onSelectKind={(kind) => {
+              onSelectNodeKind(kind);
+              // Image/icon nodes need their data (URL, icon name) to render
+              // anything useful — open its editor right away so picking the
+              // shape flows straight into providing it.
+              if ((kind === 'image' || kind === 'icon') && shapeDataCapable) {
+                setPendingShapeKind(kind);
+                onToggleNodePopover('shapedata');
+              }
+            }}
             onClose={() => onToggleNodePopover('shape')}
           />
         )}
@@ -289,11 +324,13 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
             fieldLabel={shapeDataField.label}
             placeholder={shapeDataField.placeholder}
             initialValue={shapeDataField.value}
+            suggestions={shapeDataField.suggestions}
+            hint={shapeDataField.hint}
             onApply={(value) =>
               onSetNodeShapeParam?.(selectedNodeId, shapeDataField.key, value)
             }
             onClear={() => onSetNodeShapeParam?.(selectedNodeId, shapeDataField.key, null)}
-            onClose={() => onToggleNodePopover('shapedata')}
+            onClose={closeShapeData}
           />
         )}
     </>

@@ -515,6 +515,14 @@ export const ShapeIcons = {
     </>
   ),
   folder: createShape(<path d="M2 6h7l2 3h11v10H2z" />),
+  browser: createShape(
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <line x1="3" y1="9" x2="21" y2="9" />
+      <circle cx="6.5" cy="6.5" r="0.8" fill="currentColor" stroke="none" />
+      <circle cx="9.5" cy="6.5" r="0.8" fill="currentColor" stroke="none" />
+    </>
+  ),
   bucket: createShape(
     <>
       <path d="M4 9h16l-2 11H6z" />

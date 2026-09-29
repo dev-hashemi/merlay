@@ -31,6 +31,14 @@ export interface FlowchartShapeDef {
   keywords: string;
   /** True for the original 14 delimiter shapes (serialize with delimiters). */
   classic: boolean;
+  /**
+   * Minimum Mermaid version supporting this shape (e.g. '11.17.0' for the
+   * person/bucket/console/browser batch). Hosts with older renderers
+   * (Obsidian's bundled Mermaid lags npm) hide these from the picker —
+   * offering them would break the whole diagram with "No such shape".
+   * Parsing/serialization still support them everywhere.
+   */
+  since?: string;
 }
 
 /** Pinned static favorites shown first in the picker. */
@@ -79,8 +87,8 @@ export const FLOWCHART_SHAPES: readonly FlowchartShapeDef[] = [
   { kind: 'docs', shortName: 'docs', aliases: ['documents', 'st-doc', 'stacked-document'], label: 'Multi-Document', category: 'Data & Documents', keywords: 'multiple documents stack papers multi report', classic: false },
   { kind: 'lin-doc', shortName: 'lin-doc', aliases: ['lined-document'], label: 'Lined Document', category: 'Data & Documents', keywords: 'lined document form lines ruled', classic: false },
   { kind: 'tag-doc', shortName: 'tag-doc', aliases: ['tagged-document'], label: 'Tagged Document', category: 'Data & Documents', keywords: 'tagged document label tag folder', classic: false },
-  { kind: 'folder', shortName: 'folder', aliases: ['directory'], label: 'Folder', category: 'Data & Documents', keywords: 'folder directory files archive', classic: false },
-  { kind: 'bucket', shortName: 'bucket', aliases: [], label: 'Bucket', category: 'Data & Documents', keywords: 'bucket storage cloud object s3', classic: false },
+  { kind: 'folder', shortName: 'folder', aliases: ['directory'], label: 'Folder', category: 'Data & Documents', keywords: 'folder directory files archive', classic: false, since: '11.17.0' },
+  { kind: 'bucket', shortName: 'bucket', aliases: [], label: 'Bucket', category: 'Data & Documents', keywords: 'bucket storage cloud object s3', classic: false, since: '11.17.0' },
   { kind: 'h-cyl', shortName: 'h-cyl', aliases: ['das', 'horizontal-cylinder'], label: 'Direct Storage', category: 'Data & Documents', keywords: 'direct access storage horizontal cylinder disk das', classic: false },
   { kind: 'lin-cyl', shortName: 'lin-cyl', aliases: ['disk', 'lined-cylinder'], label: 'Disk Storage', category: 'Data & Documents', keywords: 'disk storage lined cylinder database platter', classic: false },
   { kind: 'curv-trap', shortName: 'curv-trap', aliases: ['curved-trapezoid', 'display'], label: 'Display', category: 'Data & Documents', keywords: 'display screen curved monitor show', classic: false },
@@ -93,13 +101,14 @@ export const FLOWCHART_SHAPES: readonly FlowchartShapeDef[] = [
   { kind: 'bow-rect', shortName: 'bow-rect', aliases: ['bow-tie-rectangle', 'stored-data'], label: 'Stored Data', category: 'Data & Documents', keywords: 'stored data bow tie saved', classic: false },
   { kind: 'win-pane', shortName: 'win-pane', aliases: ['internal-storage', 'window-pane'], label: 'Internal Storage', category: 'Data & Documents', keywords: 'internal storage memory window pane chip', classic: false },
   { kind: 'flag', shortName: 'flag', aliases: ['paper-tape'], label: 'Paper Tape', category: 'Data & Documents', keywords: 'paper tape flag receipt punch streamer', classic: false },
-  { kind: 'console', shortName: 'console', aliases: [], label: 'Console', category: 'Data & Documents', keywords: 'console terminal window screen command', classic: false },
+  { kind: 'console', shortName: 'console', aliases: [], label: 'Console', category: 'Data & Documents', keywords: 'console terminal window screen command', classic: false, since: '11.17.0' },
+  { kind: 'browser', shortName: 'browser', aliases: [], label: 'Browser', category: 'Data & Documents', keywords: 'browser window web page tab', classic: false, since: '11.17.0' },
   // --- Notes & More ---
   { kind: 'text', shortName: 'text', aliases: [], label: 'Text Block', category: 'Notes & More', keywords: 'text note label block plain annotation', classic: false },
   { kind: 'brace', shortName: 'brace', aliases: ['brace-l', 'comment'], label: 'Comment', category: 'Notes & More', keywords: 'comment note brace annotation remark curly', classic: false },
   { kind: 'brace-r', shortName: 'brace-r', aliases: [], label: 'Comment Right', category: 'Notes & More', keywords: 'comment note brace right annotation remark', classic: false },
   { kind: 'braces', shortName: 'braces', aliases: [], label: 'Comment Both', category: 'Notes & More', keywords: 'comment note braces both annotation remark', classic: false },
-  { kind: 'person', shortName: 'person', aliases: [], label: 'Person', category: 'Notes & More', keywords: 'person user human actor people role', classic: false },
+  { kind: 'person', shortName: 'person', aliases: [], label: 'Person', category: 'Notes & More', keywords: 'person user human actor people role', classic: false, since: '11.17.0' },
   // --- Special (extra params, label still editable) ---
   { kind: 'icon', shortName: 'icon', aliases: [], label: 'Icon', category: 'Special', keywords: 'icon symbol picture glyph logo', classic: false },
   { kind: 'image', shortName: 'image', aliases: ['img'], label: 'Image', category: 'Special', keywords: 'image picture photo img graphic', classic: false },
@@ -127,6 +136,15 @@ export function isClassicShape(kind: string): boolean {
 
 export function shortNameFor(kind: string): string {
   return shapeDefFor(kind)?.shortName ?? kind;
+}
+
+/**
+ * Kinds that need a Mermaid version newer than the 11.3 baseline
+ * (currently the 11.17.0 batch). Hosts probe these against their own
+ * renderer and hide the unsupported ones from the picker.
+ */
+export function versionGatedKinds(): MermaidShapeType[] {
+  return FLOWCHART_SHAPES.filter((d) => d.since).map((d) => d.kind);
 }
 
 export interface ParsedShapeMeta {

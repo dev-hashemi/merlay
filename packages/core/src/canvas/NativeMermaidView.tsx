@@ -29,6 +29,7 @@ import { CanvasOverlays } from './components/CanvasOverlays';
 import { SelectionMarquee } from './components/SelectionMarquee';
 import { SyntaxDrawer } from './components/SyntaxDrawer';
 import { useCanvasStore } from './store/canvasStore';
+import { probeUnsupportedKinds } from '../diagrams/shapeCompat';
 
 export type { NativeMermaidViewProps };
 
@@ -113,6 +114,24 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
   });
   const driver = astHook.driver;
   const isEditable = driver.capabilities.editable !== false;
+
+  // Probe version-gated shapes (e.g. person/bucket/console/browser need
+  // mermaid ≥11.17.0) against the host renderer once per session. Unsupported
+  // kinds are hidden from the shape picker so they can't break the diagram
+  // with "No such shape" on older hosts (Obsidian's bundled Mermaid lags npm).
+  useEffect(() => {
+    const gated = driver.compatProbeKinds;
+    if (!gated || gated.length === 0) return;
+    const state = useCanvasStore.getState();
+    if (state.shapeCompatProbed) return;
+    let cancelled = false;
+    probeUnsupportedKinds(host.renderMermaid, gated).then((unsupported) => {
+      if (!cancelled) useCanvasStore.getState().setShapeCompatResult(unsupported);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [driver, host]);
   // Touch devices get tap/double-tap/long-press copy and gestures (no hover).
   const isCoarsePointer =
     typeof window !== 'undefined' &&

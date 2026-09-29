@@ -409,6 +409,12 @@ export interface DiagramDriver<TAst = unknown> {
   labels: DiagramLabels;
   /** Options for the node-kind picker (empty when !supportsNodeKinds). */
   nodeKindOptions: NodeKindOption[];
+  /**
+   * Node-kind values that may not exist on older host renderers. The canvas
+   * probes these once per session and hides the unsupported ones from the
+   * picker (absent = every option is assumed renderable).
+   */
+  compatProbeKinds?: string[];
 
   mutations: DiagramMutations<TAst>;
   dom: SvgDomAdapter;

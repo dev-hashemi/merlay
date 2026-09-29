@@ -14,6 +14,10 @@ export interface ShapeDataPopoverProps {
   /** e.g. "https://..." / "fa:user". */
   placeholder: string;
   initialValue: string;
+  /** Autocomplete suggestions (e.g. common icon names). Absent = plain input. */
+  suggestions?: string[];
+  /** One-line usage hint rendered under the input. */
+  hint?: string;
   onApply: (value: string) => void;
   onClear: () => void;
   onClose: () => void;
@@ -24,6 +28,8 @@ export const ShapeDataPopover: React.FC<ShapeDataPopoverProps> = ({
   fieldLabel,
   placeholder,
   initialValue,
+  suggestions,
+  hint,
   onApply,
   onClear,
   onClose,
@@ -103,7 +109,17 @@ export const ShapeDataPopover: React.FC<ShapeDataPopoverProps> = ({
             placeholder={placeholder}
             value={value}
             onChange={(e) => setValue(e.target.value)}
+            list={suggestions ? 'mermaid-shapedata-suggestions' : undefined}
+            autoComplete={suggestions ? 'off' : undefined}
           />
+          {suggestions && (
+            <datalist id="mermaid-shapedata-suggestions">
+              {suggestions.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+          )}
+          {hint && <div className="mermaid-link-hint">{hint}</div>}
         </div>
 
         <div className="mermaid-link-actions">

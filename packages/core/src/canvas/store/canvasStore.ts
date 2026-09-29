@@ -65,6 +65,8 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
   // Shape picker memory (survives selection clears and diagram switches)
   recentNodeKinds: [],
   lastNodeKind: null,
+  unsupportedShapeKinds: [],
+  shapeCompatProbed: false,
 
   // Actions
   setSelectedNodeIds: (ids) => set({ selectedNodeIds: ids }),
@@ -177,6 +179,9 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
       lastNodeKind: kind,
       recentNodeKinds: [kind, ...state.recentNodeKinds.filter((k) => k !== kind)].slice(0, 3),
     })),
+
+  setShapeCompatResult: (unsupportedKinds) =>
+    set({ unsupportedShapeKinds: [...unsupportedKinds], shapeCompatProbed: true }),
 
   clearSelection: () =>
     set({
