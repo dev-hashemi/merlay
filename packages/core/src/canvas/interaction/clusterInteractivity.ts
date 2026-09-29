@@ -48,6 +48,15 @@ export function setupClusterInteractivity({
     }
   });
 
+  // In Mermaid sequence diagrams, control structures / frames (loop, alt, opt, par, critical, break)
+  // contain line.loopLine, polygon.labelBox, or text.loopText.
+  mountEl.querySelectorAll('line.loopLine, .loopLine, polygon.labelBox, .loopText').forEach((childEl) => {
+    const parentG = childEl.parentElement;
+    if (parentG && parentG.tagName.toLowerCase() === 'g' && parentG !== (mountEl as unknown)) {
+      if (!clusterElements.includes(parentG)) clusterElements.push(parentG);
+    }
+  });
+
   // Label fragments (e.g. `g.cluster-label`) are never bind targets: binding
   // one would scope clicks/highlights to the label instead of the group.
   const candidates = clusterElements.filter((el) => {
@@ -130,7 +139,8 @@ export function setupClusterInteractivity({
         hitArea.setAttribute('y', String(minY));
         hitArea.setAttribute('width', String(maxX - minX));
         hitArea.setAttribute('height', String(maxY - minY));
-        hitArea.setAttribute('fill', 'transparent');
+        hitArea.setAttribute('fill', 'white');
+        hitArea.setAttribute('fill-opacity', '0.001');
         hitArea.setAttribute('pointer-events', 'all');
         applyStyles(hitArea, { cursor: 'pointer' });
         hitArea.onclick = (e) => {
@@ -150,8 +160,9 @@ export function setupClusterInteractivity({
 
     // Ensure all interactive children receive clicks. Flowchart HTML labels
     // use foreignObject, not <text>, so we include it explicitly.
+    // Sequence frames use polygon for labelBox tab, tspan inside text, and lines.
     htmlEl
-      .querySelectorAll('rect, text, line, path, foreignObject, .cluster-label, .nodeLabel')
+      .querySelectorAll('rect, text, tspan, line, polygon, path, foreignObject, .cluster-label, .nodeLabel, .labelBox, .loopText, .labelText')
       .forEach((child) => {
         const childEl = child as SVGGraphicsElement;
         applyStyles(childEl, { cursor: 'pointer' });
@@ -288,8 +299,17 @@ export function setupClusterInteractivity({
   }
 
   const getClusterLabelText = (el: Element): string => {
-    const loopTitle = el.querySelector('.loopText, .sectionTitle')?.textContent?.trim();
-    if (loopTitle) return loopTitle;
+    // Sequence frames often split titles across multiple .loopText tspans and wrap with brackets [ ... ]
+    const loopTexts = Array.from(el.querySelectorAll('.loopText, .sectionTitle'))
+      .map((t) => t.textContent?.trim() || '')
+      .filter(Boolean)
+      .join(' ')
+      .replace(/[\[\]]/g, '')
+      .trim();
+    if (loopTexts) return loopTexts;
+
+    const labelText = el.querySelector('.labelText')?.textContent?.trim();
+    if (labelText) return labelText;
 
     const standard = el.querySelector('.label, text, .cluster-label')?.textContent?.trim();
     if (standard) return standard;
@@ -353,7 +373,8 @@ export function setupClusterInteractivity({
         el.getAttribute('data-et') === 'control-structure' ||
         el.classList.contains('loopGroup') ||
         el.classList.contains('rect') ||
-        el.tagName.toLowerCase() === 'rect'
+        el.tagName.toLowerCase() === 'rect' ||
+        el.querySelector('line.loopLine, .loopLine, polygon.labelBox') !== null
       );
     });
 

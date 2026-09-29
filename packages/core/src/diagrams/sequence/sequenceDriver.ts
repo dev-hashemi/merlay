@@ -356,6 +356,6 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
     edgeSelector:
       '.edgePaths path, .edgePath path, path.flowchart-link, [class*="flowchart-link"], line.messageLine0, line.messageLine1, [class*="messageLine"], path.messageLine0, path.messageLine1',
     clusterSelector:
-      'g[data-et="control-structure"], g.loopGroup, rect.rect, rect.box, g.box',
+      'g[data-et="control-structure"], g.loopGroup, rect.rect, rect.box, g.box, line.loopLine, polygon.labelBox',
   },
 };

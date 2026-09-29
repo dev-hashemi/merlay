@@ -1591,7 +1591,14 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
   filter: drop-shadow(0 0 6px var(--mermaid-accent));
 }
 
-#merlay-svg-mount.mermaid-native-svg-mount g[data-mermaid-subgraph-id]:hover line.loopLine {
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-cluster-selected polygon.labelBox,
+#merlay-svg-mount.mermaid-native-svg-mount g[data-mermaid-subgraph-id].mermaid-cluster-selected polygon.labelBox {
+  stroke: var(--mermaid-accent) !important;
+  stroke-width: 2px !important;
+}
+
+#merlay-svg-mount.mermaid-native-svg-mount g[data-mermaid-subgraph-id]:hover line.loopLine,
+#merlay-svg-mount.mermaid-native-svg-mount g[data-mermaid-subgraph-id]:hover polygon.labelBox {
   stroke: var(--mermaid-accent);
 }
 
@@ -1617,6 +1624,7 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
   filter: drop-shadow(0 0 6px var(--mermaid-accent));
 }
 
+.mermaid-native-svg-mount g[data-mermaid-subgraph-id] polygon.labelBox,
 .mermaid-native-svg-mount g[data-mermaid-subgraph-id] text.text,
 .mermaid-native-svg-mount g[data-mermaid-subgraph-id] text.loopText,
 .mermaid-native-svg-mount g[data-mermaid-subgraph-id] text.labelText {
