@@ -12,6 +12,7 @@
  */
 
 import mermaid from 'mermaid';
+import { registerMerlayIconPack } from '../diagrams/merlayIconPack';
 
 let initialized = false;
 let renderSeq = 0;
@@ -19,6 +20,8 @@ let renderSeq = 0;
 function ensureInitialized(): void {
   if (initialized) return;
   mermaid.initialize({ startOnLoad: false, securityLevel: 'strict' });
+  // Bundled "merlay:*" glyphs so @{ icon } shapes never render "?" here.
+  registerMerlayIconPack(mermaid);
   initialized = true;
 }
 

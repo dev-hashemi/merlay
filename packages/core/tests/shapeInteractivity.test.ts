@@ -10,6 +10,12 @@ import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import { FlowchartDriver } from '../src/diagrams/flowchart/flowchartDriver';
 import {
+  MERLAY_ICON_NAMES,
+  MERLAY_ICON_PACK,
+  DEFAULT_MERLAY_ICON,
+  registerMerlayIconPack,
+} from '../src/diagrams/merlayIconPack';
+import {
   getNodeShapeParam,
   setNodeShapeParam,
 } from '../src/diagrams/flowchart/mutations';
@@ -80,6 +86,52 @@ function codeFor(kind: string): { code: string; nodeId: string } {
   FlowchartDriver.mutations.updateNodeKind(ast, nodeId, kind);
   return { code: FlowchartDriver.serialize(ast), nodeId };
 }
+
+test('Icon pack: glyphs are sanitizer-safe and names resolve', () => {
+  assert.ok(MERLAY_ICON_NAMES.length >= 10, 'pack must offer a useful set');
+  assert.deepEqual(
+    [...MERLAY_ICON_NAMES].sort(),
+    Object.keys(MERLAY_ICON_PACK.icons).map((n) => `merlay:${n}`).sort()
+  );
+  assert.ok(MERLAY_ICON_PACK.icons.circle, 'default icon must exist');
+  assert.equal(DEFAULT_MERLAY_ICON, 'merlay:circle');
+  for (const [name, icon] of Object.entries(MERLAY_ICON_PACK.icons)) {
+    assert.ok(icon.body.length > 10, `${name} must have a real body`);
+    assert.ok(
+      !/on\w+\s*=|javascript:|<\s*script|<\s*image|foreignObject/i.test(icon.body),
+      `${name} body must survive strict icon sanitization`
+    );
+  }
+});
+
+test('Icon pack: registerMerlayIconPack guards unsupported APIs', async () => {
+  const mermaid = (await import('mermaid')).default;
+  assert.equal(registerMerlayIconPack(mermaid), true);
+  assert.equal(registerMerlayIconPack({}), false);
+  assert.equal(registerMerlayIconPack(null), false);
+});
+
+async function renderIconShape(icon: string, renderId: string): Promise<string> {
+  const mermaid = (await import('mermaid')).default;
+  mermaid.initialize({ startOnLoad: false });
+  registerMerlayIconPack(mermaid);
+  const { svg } = await mermaid.render(
+    renderId,
+    `flowchart TD\n    A@{ icon: "${icon}", label: "Hi" }\n`
+  );
+  const m = svg.match(/<g class="icon-shape[\s\S]*?<\/g>\s*<\/g>/);
+  assert.ok(m, 'icon-shape group must render');
+  return m[0];
+}
+
+test('Icon pack: merlay:* names render glyphs, unknown names render "?"', async () => {
+  const glyph = await renderIconShape('merlay:bell', 'shape_pack_bell');
+  assert.ok(glyph.includes('<path'), 'registered icon must inline its path');
+  assert.ok(!glyph.includes('>?</'), 'registered icon must not show the "?" fallback');
+
+  const missing = await renderIconShape('fa:definitely-not-registered', 'shape_pack_missing');
+  assert.ok(missing.includes('>?</'), 'unregistered icon keeps mermaid "?" fallback');
+});
 
 test('Icon shape: renders as g.icon-shape and is clickable via DOM adapter', async () => {
   const { code, nodeId } = codeFor('icon');

@@ -19,6 +19,14 @@ export type {
 // npm-backed engine for hosts without a native Mermaid runtime
 export { renderMermaidWithNpm } from './platform/mermaidEngine';
 
+// Bundled icon pack (hosts register it so @{ icon } shapes never render "?")
+export {
+  MERLAY_ICON_PACK,
+  MERLAY_ICON_NAMES,
+  DEFAULT_MERLAY_ICON,
+  registerMerlayIconPack,
+} from './diagrams/merlayIconPack';
+
 // Diagram drivers
 export type {
   DiagramDriver,

@@ -8,6 +8,7 @@ import { ThemePreset } from '../constants';
 import { MermaidNodeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
 import { DiagramDriver, NodeMemberCapabilities } from '../../diagrams/types';
 import { NodeLinkDetails } from '../../diagrams/nodeLinks';
+import { MERLAY_ICON_NAMES } from '../../diagrams/merlayIconPack';
 import { DiagramNoteDetails } from '../../diagrams/common';
 import { NodeActionHud } from '../components/NodeActionHud';
 import { KindPopover } from '../components/KindPopover';
@@ -149,15 +150,10 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
           ? {
               key: 'icon',
               label: 'Icon name',
-              placeholder: 'fa:user',
+              placeholder: 'merlay:bell',
               value: (shapeDataValue as Record<string, string>).icon ?? '',
-              hint: 'Font Awesome names (fa:user, fa:star…). The glyph renders only when the host app registered icon packs; the label always shows.',
-              suggestions: [
-                'fa:user', 'fa:users', 'fa:home', 'fa:star', 'fa:heart',
-                'fa:check', 'fa:xmark', 'fa:bell', 'fa:cog', 'fa:calendar',
-                'fa:file', 'fa:folder', 'fa:image', 'fa:music', 'fa:car',
-                'fa:circle', 'fa:flag', 'fa:lock', 'fa:magnifying-glass',
-              ],
+              hint: 'Built-in merlay:* icons render everywhere. fa:* names need a Font Awesome pack registered by the host app.',
+              suggestions: MERLAY_ICON_NAMES,
             }
           : null
       : null;

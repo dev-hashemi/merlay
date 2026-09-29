@@ -9,6 +9,7 @@ import {
   MermaidShapeType,
 } from './types';
 import { isClassicShape, shortNameFor } from './shapes';
+import { DEFAULT_MERLAY_ICON } from '../merlayIconPack';
 import { emitFrontmatter, emitDirectives } from '../common/diagramHeader';
 
 export function serializeMermaidFlowchart(ast: MermaidFlowchartAST): string {
@@ -205,7 +206,7 @@ function formatNode(node: MermaidNodeDef): string {
       node.shapeParams && Object.keys(node.shapeParams).length > 0
         ? node.shapeParams
         : node.shape === 'icon'
-          ? { icon: 'fa:circle' }
+          ? { icon: DEFAULT_MERLAY_ICON }
           : { img: '' };
     const paramStr = Object.entries(params)
       .map(([k, v]) => `${k}: "${escapeLabel(v)}"`)

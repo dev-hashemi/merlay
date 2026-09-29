@@ -10,6 +10,7 @@ import {
   MermaidShapeType,
 } from '../types';
 import { generateUniqueId } from '../../common/diagramHeader';
+import { DEFAULT_MERLAY_ICON } from '../../merlayIconPack';
 
 export function generateUniqueNodeId(
   ast: MermaidFlowchartAST,
@@ -154,7 +155,7 @@ export function updateNodeShape(
     // standard Mermaid (`@{ icon: ... }` / `@{ img: ... }`) that round-trips.
     // Full URL/name editing lives in the syntax drawer for now.
     if (newShape === 'icon' && node.shapeParams?.icon === undefined) {
-      node.shapeParams = { ...(node.shapeParams ?? {}), icon: 'fa:circle' };
+      node.shapeParams = { ...(node.shapeParams ?? {}), icon: DEFAULT_MERLAY_ICON };
     }
     if (newShape === 'image' && node.shapeParams?.img === undefined) {
       node.shapeParams = { ...(node.shapeParams ?? {}), img: '' };
@@ -181,7 +182,7 @@ export function updateNodesShape(
       node.shape = shape;
       if (shape === 'icon' || shape === 'image') {
         if (shape === 'icon' && node.shapeParams?.icon === undefined) {
-          node.shapeParams = { ...(node.shapeParams ?? {}), icon: 'fa:circle' };
+          node.shapeParams = { ...(node.shapeParams ?? {}), icon: DEFAULT_MERLAY_ICON };
         }
         if (shape === 'image' && node.shapeParams?.img === undefined) {
           node.shapeParams = { ...(node.shapeParams ?? {}), img: '' };

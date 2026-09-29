@@ -8,6 +8,7 @@
  */
 
 import { App, MarkdownRenderer, Component, loadMermaid } from 'obsidian';
+import { registerMerlayIconPack } from '@merlay/core';
 
 export interface MermaidRenderResult {
   svg: string;
@@ -15,6 +16,7 @@ export interface MermaidRenderResult {
 
 export interface MermaidApi {
   render(id: string, text: string, container?: HTMLElement): Promise<MermaidRenderResult | string>;
+  registerIconPacks?: (packs: unknown[]) => void;
 }
 
 let cachedMermaidApi: MermaidApi | null = null;
@@ -23,11 +25,15 @@ export async function getMermaidApi(): Promise<MermaidApi | null> {
   if (cachedMermaidApi) return cachedMermaidApi;
   if (typeof window !== 'undefined' && (window as unknown as { mermaid?: MermaidApi }).mermaid) {
     cachedMermaidApi = (window as unknown as { mermaid?: MermaidApi }).mermaid ?? null;
+    registerMerlayIconPack(cachedMermaidApi);
     return cachedMermaidApi;
   }
   try {
     const loaded: unknown = await loadMermaid();
     cachedMermaidApi = (loaded as MermaidApi).render ? (loaded as MermaidApi) : null;
+    // Bundled "merlay:*" glyphs so @{ icon } shapes render even though
+    // Obsidian registers no icon packs itself (no-op when unsupported).
+    registerMerlayIconPack(cachedMermaidApi);
     return cachedMermaidApi;
   } catch (err) {
     console.warn(
