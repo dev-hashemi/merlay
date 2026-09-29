@@ -121,7 +121,7 @@ export function projectStateDiagram(ast: MermaidStateAST) {
       type: 'subgraph',
       id,
       label: comp.label,
-      direction: comp.direction || ast.direction || 'TD',
+      direction: comp.direction,
       nodeIds: stateIds,
       subgraphIds: comp.compositeIds,
       style: comp.style,

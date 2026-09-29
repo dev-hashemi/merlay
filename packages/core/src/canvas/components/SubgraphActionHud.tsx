@@ -82,11 +82,15 @@ export const SubgraphActionHud: React.FC<SubgraphActionHudProps> = ({
       {onToggleDirection && (
         <button
           type="button"
-          className="mermaid-hud-btn"
+          className={`mermaid-hud-btn ${subgraph.direction ? 'is-active' : ''}`}
           onClick={onToggleDirection}
-          title={`Toggle Group Flow Direction (Current: ${subgraph.direction || 'Default'})`}
+          title={
+            subgraph.direction
+              ? `Group Flow: ${subgraph.direction} (Click to toggle or reset)`
+              : 'Group Flow: Auto (Inherited) (Click to override)'
+          }
         >
-          <span>{subgraph.direction ? `${subgraph.direction}` : 'Direction'}</span>
+          <span>{subgraph.direction ? `${subgraph.direction}` : 'Auto'}</span>
         </button>
       )}
 

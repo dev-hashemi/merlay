@@ -151,7 +151,8 @@ export function useSubgraphMutations({ astHook }: UseSubgraphMutationsOptions) {
       if (!m.setGroupDirection) return;
       applyMutation((a) => {
         const current = m.getGroupDirection ? m.getGroupDirection(a, groupId) : undefined;
-        const next = current === 'LR' ? 'TB' : 'LR';
+        const diagramDir = m.getDirection ? m.getDirection(a) : undefined;
+        const next = getNextGroupDirection(current, diagramDir);
         m.setGroupDirection!(a, groupId, next);
       });
     },
@@ -201,4 +202,34 @@ export function useSubgraphMutations({ astHook }: UseSubgraphMutationsOptions) {
     handleRemoveConcurrencyDivider,
     getConcurrencyDividerCount,
   };
+}
+
+/**
+ * Computes the next direction for a group/subgraph when toggled.
+ * Cycles symmetrically:
+ * 1. Unset/Auto -> Opposite of diagram direction (immediate visual flip!)
+ * 2. Opposite -> Explicit same as diagram direction
+ * 3. Same -> Unset/Auto (clears override)
+ */
+export function getNextGroupDirection(
+  current: string | undefined,
+  diagramDir: string | undefined
+): string | undefined {
+  const normDiagram = (diagramDir || 'TD').toUpperCase();
+  const isDiagramHorizontal = normDiagram === 'LR' || normDiagram === 'RL';
+  const defaultDir = isDiagramHorizontal ? 'LR' : 'TB';
+  const oppositeDir = isDiagramHorizontal ? 'TB' : 'LR';
+
+  if (!current) {
+    return oppositeDir;
+  }
+
+  const normCurrent = current.toUpperCase();
+  const isCurrentHorizontal = normCurrent === 'LR' || normCurrent === 'RL';
+
+  if (isCurrentHorizontal !== isDiagramHorizontal) {
+    return defaultDir;
+  }
+
+  return undefined;
 }

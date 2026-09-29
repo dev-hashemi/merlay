@@ -292,7 +292,7 @@ export interface DiagramMutations<TAst = unknown> {
 
   // Group direction (optional — supportsGroupDirection)
   getGroupDirection?(ast: TAst, groupId: string): string | undefined;
-  setGroupDirection?(ast: TAst, groupId: string, direction: string | null): void;
+  setGroupDirection?(ast: TAst, groupId: string, direction: string | null | undefined): void;
 
   // Diagram title (optional — supportsTitle)
   getTitle?(ast: TAst): string | undefined;
