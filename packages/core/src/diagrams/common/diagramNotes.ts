@@ -154,7 +154,7 @@ function getRawText(item: unknown): string {
  */
 export function findNotesForTarget<T>(
   rawLines: T[],
-  targetId: string,
+  targetId: string | undefined,
   kind: 'sequence' | 'state' | 'class'
 ): DiagramNoteDetails[] {
   const results: DiagramNoteDetails[] = [];
@@ -167,19 +167,19 @@ export function findNotesForTarget<T>(
       const parsed = parseSequenceNote(line);
       if (
         parsed &&
-        (parsed.targetId === targetId || parsed.secondTargetId === targetId)
+        (!targetId || parsed.targetId === targetId || parsed.secondTargetId === targetId)
       ) {
         results.push(parsed);
       }
     } else if (kind === 'state') {
       const single = parseStateNoteLine(line);
-      if (single && single.targetId === targetId) {
+      if (single && (!targetId || single.targetId === targetId)) {
         results.push(single);
         continue;
       }
       // Check multi-line block header: note (right|left) of <targetId>
       const blockHeader = line.match(/^\s*note\s+(right\s+of|left\s+of)\s+(\S+)\s*$/i);
-      if (blockHeader && blockHeader[2] === targetId) {
+      if (blockHeader && (!targetId || blockHeader[2] === targetId)) {
         const pos: NotePosition = blockHeader[1].toLowerCase().includes('left') ? 'left' : 'right';
         const bodyLines: string[] = [];
         let j = i + 1;
@@ -189,20 +189,20 @@ export function findNotesForTarget<T>(
         }
         results.push({
           position: pos,
-          targetId,
+          targetId: blockHeader[2],
           text: bodyLines.join('\n'),
         });
         i = j; // skip consumed block
       }
     } else if (kind === 'class') {
       const single = parseClassNoteLine(line);
-      if (single && single.targetId === targetId) {
+      if (single && (!targetId || single.targetId === targetId)) {
         results.push(single);
         continue;
       }
       // Multi-line block header: note for <targetId>
       const blockHeader = line.match(/^\s*note\s+for\s+(\S+)\s*$/i);
-      if (blockHeader && blockHeader[1] === targetId) {
+      if (blockHeader && (!targetId || blockHeader[1] === targetId)) {
         const bodyLines: string[] = [];
         let j = i + 1;
         while (j < lines.length && !/^\s*end\s+note\b/i.test(lines[j])) {
@@ -210,7 +210,7 @@ export function findNotesForTarget<T>(
           j++;
         }
         results.push({
-          targetId,
+          targetId: blockHeader[1],
           text: bodyLines.join('\n'),
         });
         i = j;

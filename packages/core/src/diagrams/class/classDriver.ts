@@ -277,7 +277,6 @@ export const ClassDiagramDriver: DiagramDriver<MermaidClassAST> = {
     },
 
     getNotes: (ast, targetId) => {
-      if (!targetId) return [];
       return findNotesForTarget(ast.rawLines, targetId, 'class');
     },
     setNote: (ast, targetId, note) => {

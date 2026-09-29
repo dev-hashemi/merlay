@@ -89,6 +89,75 @@ export function useCanvasRenderer({
       isAnchorId,
     });
 
+    const findNodeForNote = (noteEl: Element): string | null => {
+      if (!driver.capabilities.supportsNotes) return null;
+      try {
+        const ast = driver.parse(code);
+        if (!driver.mutations.getNotes) return null;
+
+        const rawText = noteEl.textContent || '';
+        const normalize = (t: string) =>
+          t
+            .replace(/<br\s*\/?>/gi, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLowerCase();
+        const normElText = normalize(rawText);
+
+        // 1. Match by note text across all display nodes
+        for (const [nodeId] of displayNodes) {
+          const notes = driver.mutations.getNotes(ast, nodeId);
+          for (const n of notes) {
+            const normNoteText = normalize(n.text);
+            if (normNoteText && (normElText.includes(normNoteText) || normNoteText.includes(normElText))) {
+              return nodeId;
+            }
+          }
+        }
+
+        // 2. Fallback: only consider nodes that actually have at least one note!
+        const nodesWithNotes = Array.from(displayNodes.keys()).filter((nodeId) => {
+          const notes = driver.mutations.getNotes!(ast, nodeId);
+          return notes && notes.length > 0;
+        });
+
+        if (nodesWithNotes.length === 1) {
+          return nodesWithNotes[0];
+        }
+
+        if (nodesWithNotes.length > 1) {
+          const noteBox = getLocalRect(noteEl);
+          if (noteBox) {
+            const noteCenterX = noteBox.x + noteBox.width / 2;
+            const noteCenterY = noteBox.y + noteBox.height / 2;
+            let bestNodeId: string | null = null;
+            let minDistance = Infinity;
+
+            for (const nodeId of nodesWithNotes) {
+              const nodeEl = mountEl.querySelector(`[data-mermaid-node-id="${nodeId}"]`);
+              if (nodeEl) {
+                const nodeRect = getLocalRect(nodeEl);
+                if (nodeRect) {
+                  const nodeCenterX = nodeRect.x + nodeRect.width / 2;
+                  const nodeCenterY = nodeRect.y + nodeRect.height / 2;
+                  const dist = Math.hypot(noteCenterX - nodeCenterX, noteCenterY - nodeCenterY);
+                  if (dist < minDistance) {
+                    minDistance = dist;
+                    bestNodeId = nodeId;
+                  }
+                }
+              }
+            }
+            if (bestNodeId) return bestNodeId;
+          }
+          return nodesWithNotes[0];
+        }
+      } catch {
+        // Fallback
+      }
+      return null;
+    };
+
     setupSvgInteractivity({
       mountEl,
       dom: driver.dom,
@@ -110,11 +179,13 @@ export function useCanvasRenderer({
         onSelectNode(targetNodeId, false, noteEl);
         useCanvasStore.getState().setActiveNodePopover('note');
       },
+      findNodeForNote,
     });
   }, [
     svgMountRef,
     isEditable,
     driver,
+    code,
     displayNodes,
     displayEdges,
     displaySubgraphs,

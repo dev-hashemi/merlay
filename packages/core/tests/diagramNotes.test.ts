@@ -143,3 +143,17 @@ test('diagramNotes: updateNoteInRawLines adds, modifies, and deletes notes', () 
   updateNoteInRawLines(classLines, 'User', null, 'class');
   assert.equal(classLines.length, 1);
 });
+
+test('diagramNotes: findNotesForTarget returns all notes when targetId is undefined', () => {
+  const seqLines = [
+    { text: 'Alice->>Bob: Ping' },
+    { text: 'Note right of Alice: Hello Alice' },
+    { text: 'Note left of Bob: Hello Bob' },
+  ];
+  const allNotes = findNotesForTarget(seqLines, undefined, 'sequence');
+  assert.equal(allNotes.length, 2);
+  assert.equal(allNotes[0].targetId, 'Alice');
+  assert.equal(allNotes[0].text, 'Hello Alice');
+  assert.equal(allNotes[1].targetId, 'Bob');
+  assert.equal(allNotes[1].text, 'Hello Bob');
+});

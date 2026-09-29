@@ -234,7 +234,6 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
     },
 
     getNotes: (ast, targetId) => {
-      if (!targetId) return [];
       return findNotesForTarget(ast.rawLines, targetId, 'state');
     },
     setNote: (ast, targetId, note) => {

@@ -27,6 +27,7 @@ export interface SetupNodeInteractivityOptions {
   onStartEditingSubgraph: (subId: string, subEl: Element) => void;
   onHoverNode: (nodeId: string, rect: Rect | null, startEndKind?: StartEndKind) => void;
   onSelectNote?: (targetNodeId: string, noteEl: Element) => void;
+  findNodeForNote?: (noteEl: Element) => string | null;
 }
 
 export function setupNodeInteractivity({
@@ -42,6 +43,7 @@ export function setupNodeInteractivity({
   onStartEditingSubgraph,
   onHoverNode,
   onSelectNote,
+  findNodeForNote,
 }: SetupNodeInteractivityOptions): void {
   const prefixes = dom.nodeIdPrefixes || ['node-', 'flowchart-'];
   const anchorNodeId = dom.anchorNodeId;
@@ -226,23 +228,20 @@ export function setupNodeInteractivity({
   // 3. Notes (sequence, state, class diagrams)
   if (onSelectNote) {
     const rawNoteElements = Array.from(
-      mountEl.querySelectorAll('.note, [class*="note"], text.noteText, rect.note')
+      mountEl.querySelectorAll(
+        'g[data-et="note"], .note, [class*="note"], text.noteText, rect.note'
+      )
     );
     const handledNotes = new Set<Element>();
 
-    rawNoteElements.forEach((rawEl) => {
-      const container = (rawEl.closest('g.note, g[id*="Note"], g') || rawEl) as SVGGraphicsElement;
-      if (handledNotes.has(container)) return;
-      handledNotes.add(container);
+    const resolveTargetNode = (container: Element): string | null => {
+      let targetNodeId: string | null = null;
+      if (findNodeForNote) {
+        targetNodeId = findNodeForNote(container);
+      }
 
-      applyStyles(container, { cursor: 'pointer' });
-
-      container.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
+      if (!targetNodeId) {
         const noteBox = getLocalRect(container);
-        let nearestNodeId: string | null = null;
         let minDistance = Infinity;
 
         if (noteBox) {
@@ -259,17 +258,40 @@ export function setupNodeInteractivity({
                 const dist = Math.hypot(noteCenterX - nodeCenterX, noteCenterY - nodeCenterY);
                 if (dist < minDistance) {
                   minDistance = dist;
-                  nearestNodeId = nodeId;
+                  targetNodeId = nodeId;
                 }
               }
             }
           }
         }
+      }
+      return targetNodeId;
+    };
 
-        if (nearestNodeId) {
-          onSelectNote(nearestNodeId, container);
+    rawNoteElements.forEach((rawEl) => {
+      const container = (rawEl.closest('g[data-et="note"], g.note, g[id*="Note"], g') || rawEl) as SVGGraphicsElement;
+      if (handledNotes.has(container)) return;
+      handledNotes.add(container);
+
+      applyStyles(container, { cursor: 'pointer' });
+
+      const handleNoteClick = (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const targetNodeId = resolveTargetNode(container);
+        if (targetNodeId) {
+          onSelectNote(targetNodeId, container);
         }
       };
+
+      container.onclick = handleNoteClick;
+
+      container.querySelectorAll('rect, text, path, tspan').forEach((child) => {
+        const childEl = child as SVGGraphicsElement;
+        applyStyles(childEl, { cursor: 'pointer' });
+        childEl.setAttribute('pointer-events', 'all');
+        childEl.onclick = handleNoteClick;
+      });
     });
   }
 }

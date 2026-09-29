@@ -1573,33 +1573,53 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
 }
 
 /* Subgraph SVG Selection Highlight */
-#merlay-svg-mount.mermaid-native-svg-mount .mermaid-cluster-selected rect {
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-cluster-selected rect,
+#merlay-svg-mount.mermaid-native-svg-mount rect.mermaid-cluster-selected {
   stroke: var(--mermaid-accent);
   stroke-width: 2.5px;
   stroke-dasharray: 6 3;
   filter: drop-shadow(0 0 6px var(--mermaid-accent));
 }
 
-/* Sequence Box Containers & Participant Styling */
-.mermaid-native-svg-mount g[data-mermaid-subgraph-id] rect.rect {
+/* Sequence Frame (Loop, Alt, Opt, Par, Critical, Break) Selection Highlight */
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-cluster-selected line.loopLine,
+#merlay-svg-mount.mermaid-native-svg-mount g[data-mermaid-subgraph-id].mermaid-cluster-selected line.loopLine,
+#merlay-svg-mount.mermaid-native-svg-mount g[data-mermaid-subgraph-id].mermaid-cluster-selected line {
+  stroke: var(--mermaid-accent) !important;
+  stroke-width: 2.5px !important;
+  stroke-dasharray: 6 3;
+  filter: drop-shadow(0 0 6px var(--mermaid-accent));
+}
+
+#merlay-svg-mount.mermaid-native-svg-mount g[data-mermaid-subgraph-id]:hover line.loopLine {
+  stroke: var(--mermaid-accent);
+}
+
+/* Sequence Box Containers & Frame Rect Styling */
+.mermaid-native-svg-mount g[data-mermaid-subgraph-id] rect.rect,
+.mermaid-native-svg-mount rect[data-mermaid-subgraph-id].rect {
   pointer-events: all;
   cursor: pointer;
   transition: stroke 0.15s ease;
 }
 
-#merlay-svg-mount.mermaid-native-svg-mount g[data-mermaid-subgraph-id]:hover rect.rect {
+#merlay-svg-mount.mermaid-native-svg-mount g[data-mermaid-subgraph-id]:hover rect.rect,
+#merlay-svg-mount.mermaid-native-svg-mount rect[data-mermaid-subgraph-id].rect:hover {
   stroke: var(--mermaid-accent);
   stroke-width: 1.5px;
 }
 
-#merlay-svg-mount.mermaid-native-svg-mount g[data-mermaid-subgraph-id].mermaid-cluster-selected rect.rect {
+#merlay-svg-mount.mermaid-native-svg-mount g[data-mermaid-subgraph-id].mermaid-cluster-selected rect.rect,
+#merlay-svg-mount.mermaid-native-svg-mount rect[data-mermaid-subgraph-id].mermaid-cluster-selected.rect {
   stroke: var(--mermaid-accent);
   stroke-width: 2.5px;
   stroke-dasharray: 6 3;
   filter: drop-shadow(0 0 6px var(--mermaid-accent));
 }
 
-.mermaid-native-svg-mount g[data-mermaid-subgraph-id] text.text {
+.mermaid-native-svg-mount g[data-mermaid-subgraph-id] text.text,
+.mermaid-native-svg-mount g[data-mermaid-subgraph-id] text.loopText,
+.mermaid-native-svg-mount g[data-mermaid-subgraph-id] text.labelText {
   cursor: pointer;
 }
 

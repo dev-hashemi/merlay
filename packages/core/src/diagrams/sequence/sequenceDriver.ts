@@ -280,11 +280,10 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
     },
 
     getNotes: (ast, targetId) => {
-      if (!targetId) return [];
       const timelineNotes = ast.timeline
         .filter((it): it is { type: 'raw'; text: string; boxId?: string } => it.type === 'raw')
         .map((it) => parseSequenceNote(it.text))
-        .filter((n): n is DiagramNoteDetails => n !== null && (n.targetId === targetId || n.secondTargetId === targetId));
+        .filter((n): n is DiagramNoteDetails => n !== null && (!targetId || n.targetId === targetId || n.secondTargetId === targetId));
       if (timelineNotes.length > 0) return timelineNotes;
       return findNotesForTarget(ast.rawLines, targetId, 'sequence');
     },

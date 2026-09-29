@@ -98,23 +98,76 @@ export function setupClusterInteractivity({
     // composite states, edges between flowchart subgraphs). Drivers decide
     // whether the id is connectable; the canvas just resolves the drop.
     htmlEl.setAttribute('data-mermaid-node-id', targetSubId);
-      applyStyles(htmlEl, { cursor: 'pointer' });
+    applyStyles(htmlEl, { cursor: 'pointer' });
 
-    // Ensure all interactive children receive clicks.  Flowchart HTML labels
+    // For sequence frames with loop lines or control structures, add an interactive
+    // background hit-area rect spanning the bounding box of the lines so clicking
+    // ANYWHERE inside the frame (not just on 1px border lines) selects the frame.
+    const loopLines = Array.from(htmlEl.querySelectorAll('line.loopLine, line'));
+    if (loopLines.length > 0 || htmlEl.getAttribute('data-et') === 'control-structure') {
+      let minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity;
+      for (const line of loopLines) {
+        const x1 = parseFloat(line.getAttribute('x1') || '0');
+        const y1 = parseFloat(line.getAttribute('y1') || '0');
+        const x2 = parseFloat(line.getAttribute('x2') || '0');
+        const y2 = parseFloat(line.getAttribute('y2') || '0');
+        if (!isNaN(x1) && !isNaN(y1) && !isNaN(x2) && !isNaN(y2)) {
+          minX = Math.min(minX, x1, x2);
+          maxX = Math.max(maxX, x1, x2);
+          minY = Math.min(minY, y1, y2);
+          maxY = Math.max(maxY, y1, y2);
+        }
+      }
+
+      if (minX < maxX && minY < maxY) {
+        htmlEl.querySelectorAll('.mermaid-frame-hit-area').forEach((r) => r.remove());
+        const hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        hitArea.setAttribute('class', 'mermaid-frame-hit-area');
+        hitArea.setAttribute('x', String(minX));
+        hitArea.setAttribute('y', String(minY));
+        hitArea.setAttribute('width', String(maxX - minX));
+        hitArea.setAttribute('height', String(maxY - minY));
+        hitArea.setAttribute('fill', 'transparent');
+        hitArea.setAttribute('pointer-events', 'all');
+        applyStyles(hitArea, { cursor: 'pointer' });
+        hitArea.onclick = (e) => {
+          e.stopPropagation();
+          onSelectSubgraph(targetSubId, htmlEl);
+        };
+        hitArea.ondblclick = (e) => {
+          e.stopPropagation();
+          onStartEditingSubgraph(targetSubId, htmlEl);
+        };
+        attachTapGestures(hitArea, {
+          onDoubleTap: () => onStartEditingSubgraph(targetSubId, htmlEl),
+        });
+        htmlEl.prepend(hitArea);
+      }
+    }
+
+    // Ensure all interactive children receive clicks. Flowchart HTML labels
     // use foreignObject, not <text>, so we include it explicitly.
-    htmlEl.querySelectorAll('rect, text, foreignObject, .cluster-label, .nodeLabel').forEach((child) => {
-      const childEl = child as SVGGraphicsElement;
-      applyStyles(childEl, { cursor: 'pointer' });
-      childEl.setAttribute('pointer-events', 'all');
-      childEl.onclick = (e) => {
-        e.stopPropagation();
-        onSelectSubgraph(targetSubId, htmlEl);
-      };
-      childEl.ondblclick = (e) => {
-        e.stopPropagation();
-        onStartEditingSubgraph(targetSubId, htmlEl);
-      };
-    });
+    htmlEl
+      .querySelectorAll('rect, text, line, path, foreignObject, .cluster-label, .nodeLabel')
+      .forEach((child) => {
+        const childEl = child as SVGGraphicsElement;
+        applyStyles(childEl, { cursor: 'pointer' });
+        childEl.setAttribute('pointer-events', 'all');
+        childEl.onclick = (e) => {
+          e.stopPropagation();
+          onSelectSubgraph(targetSubId, htmlEl);
+        };
+        childEl.ondblclick = (e) => {
+          e.stopPropagation();
+          onStartEditingSubgraph(targetSubId, htmlEl);
+        };
+        attachTapGestures(childEl, {
+          onDoubleTap: () => onStartEditingSubgraph(targetSubId, htmlEl),
+        });
+      });
 
     htmlEl.onclick = (e) => {
       e.stopPropagation();
@@ -234,11 +287,23 @@ export function setupClusterInteractivity({
     }
   }
 
+  const getClusterLabelText = (el: Element): string => {
+    const loopTitle = el.querySelector('.loopText, .sectionTitle')?.textContent?.trim();
+    if (loopTitle) return loopTitle;
+
+    const standard = el.querySelector('.label, text, .cluster-label')?.textContent?.trim();
+    if (standard) return standard;
+
+    return Array.from(el.querySelectorAll('text'))
+      .map((t) => t.textContent?.trim())
+      .filter(Boolean)
+      .join(' ');
+  };
+
   // Second pass: label matching
   const clustersByLabel = new Map<string, Element[]>();
   for (const el of unlabeledClusters) {
-    const labelText =
-      el.querySelector('.label, text, .cluster-label')?.textContent?.trim() ?? '';
+    const labelText = getClusterLabelText(el);
     const key = labelText;
     if (!clustersByLabel.has(key)) clustersByLabel.set(key, []);
     clustersByLabel.get(key)!.push(el);
@@ -260,8 +325,7 @@ export function setupClusterInteractivity({
       pendingLabelClusters.push(htmlEl);
       continue;
     }
-    const labelText =
-      htmlEl.querySelector('.label, text, .cluster-label')?.textContent?.trim() ?? '';
+    const labelText = getClusterLabelText(htmlEl);
     const clusterQueue = clustersByLabel.get(labelText) ?? [];
     const subQueue = subsByLabel.get(labelText) ?? [];
     if (subQueue.length === 0) {
@@ -283,13 +347,21 @@ export function setupClusterInteractivity({
   );
 
   if (remainingFrameSubIds.length > 0) {
-    for (let i = pendingLabelClusters.length - 1; i >= 0 && remainingFrameSubIds.length > 0; i--) {
-      const el = pendingLabelClusters[i];
-      const htmlEl = el as SVGGraphicsElement;
+    const frameElements = candidates.filter((el) => {
+      if (el.hasAttribute('data-mermaid-subgraph-id')) return false;
+      return (
+        el.getAttribute('data-et') === 'control-structure' ||
+        el.classList.contains('loopGroup') ||
+        el.classList.contains('rect') ||
+        el.tagName.toLowerCase() === 'rect'
+      );
+    });
+
+    for (const htmlEl of frameElements) {
+      if (remainingFrameSubIds.length === 0) break;
       if (htmlEl.hasAttribute('data-mermaid-subgraph-id')) continue;
 
-      const labelText =
-        htmlEl.querySelector('.label, text, .cluster-label')?.textContent?.trim() ?? '';
+      const labelText = getClusterLabelText(htmlEl);
 
       // Try matching by substring first
       let matchedIdx = remainingFrameSubIds.findIndex((sid) => {
@@ -301,15 +373,13 @@ export function setupClusterInteractivity({
         );
       });
 
-      // If no substring match, take the first remaining frame in order
       if (matchedIdx === -1) {
         matchedIdx = 0;
       }
 
       const targetSubId = remainingFrameSubIds.splice(matchedIdx, 1)[0];
       usedSubIds.add(targetSubId);
-      bindCluster(htmlEl, targetSubId);
-      pendingLabelClusters.splice(i, 1);
+      bindCluster(htmlEl as SVGGraphicsElement, targetSubId);
     }
   }
 
