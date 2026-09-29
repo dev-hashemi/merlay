@@ -19,7 +19,9 @@ export function connectNodes(
   label?: string
 ): string | null {
   if (fromId === toId) return null;
-  if (!ast.nodes.has(fromId) || !ast.nodes.has(toId)) return null;
+  const hasFrom = ast.nodes.has(fromId) || ast.subgraphs.has(fromId);
+  const hasTo = ast.nodes.has(toId) || ast.subgraphs.has(toId);
+  if (!hasFrom || !hasTo) return null;
 
   const edgeId = `e_${fromId}_${toId}_${Date.now()}_${ast.edges.length}`;
   const newEdge: MermaidEdgeDef = {

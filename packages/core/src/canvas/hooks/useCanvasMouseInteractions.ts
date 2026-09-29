@@ -362,10 +362,13 @@ export function useCanvasMouseInteractions({
         rawTarget?.getAttribute('data-id') ||
         null;
 
-      // If hovering directly over a real node (not a subgraph), target that node.
-      // If hovering over a subgraph or empty space, snap to closest real node within 50px.
+      // If hovering directly over a real node or subgraph, target it directly.
+      // If hovering over empty canvas space, snap to closest real node within 50px.
       let resolvedTargetId: string | null = null;
-      if (rawTargetId && displayNodes?.has(rawTargetId)) {
+      if (
+        rawTargetId &&
+        (displayNodes?.has(rawTargetId) || displaySubgraphs?.has(rawTargetId))
+      ) {
         resolvedTargetId = rawTargetId !== sourceId ? rawTargetId : null;
       } else if (worldRef.current) {
         const snap = findClosestNodeElement(
@@ -492,12 +495,16 @@ export function useCanvasMouseInteractions({
       let targetNodeEl: Element | null =
         hitEl?.closest?.('[data-mermaid-node-id]') ?? null;
 
-      // Fallback 1: check if target is inside an element with name matching displayNodes
+      // Fallback 1: check if target is inside an element with name matching displayNodes or displaySubgraphs
       if (!targetNodeEl) {
         const namedContainer = hitEl?.closest?.('[name], [data-id]');
         const nameVal =
           namedContainer?.getAttribute('name') || namedContainer?.getAttribute('data-id');
-        if (nameVal && displayNodes?.has(nameVal) && namedContainer) {
+        if (
+          nameVal &&
+          (displayNodes?.has(nameVal) || displaySubgraphs?.has(nameVal)) &&
+          namedContainer
+        ) {
           targetNodeEl =
             namedContainer.closest('[data-mermaid-node-id]') ||
             namedContainer;
@@ -510,13 +517,9 @@ export function useCanvasMouseInteractions({
         targetNodeEl?.getAttribute('data-id') ||
         null;
 
-      // Fallback 2: snap to closest node/lifeline within 50px radius.
-      // If nothing was hit directly OR if a subgraph was hit,
-      // search for real inner nodes so subgraphs never shadow their children.
-      if (
-        (!targetNodeEl || (directTargetId && displaySubgraphs?.has(directTargetId))) &&
-        worldRef.current
-      ) {
+      // Fallback 2: snap to closest node/lifeline within 50px radius only when
+      // nothing was hit directly (empty canvas drop).
+      if (!targetNodeEl && worldRef.current) {
         const worldRect = worldRef.current.getBoundingClientRect();
         const dropX = (e.clientX - worldRect.left) / zoom;
         const dropY = (e.clientY - worldRect.top) / zoom;

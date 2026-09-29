@@ -239,6 +239,12 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         selectedSubgraphId={selectedSubgraphId}
         isMultiSelect={selection.isMultiSelect}
         displaySubgraphs={mutations.displaySubgraphs}
+        displayEdges={mutations.displayEdges}
+        diagramDirection={
+          driver.mutations.getDirection
+            ? driver.mutations.getDirection(mutations.ast)
+            : undefined
+        }
         selectedSubgraphStyle={selectedSubgraphStyle}
         activeSubgraphPopover={selection.activeSubgraphPopover}
         onToggleSubgraphStyle={() =>
@@ -264,6 +270,8 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
             ? () => mutations.handleToggleGroupDirection(selectedSubgraphId)
             : undefined
         }
+        onSprout={mutations.handleSproutFromSubgraph}
+        sproutLabel={driver.labels.addChild}
         unmatchedSubgraphIds={selection.unmatchedSubgraphIds}
         onSelectUnmatchedSubgraph={(subId, idx) => {
           selection.isolateSelection('subgraph', subId);

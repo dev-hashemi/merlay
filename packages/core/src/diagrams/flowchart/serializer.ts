@@ -74,7 +74,7 @@ export function serializeMermaidFlowchart(ast: MermaidFlowchartAST): string {
 
   // 3. Standalone nodes (not part of any subgraph, or not yet defined with custom label)
   for (const [nodeId, node] of ast.nodes.entries()) {
-    if (!node.subgraphId && !emittedNodeIds.has(nodeId)) {
+    if (!node.subgraphId && !emittedNodeIds.has(nodeId) && !ast.subgraphs.has(nodeId)) {
       lines.push(`    ${formatNode(node)}`);
       emittedNodeIds.add(nodeId);
     }

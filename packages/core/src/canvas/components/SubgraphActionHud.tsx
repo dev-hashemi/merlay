@@ -7,6 +7,7 @@ import {
   UngroupIcon,
   FolderIcon,
   ColumnsSplitIcon,
+  PlusIcon,
 } from '../icons/Icons';
 
 export interface SubgraphActionHudProps {
@@ -26,6 +27,9 @@ export interface SubgraphActionHudProps {
   onAddStart?: () => void;
   onAddEnd?: () => void;
   onToggleDirection?: () => void;
+  hasDirectionConflict?: boolean;
+  onSprout?: () => void;
+  sproutLabel?: string;
   canAddConcurrencyDivider?: boolean;
   onAddConcurrencyDivider?: () => void;
   dividerCount?: number;
@@ -49,6 +53,9 @@ export const SubgraphActionHud: React.FC<SubgraphActionHudProps> = ({
   onAddStart,
   onAddEnd,
   onToggleDirection,
+  hasDirectionConflict,
+  onSprout,
+  sproutLabel,
   canAddConcurrencyDivider,
   onAddConcurrencyDivider,
   dividerCount,
@@ -91,6 +98,27 @@ export const SubgraphActionHud: React.FC<SubgraphActionHudProps> = ({
           }
         >
           <span>{subgraph.direction ? `${subgraph.direction}` : 'Auto'}</span>
+        </button>
+      )}
+
+      {hasDirectionConflict && (
+        <div
+          className="mermaid-hud-warning-pill"
+          title="Mermaid rule: Dagre layout engine flattens group direction when inner steps connect directly across boundaries. Connect to/from the group boundary itself to preserve independent flow."
+        >
+          <span>⚠️ Flow restricted</span>
+        </div>
+      )}
+
+      {onSprout && (
+        <button
+          type="button"
+          className="mermaid-hud-btn sprout-btn"
+          onClick={onSprout}
+          title={`Connect new step from group boundary (Group ➔ ${sproutLabel || 'Step'})`}
+        >
+          <PlusIcon size={13} />
+          <span>{sproutLabel || 'Step'}</span>
         </button>
       )}
 

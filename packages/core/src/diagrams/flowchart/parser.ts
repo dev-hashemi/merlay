@@ -218,6 +218,18 @@ export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
   // Resolve styles onto nodes and edges
   resolveStylesOntoAst(ast, pendingLinkStyles);
 
+  // Prune any bare placeholder node whose id matches an actual subgraph
+  for (const subId of ast.subgraphs.keys()) {
+    const node = ast.nodes.get(subId);
+    if (
+      node &&
+      (!node.shape || node.shape === 'rectangle') &&
+      (!node.label || node.label === subId)
+    ) {
+      ast.nodes.delete(subId);
+    }
+  }
+
   return ast;
 
   function ensureNodeExists(nodeInfo: FlowchartNodeInfo) {

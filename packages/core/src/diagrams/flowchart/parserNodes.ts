@@ -79,6 +79,16 @@ export function ensureNodeInAst(
   currentSubId: string | undefined,
   nodeInfo: FlowchartNodeInfo
 ): void {
+  // If this ID already matches a known subgraph and has no explicit node shape,
+  // it is referencing the subgraph cluster endpoint (e.g. sub1 --> C).
+  if (
+    ast.subgraphs.has(nodeInfo.id) &&
+    !nodeInfo.shape &&
+    (!nodeInfo.label || nodeInfo.label === nodeInfo.id)
+  ) {
+    return;
+  }
+
   if (!ast.nodes.has(nodeInfo.id)) {
     const newNode: MermaidNodeDef = {
       type: 'node',

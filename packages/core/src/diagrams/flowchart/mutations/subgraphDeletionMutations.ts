@@ -39,6 +39,9 @@ export function deleteSubgraph(
   // Remove style if any
   ast.styles = ast.styles.filter((s) => s.targetId !== subgraphId);
 
+  // Remove any edges connecting directly to or from this subgraph
+  ast.edges = ast.edges.filter((e) => e.from !== subgraphId && e.to !== subgraphId);
+
   // Remove subgraph definition
   ast.subgraphs.delete(subgraphId);
   return true;

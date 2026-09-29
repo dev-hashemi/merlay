@@ -157,9 +157,12 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
     connect: (ast, fromId, toId) => {
       fc.connectNodes(ast, fromId, toId);
     },
-    // Official Mermaid allows edges between any flowchart nodes, including
-    // across subgraphs — only state composites restrict connections.
-    canConnect: () => true,
+    canConnect: (ast, fromId, toId) => {
+      if (fromId === toId) return false;
+      const hasFrom = ast.nodes.has(fromId) || ast.subgraphs.has(fromId);
+      const hasTo = ast.nodes.has(toId) || ast.subgraphs.has(toId);
+      return hasFrom && hasTo;
+    },
     deleteEdge: (ast, edgeId) => {
       fc.deleteEdge(ast, edgeId);
     },

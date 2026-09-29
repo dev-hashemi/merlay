@@ -186,6 +186,21 @@ export function useSubgraphMutations({ astHook }: UseSubgraphMutationsOptions) {
     [m, ast]
   );
 
+  const handleSproutFromSubgraph = useCallback(
+    (subId: string) => {
+      let createdChildId: string | null = null;
+      applyMutation((a) => {
+        createdChildId = m.addChildNode(a, subId, driver.labels.addChild);
+      }, subId);
+      if (createdChildId) {
+        useCanvasStore.getState().setSelectedNodeIds(new Set([createdChildId]));
+        useCanvasStore.getState().setSelectedSubgraphId(null);
+        useCanvasStore.getState().setSelectedSubgraphRect(null);
+      }
+    },
+    [m, driver, applyMutation]
+  );
+
   return {
     handleAddGroup,
     handleApplySubgraphPreset,
@@ -198,6 +213,7 @@ export function useSubgraphMutations({ astHook }: UseSubgraphMutationsOptions) {
     handleRemoveNodeFromGroup,
     handleCreateGroupWithNode,
     handleToggleGroupDirection,
+    handleSproutFromSubgraph,
     handleAddConcurrencyDivider,
     handleRemoveConcurrencyDivider,
     getConcurrencyDividerCount,
