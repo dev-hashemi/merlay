@@ -127,6 +127,7 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         onSetDefaultStyle={mutations.handleSetDefaultNodeStyle}
         onClearDefaultStyle={mutations.handleClearDefaultNodeStyle}
         hasDefaultStyle={mutations.hasDefaultNodeStyle}
+        onWrapInFrame={mutations.handleWrapMessagesInFrame}
       />
 
       {/* Single Node Layer */}
@@ -171,6 +172,11 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         onSetDefaultStyle={mutations.handleSetDefaultNodeStyle}
         onClearDefaultStyle={mutations.handleClearDefaultNodeStyle}
         hasDefaultStyle={mutations.hasDefaultNodeStyle}
+        classDefs={mutations.classDefs}
+        nodeClasses={mutations.nodeClasses}
+        onToggleNodeClass={mutations.handleToggleNodeClass}
+        onSaveClassDef={mutations.handleSaveClassDef}
+        onDeleteClassDef={mutations.handleDeleteClassDef}
         nodeMemberCapabilities={nodeMemberCapabilities}
         onAddNodeAttribute={onAddNodeAttribute}
         onAddNodeMethod={onAddNodeMethod}
@@ -202,6 +208,10 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         onToggleEdgeType={() =>
           selection.setActiveEdgePopover((prev) => (prev === 'type' ? null : 'type'))
         }
+        onToggleEdgeFrame={() =>
+          selection.setActiveEdgePopover((prev) => (prev === 'frame' ? null : 'frame'))
+        }
+        onWrapInFrame={mutations.handleWrapMessagesInFrame}
         onUpdateEdgeLength={mutations.handleUpdateEdgeLength}
         edgeLength={
           selectedEdgeId
@@ -285,6 +295,12 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
             ? () => mutations.handleAddEndState(selectedSubgraphId)
             : undefined
         }
+        canAddConcurrencyDivider={driver.capabilities.supportsConcurrency}
+        onAddConcurrencyDivider={mutations.handleAddConcurrencyDivider}
+        dividerCount={
+          selectedSubgraphId ? mutations.getConcurrencyDividerCount(selectedSubgraphId) : 0
+        }
+        onRemoveConcurrencyDivider={mutations.handleRemoveConcurrencyDivider}
       />
 
       {/* Inline Text Editors Layer */}

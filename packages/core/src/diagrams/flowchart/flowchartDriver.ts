@@ -116,6 +116,7 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
     supportsGroupDirection: true,
     supportsTitle: true,
     supportsAccessibility: true,
+    supportsClassDefs: true,
   },
 
   labels: {
@@ -283,6 +284,13 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
     setAccessibility: (ast, acc) => {
       updateDiagramAccessibility(ast.rawLines, acc);
     },
+
+    getClassDefs: (ast) => fc.getClassDefs(ast),
+    setClassDef: (ast, name, styles) => fc.setClassDef(ast, name, styles),
+    deleteClassDef: (ast, name) => fc.deleteClassDef(ast, name),
+    getNodeClasses: (ast, nodeId) => fc.getNodeClasses(ast, nodeId),
+    setNodeClasses: (ast, nodeId, classes) => fc.setNodeClasses(ast, nodeId, classes),
+    toggleNodeClass: (ast, nodeId, className) => fc.toggleNodeClass(ast, nodeId, className),
   },
 
   dom: {

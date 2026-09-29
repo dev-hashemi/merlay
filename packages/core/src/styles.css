@@ -2228,6 +2228,278 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
 }
 
 /* ==========================================================================
+   Sequence Frame Popover
+   ========================================================================== */
+.mermaid-frame-popover {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 290px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--mermaid-surface);
+  border: 1px solid var(--mermaid-border);
+  box-shadow: 0 8px 24px var(--mermaid-shadow);
+  color: var(--mermaid-text);
+  font-family: inherit;
+}
+
+.mermaid-frame-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mermaid-frame-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mermaid-text);
+}
+
+.mermaid-frame-close-btn {
+  background: none;
+  border: none;
+  color: var(--mermaid-muted);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mermaid-frame-close-btn:hover {
+  color: var(--mermaid-text);
+  background: var(--mermaid-hover);
+}
+
+.mermaid-frame-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.mermaid-frame-tab-btn {
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  background: var(--mermaid-bg);
+  border: 1px solid var(--mermaid-border);
+  color: var(--mermaid-text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mermaid-frame-tab-btn:hover {
+  background: var(--mermaid-hover);
+}
+
+.mermaid-frame-tab-btn.is-active {
+  background: var(--mermaid-accent);
+  color: #ffffff;
+  border-color: var(--mermaid-accent);
+}
+
+.mermaid-frame-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mermaid-frame-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.mermaid-frame-color-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--mermaid-border);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.mermaid-frame-color-circle:hover {
+  transform: scale(1.15);
+}
+
+.mermaid-frame-color-circle.is-active {
+  border-color: var(--mermaid-accent);
+  box-shadow: 0 0 0 2px var(--mermaid-accent-subtle);
+  transform: scale(1.15);
+}
+
+.mermaid-frame-input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid var(--mermaid-border);
+  border-radius: 6px;
+  background: var(--mermaid-bg);
+  color: var(--mermaid-text);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.mermaid-frame-input:focus {
+  border-color: var(--mermaid-accent);
+  box-shadow: 0 0 0 2px var(--mermaid-accent-subtle);
+}
+
+.mermaid-frame-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mermaid-frame-apply-btn {
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  background: var(--mermaid-accent);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.mermaid-frame-apply-btn:hover {
+  opacity: 0.9;
+}
+
+/* ==========================================================================
+   ClassDef Section in NodeStylePopover
+   ========================================================================== */
+.mermaid-classdef-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--mermaid-border);
+}
+
+.mermaid-classdef-add-trigger {
+  background: none;
+  border: none;
+  color: var(--mermaid-accent);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 500;
+}
+
+.mermaid-classdef-add-trigger:hover {
+  text-decoration: underline;
+}
+
+.mermaid-classdef-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.mermaid-classdef-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  font-size: 11px;
+  border-radius: 12px;
+  background: var(--mermaid-bg);
+  border: 1px solid var(--mermaid-border);
+  color: var(--mermaid-text);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.mermaid-classdef-chip:hover {
+  border-color: var(--mermaid-muted);
+}
+
+.mermaid-classdef-chip.is-active {
+  background: var(--mermaid-accent-subtle);
+  border-color: var(--mermaid-accent);
+  color: var(--mermaid-accent);
+  font-weight: 600;
+}
+
+.mermaid-classdef-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.mermaid-classdef-name {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mermaid-classdef-delete-btn {
+  background: none;
+  border: none;
+  color: var(--mermaid-muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.mermaid-classdef-delete-btn:hover {
+  color: var(--mermaid-danger);
+}
+
+.mermaid-classdef-save-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.mermaid-classdef-input {
+  flex: 1;
+  padding: 4px 6px;
+  font-size: 11px;
+  border: 1px solid var(--mermaid-border);
+  border-radius: 4px;
+  background: var(--mermaid-bg);
+  color: var(--mermaid-text);
+  outline: none;
+}
+
+.mermaid-classdef-input:focus {
+  border-color: var(--mermaid-accent);
+}
+
+.mermaid-classdef-save-btn {
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+  background: var(--mermaid-accent);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+
+.mermaid-classdef-cancel-btn {
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+  background: none;
+  border: 1px solid var(--mermaid-border);
+  color: var(--mermaid-muted);
+  cursor: pointer;
+}
+
+/* ==========================================================================
    7. Touch / small-screen layout (mobile best practices)
    ========================================================================== */
 
@@ -2331,7 +2603,8 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
   .mermaid-theme-popover,
   .mermaid-export-popover,
   .mermaid-edge-type-popover,
-  .mermaid-info-popover {
+  .mermaid-info-popover,
+  .mermaid-frame-popover {
     max-width: calc(100vw - 24px);
   }
 
@@ -2368,6 +2641,8 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
   .mermaid-canvas-title-input,
   .mermaid-info-input,
   .mermaid-info-textarea,
+  .mermaid-frame-input,
+  .mermaid-classdef-input,
   .mermaid-code-drawer-textarea {
     font-size: 16px;
   }

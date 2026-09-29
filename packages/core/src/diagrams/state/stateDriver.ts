@@ -69,6 +69,7 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
     supportsNotes: true,
     notePositions: ['left', 'right'] as const,
     supportsAccessibility: true,
+    supportsConcurrency: true,
   },
 
   labels: {
@@ -244,6 +245,14 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
     setAccessibility: (ast, acc) => {
       updateDiagramAccessibility(ast.rawLines, acc);
     },
+
+    addConcurrencyDivider: (ast, compositeStateId) => {
+      st.addConcurrencyDivider(ast, compositeStateId);
+    },
+    removeConcurrencyDivider: (ast, compositeStateId) =>
+      st.removeConcurrencyDivider(ast, compositeStateId),
+    getConcurrencyDividerCount: (ast, compositeStateId) =>
+      st.getConcurrencyDividerCount(ast, compositeStateId),
 
     anchors: {
       isAnchor: (nodeId) => nodeId === '[*]' || nodeId.startsWith('[*]:'),

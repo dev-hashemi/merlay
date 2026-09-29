@@ -209,6 +209,16 @@ export function useEdgeMutations({
     });
   }, [m, applyMutation]);
 
+  const handleWrapMessagesInFrame = useCallback(
+    (edgeIds: string[], frame: { type: string; label?: string }) => {
+      if (!m.wrapMessagesInFrame) return;
+      applyMutation((a) => {
+        m.wrapMessagesInFrame!(a, edgeIds, frame);
+      });
+    },
+    [m, applyMutation]
+  );
+
   return {
     handleChangeEdgeType,
     handleUpdateEdgeLength,
@@ -222,5 +232,6 @@ export function useEdgeMutations({
     handleSetDefaultEdgeStyle,
     handleClearDefaultEdgeStyle,
     hasDefaultEdgeStyle: Boolean(m.getDefaultEdgeStyle?.(ast)),
+    handleWrapMessagesInFrame,
   };
 }

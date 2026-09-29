@@ -27,6 +27,7 @@ test('Driver surface: flowchart capabilities, labels, and projection', () => {
     supportsGroupDirection: true,
     supportsTitle: true,
     supportsAccessibility: true,
+    supportsClassDefs: true,
   });
   assert.strictEqual(flowchartDriver.labels.node, 'Step');
   assert.strictEqual(flowchartDriver.mutations.anchors, undefined);
@@ -57,6 +58,7 @@ test('Driver surface: state capabilities, labels, and projection', () => {
     supportsNotes: true,
     notePositions: ['left', 'right'],
     supportsAccessibility: true,
+    supportsConcurrency: true,
   });
   assert.strictEqual(stateDriver.labels.node, 'State');
   assert.strictEqual(stateDriver.mutations.updateEdgeType, undefined);
@@ -146,6 +148,7 @@ test('Driver surface: sequence capabilities, labels, and projection', () => {
     supportsNotes: true,
     notePositions: ['left', 'over', 'right'],
     supportsAccessibility: true,
+    supportsFrames: true,
   });
   assert.strictEqual(sequenceDriver.labels.node, 'Participant');
   assert.strictEqual(sequenceDriver.labels.edge, 'Message');

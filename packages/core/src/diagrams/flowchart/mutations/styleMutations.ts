@@ -7,3 +7,4 @@ export * from './nodeStyleMutations';
 export * from './edgeStyleMutations';
 export * from './subgraphStyleMutations';
 export * from './defaultStyleMutations';
+export * from './classDefMutations';

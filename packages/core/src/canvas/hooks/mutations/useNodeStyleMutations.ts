@@ -121,6 +121,52 @@ export function useNodeStyleMutations({
     });
   }, [m, applyMutation]);
 
+  const classDefs = m.getClassDefs ? m.getClassDefs(ast) : undefined;
+  const selectedNodeId = getSelectedNodeId();
+  const nodeClasses = m.getNodeClasses && selectedNodeId ? m.getNodeClasses(ast, selectedNodeId) : undefined;
+
+  const handleToggleNodeClass = useCallback(
+    (className: string, specificId?: unknown) => {
+      if (!m.toggleNodeClass) return;
+      const target =
+        (typeof specificId === 'string' && specificId ? specificId : null) ||
+        getSelectedNodeId();
+      if (!target) return;
+
+      applyMutation((a) => {
+        m.toggleNodeClass!(a, target, className);
+      }, target);
+    },
+    [m, applyMutation, getSelectedNodeId]
+  );
+
+  const handleSaveClassDef = useCallback(
+    (name: string, styles: Record<string, string>) => {
+      if (!m.setClassDef) return;
+      const target = getSelectedNodeId();
+      applyMutation((a) => {
+        m.setClassDef!(a, name, styles);
+        if (target && m.setNodeClasses) {
+          const currentClasses = m.getNodeClasses?.(a, target) || [];
+          if (!currentClasses.includes(name)) {
+            m.setNodeClasses(a, target, [...currentClasses, name]);
+          }
+        }
+      }, target || undefined);
+    },
+    [m, applyMutation, getSelectedNodeId]
+  );
+
+  const handleDeleteClassDef = useCallback(
+    (name: string) => {
+      if (!m.deleteClassDef) return;
+      applyMutation((a) => {
+        m.deleteClassDef!(a, name);
+      }, getSelectedNodeId() || undefined);
+    },
+    [m, applyMutation, getSelectedNodeId]
+  );
+
   return {
     handleApplyNodePreset,
     handleUpdateCustomStyle,
@@ -128,5 +174,10 @@ export function useNodeStyleMutations({
     handleSetDefaultNodeStyle,
     handleClearDefaultNodeStyle,
     hasDefaultNodeStyle: Boolean(m.getDefaultStyle?.(ast)),
+    classDefs,
+    nodeClasses,
+    handleToggleNodeClass,
+    handleSaveClassDef,
+    handleDeleteClassDef,
   };
 }

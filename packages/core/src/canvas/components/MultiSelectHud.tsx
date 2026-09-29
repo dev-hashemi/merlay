@@ -8,6 +8,7 @@ import {
   ArrowSolidIcon,
   FolderIcon,
   UngroupIcon,
+  FrameIcon,
 } from '../icons/Icons';
 import { DiagramDriver } from '../../diagrams/types';
 
@@ -18,7 +19,7 @@ export interface MultiSelectHudProps {
   centerX: number;
   topY: number;
   activePopover: ActiveMultiPopover;
-  onTogglePopover: (popover: 'shape' | 'style' | 'edgeType') => void;
+  onTogglePopover: (popover: 'shape' | 'style' | 'edgeType' | 'frame') => void;
   onBatchDelete: () => void;
   onGroupSelected?: () => void;
   onUngroupSelected?: () => void;
@@ -95,6 +96,20 @@ export const MultiSelectHud: React.FC<MultiSelectHudProps> = ({
           title={`Change Edge Type (All Selected ${labels.edges})`}
         >
           <ArrowSolidIcon size={14} />
+        </button>
+      )}
+
+      {/* Batch Frame Picker for Messages */}
+      {capabilities.supportsFrames && selectedEdgeCount > 0 && (
+        <button
+          type="button"
+          className={`mermaid-hud-btn icon-only ${
+            activePopover === 'frame' ? 'is-active' : ''
+          }`}
+          onClick={() => onTogglePopover('frame')}
+          title={`Wrap Selected ${labels.edges} in Frame (Loop, Alt, Opt, Par, Rect...)`}
+        >
+          <FrameIcon size={14} />
         </button>
       )}
 

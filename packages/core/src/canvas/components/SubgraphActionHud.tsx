@@ -1,6 +1,13 @@
 import React from 'react';
 import { MermaidSubgraphDef } from '../../diagrams/viewModel';
-import { PencilIcon, PaletteIcon, TrashIcon, UngroupIcon, FolderIcon } from '../icons/Icons';
+import {
+  PencilIcon,
+  PaletteIcon,
+  TrashIcon,
+  UngroupIcon,
+  FolderIcon,
+  ColumnsSplitIcon,
+} from '../icons/Icons';
 
 export interface SubgraphActionHudProps {
   subgraph: MermaidSubgraphDef;
@@ -19,6 +26,10 @@ export interface SubgraphActionHudProps {
   onAddStart?: () => void;
   onAddEnd?: () => void;
   onToggleDirection?: () => void;
+  canAddConcurrencyDivider?: boolean;
+  onAddConcurrencyDivider?: () => void;
+  dividerCount?: number;
+  onRemoveConcurrencyDivider?: () => void;
 }
 
 export const SubgraphActionHud: React.FC<SubgraphActionHudProps> = ({
@@ -38,6 +49,10 @@ export const SubgraphActionHud: React.FC<SubgraphActionHudProps> = ({
   onAddStart,
   onAddEnd,
   onToggleDirection,
+  canAddConcurrencyDivider,
+  onAddConcurrencyDivider,
+  dividerCount,
+  onRemoveConcurrencyDivider,
 }) => {
   return (
     <div
@@ -131,6 +146,29 @@ export const SubgraphActionHud: React.FC<SubgraphActionHudProps> = ({
           title={canAddEnd ? 'Add End point ([*]) to Composite' : 'Composite end point already exists'}
         >
           <span>＋End</span>
+        </button>
+      )}
+
+      {canAddConcurrencyDivider && onAddConcurrencyDivider && (
+        <button
+          type="button"
+          className="mermaid-hud-btn"
+          onClick={onAddConcurrencyDivider}
+          title="Add Parallel Track Divider (--) to split into concurrent regions"
+        >
+          <ColumnsSplitIcon size={13} />
+          <span>＋Track</span>
+        </button>
+      )}
+
+      {canAddConcurrencyDivider && (dividerCount ?? 0) > 0 && onRemoveConcurrencyDivider && (
+        <button
+          type="button"
+          className="mermaid-hud-btn"
+          onClick={onRemoveConcurrencyDivider}
+          title="Remove last track divider (--)"
+        >
+          <span>－Track</span>
         </button>
       )}
 

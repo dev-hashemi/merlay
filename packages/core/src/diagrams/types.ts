@@ -98,6 +98,12 @@ export interface DiagramCapabilities {
   notePositions?: readonly NotePosition[];
   /** Whether the diagram supports accessibility directives (accTitle, accDescr). */
   supportsAccessibility?: boolean;
+  /** Whether the diagram supports reusable classDef styles and class assignments. */
+  supportsClassDefs?: boolean;
+  /** Whether the diagram supports wrapping messages/elements in control frames (loop, alt, opt, etc.). */
+  supportsFrames?: boolean;
+  /** Whether composite groups support concurrency dividers (--). */
+  supportsConcurrency?: boolean;
 }
 
 /** UI vocabulary so components never hard-code diagram-specific nouns. */
@@ -299,6 +305,26 @@ export interface DiagramMutations<TAst = unknown> {
   // Diagram accessibility (optional — supportsAccessibility)
   getAccessibility?(ast: TAst): DiagramAccessibility | undefined;
   setAccessibility?(ast: TAst, acc: DiagramAccessibility | null): void;
+
+  // Reusable Class Definitions (optional — supportsClassDefs)
+  getClassDefs?(ast: TAst): Array<{ name: string; styles: Record<string, string> }>;
+  setClassDef?(ast: TAst, name: string, styles: Record<string, string>): void;
+  deleteClassDef?(ast: TAst, name: string): void;
+  getNodeClasses?(ast: TAst, nodeId: string): string[];
+  setNodeClasses?(ast: TAst, nodeId: string, classes: string[]): void;
+  toggleNodeClass?(ast: TAst, nodeId: string, className: string): void;
+
+  // Control Frames (optional — supportsFrames)
+  wrapMessagesInFrame?(
+    ast: TAst,
+    messageIds: string[],
+    frame: { type: string; label?: string }
+  ): void;
+
+  // Concurrency Dividers (optional — supportsConcurrency)
+  addConcurrencyDivider?(ast: TAst, compositeStateId: string): void;
+  removeConcurrencyDivider?(ast: TAst, compositeStateId: string): boolean;
+  getConcurrencyDividerCount?(ast: TAst, compositeStateId: string): number;
 
   // Start/end anchors (optional — hasAnchors)
   anchors?: AnchorApi<TAst>;

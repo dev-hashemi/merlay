@@ -49,6 +49,11 @@ export interface NodeOverlaysProps {
   onSetDefaultStyle?: () => void;
   onClearDefaultStyle?: () => void;
   hasDefaultStyle?: boolean;
+  classDefs?: Array<{ name: string; styles: Record<string, string> }>;
+  nodeClasses?: string[];
+  onToggleNodeClass?: (className: string) => void;
+  onSaveClassDef?: (name: string, styles: Record<string, string>) => void;
+  onDeleteClassDef?: (name: string) => void;
 
   onAddNodeAttribute?: (nodeId: string) => void;
   onAddNodeMethod?: (nodeId: string) => void;
@@ -94,6 +99,11 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
   onSetDefaultStyle,
   onClearDefaultStyle,
   hasDefaultStyle,
+  classDefs,
+  nodeClasses,
+  onToggleNodeClass,
+  onSaveClassDef,
+  onDeleteClassDef,
   onAddNodeAttribute,
   onAddNodeMethod,
   nodeMemberCapabilities,
@@ -177,6 +187,11 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
           onSetDefaultStyle={onSetDefaultStyle}
           onClearDefaultStyle={onClearDefaultStyle}
           hasDefaultStyle={hasDefaultStyle}
+          classDefs={classDefs}
+          nodeClasses={nodeClasses}
+          onToggleNodeClass={onToggleNodeClass}
+          onSaveClassDef={onSaveClassDef}
+          onDeleteClassDef={onDeleteClassDef}
         />
       )}
 

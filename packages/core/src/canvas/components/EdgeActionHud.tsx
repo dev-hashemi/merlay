@@ -11,6 +11,7 @@ import {
   PaletteIcon,
   ReverseIcon,
   TrashIcon,
+  FrameIcon,
 } from '../icons/Icons';
 import { DiagramDriver } from '../../diagrams/types';
 
@@ -22,6 +23,7 @@ export interface EdgeActionHudProps {
   activeEdgePopover: ActiveEdgePopover;
   onChangeEdgeType: (newType: string) => void;
   onToggleTypePopover: () => void;
+  onToggleFramePopover?: () => void;
   onReverseEdge: () => void;
   onInsertNodeOnEdge: () => void;
   onUpdateEdgeLabel: (label: string) => void;
@@ -37,6 +39,7 @@ export const EdgeActionHud: React.FC<EdgeActionHudProps> = ({
   activeEdgePopover,
   onChangeEdgeType,
   onToggleTypePopover,
+  onToggleFramePopover,
   onReverseEdge,
   onInsertNodeOnEdge,
   onUpdateEdgeLabel,
@@ -122,6 +125,20 @@ export const EdgeActionHud: React.FC<EdgeActionHudProps> = ({
       >
         <ReverseIcon size={14} />
       </button>
+
+      {/* Control Frame (Sequence Diagrams) */}
+      {capabilities.supportsFrames && onToggleFramePopover && (
+        <button
+          type="button"
+          className={`mermaid-hud-btn icon-only ${
+            activeEdgePopover === 'frame' ? 'is-active' : ''
+          }`}
+          onClick={onToggleFramePopover}
+          title="Wrap Message in Frame (Loop, Alt, Opt, Par, Rect...)"
+        >
+          <FrameIcon size={14} />
+        </button>
+      )}
 
       {/* Insert Node Between */}
       <button

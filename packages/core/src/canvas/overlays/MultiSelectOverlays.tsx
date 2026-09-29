@@ -11,6 +11,7 @@ import { MultiSelectHud } from '../components/MultiSelectHud';
 import { EdgeTypePopover } from '../components/EdgeTypePopover';
 import { KindPopover } from '../components/KindPopover';
 import { NodeStylePopover } from '../components/NodeStylePopover';
+import { SequenceFramePopover } from '../components/SequenceFramePopover';
 
 export interface MultiSelectOverlaysProps {
   multiSelectBounds: {
@@ -26,7 +27,8 @@ export interface MultiSelectOverlaysProps {
   selectedNodeIds: Set<string>;
   selectedEdgeIds: Set<string>;
   activeMultiPopover: ActiveMultiPopover;
-  onToggleMultiPopover: (popover: 'shape' | 'style' | 'edgeType') => void;
+  onToggleMultiPopover: (popover: 'shape' | 'style' | 'edgeType' | 'frame') => void;
+  onWrapInFrame?: (edgeIds: string[], frame: { type: string; label?: string }) => void;
   onBatchDelete: () => void;
   onBatchGroup: () => void;
   canUngroup: boolean;
@@ -52,6 +54,7 @@ export const MultiSelectOverlays: React.FC<MultiSelectOverlaysProps> = ({
   selectedEdgeIds,
   activeMultiPopover,
   onToggleMultiPopover,
+  onWrapInFrame,
   onBatchDelete,
   onBatchGroup,
   canUngroup,
@@ -95,6 +98,19 @@ export const MultiSelectOverlays: React.FC<MultiSelectOverlaysProps> = ({
           <EdgeTypePopover
             popoverPos={popoverPos}
             onSelectType={onBatchUpdateEdgeType}
+          />
+        )}
+
+      {/* Multi-Select Sequence Frame Popover */}
+      {activeMultiPopover === 'frame' &&
+        driver.capabilities.supportsFrames &&
+        popoverPos && (
+          <SequenceFramePopover
+            popoverPos={popoverPos}
+            onApply={(type, label) =>
+              onWrapInFrame?.(Array.from(selectedEdgeIds), { type, label })
+            }
+            onClose={() => onToggleMultiPopover('frame')}
           />
         )}
 

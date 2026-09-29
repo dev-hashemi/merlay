@@ -36,6 +36,10 @@ export interface SubgraphOverlaysProps {
   onAddStart?: () => void;
   onAddEnd?: () => void;
   onToggleSubgraphDirection?: () => void;
+  canAddConcurrencyDivider?: boolean;
+  onAddConcurrencyDivider?: (subId: string) => void;
+  dividerCount?: number;
+  onRemoveConcurrencyDivider?: (subId: string) => void;
 }
 
 export const SubgraphOverlays: React.FC<SubgraphOverlaysProps> = ({
@@ -64,6 +68,10 @@ export const SubgraphOverlays: React.FC<SubgraphOverlaysProps> = ({
   onAddStart,
   onAddEnd,
   onToggleSubgraphDirection,
+  canAddConcurrencyDivider,
+  onAddConcurrencyDivider,
+  dividerCount,
+  onRemoveConcurrencyDivider,
 }) => {
   const currentParentSubgraphId = useMemo(() => {
     if (!selectedSubgraphId) return undefined;
@@ -119,6 +127,14 @@ export const SubgraphOverlays: React.FC<SubgraphOverlaysProps> = ({
             onAddStart={onAddStart}
             onAddEnd={onAddEnd}
             onToggleDirection={onToggleSubgraphDirection}
+            canAddConcurrencyDivider={canAddConcurrencyDivider}
+            onAddConcurrencyDivider={
+              onAddConcurrencyDivider ? () => onAddConcurrencyDivider(selectedSubgraphId) : undefined
+            }
+            dividerCount={dividerCount}
+            onRemoveConcurrencyDivider={
+              onRemoveConcurrencyDivider ? () => onRemoveConcurrencyDivider(selectedSubgraphId) : undefined
+            }
           />
         )}
 

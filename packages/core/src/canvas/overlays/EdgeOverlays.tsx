@@ -9,6 +9,7 @@ import { DiagramDriver } from '../../diagrams/types';
 import { EdgeActionHud } from '../components/EdgeActionHud';
 import { EdgeStylePopover } from '../components/EdgeStylePopover';
 import { EdgeTypePopover } from '../components/EdgeTypePopover';
+import { SequenceFramePopover } from '../components/SequenceFramePopover';
 import { ArrowType } from '../../diagrams/viewModel';
 
 export interface EdgeOverlaysProps {
@@ -20,6 +21,8 @@ export interface EdgeOverlaysProps {
   activeEdgePopover: ActiveEdgePopover;
   onChangeEdgeType: (newType: string) => void;
   onToggleEdgeType?: () => void;
+  onToggleEdgeFrame?: () => void;
+  onWrapInFrame?: (edgeIds: string[], frame: { type: string; label?: string }) => void;
   onUpdateEdgeLength?: (length: number) => void;
   edgeLength?: number;
   onReverseEdge: () => void;
@@ -44,6 +47,8 @@ export const EdgeOverlays: React.FC<EdgeOverlaysProps> = ({
   activeEdgePopover,
   onChangeEdgeType,
   onToggleEdgeType,
+  onToggleEdgeFrame,
+  onWrapInFrame,
   onUpdateEdgeLength,
   edgeLength,
   onReverseEdge,
@@ -70,6 +75,7 @@ export const EdgeOverlays: React.FC<EdgeOverlaysProps> = ({
           activeEdgePopover={activeEdgePopover}
           onChangeEdgeType={onChangeEdgeType}
           onToggleTypePopover={onToggleEdgeType || (() => {})}
+          onToggleFramePopover={onToggleEdgeFrame}
           onReverseEdge={onReverseEdge}
           onInsertNodeOnEdge={() => onInsertNodeOnEdge(selectedEdgeId)}
           onUpdateEdgeLabel={onUpdateEdgeLabel}
@@ -95,6 +101,23 @@ export const EdgeOverlays: React.FC<EdgeOverlaysProps> = ({
             onSelectType={(type) => onChangeEdgeType(type)}
             onSelectLength={onUpdateEdgeLength}
             onClose={onToggleEdgeType}
+          />
+        )}
+
+      {/* Sequence Frame Popover */}
+      {activeEdgePopover === 'frame' &&
+        driver.capabilities.supportsFrames &&
+        selectedEdgePos &&
+        selectedEdgeId &&
+        !isMultiSelect && (
+          <SequenceFramePopover
+            popoverPos={{
+              left: selectedEdgePos.x,
+              top: selectedEdgePos.y + 14,
+              transform: 'translate(-50%, 0)',
+            }}
+            onApply={(type, label) => onWrapInFrame?.([selectedEdgeId], { type, label })}
+            onClose={onToggleEdgeFrame || (() => {})}
           />
         )}
 

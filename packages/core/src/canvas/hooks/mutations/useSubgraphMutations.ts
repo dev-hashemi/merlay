@@ -8,7 +8,7 @@ export interface UseSubgraphMutationsOptions {
 }
 
 export function useSubgraphMutations({ astHook }: UseSubgraphMutationsOptions) {
-  const { driver, displayNodes, displaySubgraphs, applyMutation } = astHook;
+  const { driver, ast, displayNodes, displaySubgraphs, applyMutation } = astHook;
   const m = driver.mutations;
 
   const handleAddGroup = useCallback(() => {
@@ -158,6 +158,33 @@ export function useSubgraphMutations({ astHook }: UseSubgraphMutationsOptions) {
     [m, applyMutation]
   );
 
+  const handleAddConcurrencyDivider = useCallback(
+    (groupId: string) => {
+      if (!m.addConcurrencyDivider) return;
+      applyMutation((a) => {
+        m.addConcurrencyDivider!(a, groupId);
+      });
+    },
+    [m, applyMutation]
+  );
+
+  const handleRemoveConcurrencyDivider = useCallback(
+    (groupId: string) => {
+      if (!m.removeConcurrencyDivider) return;
+      applyMutation((a) => {
+        m.removeConcurrencyDivider!(a, groupId);
+      });
+    },
+    [m, applyMutation]
+  );
+
+  const getConcurrencyDividerCount = useCallback(
+    (groupId: string) => {
+      return m.getConcurrencyDividerCount ? m.getConcurrencyDividerCount(ast, groupId) : 0;
+    },
+    [m, ast]
+  );
+
   return {
     handleAddGroup,
     handleApplySubgraphPreset,
@@ -170,5 +197,8 @@ export function useSubgraphMutations({ astHook }: UseSubgraphMutationsOptions) {
     handleRemoveNodeFromGroup,
     handleCreateGroupWithNode,
     handleToggleGroupDirection,
+    handleAddConcurrencyDivider,
+    handleRemoveConcurrencyDivider,
+    getConcurrencyDividerCount,
   };
 }

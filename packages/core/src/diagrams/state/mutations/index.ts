@@ -7,5 +7,6 @@ export * from './stateMutations';
 export * from './statePruneMutations';
 export * from './transitionMutations';
 export * from './compositeMutations';
+export * from './concurrencyMutations';
 export * from './styleMutations';
 export * from './clipboardMutations';

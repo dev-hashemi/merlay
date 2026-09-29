@@ -84,6 +84,7 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
     supportsNotes: true,
     notePositions: ['left', 'over', 'right'] as const,
     supportsAccessibility: true,
+    supportsFrames: true,
   },
 
   canvasHint: {
@@ -335,6 +336,10 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
           ast.directives.push(`accDescr: ${acc.accDescr.trim()}`);
         }
       }
+    },
+
+    wrapMessagesInFrame: (ast, messageIds, frame) => {
+      seq.wrapMessagesInFrame(ast, messageIds, frame as seq.SequenceFrameDetails);
     },
   },
 

@@ -604,3 +604,17 @@ export const RowsIcon = createIcon(
     <line x1="3" y1="18" x2="21" y2="18" />
   </>
 );
+
+export const FrameIcon = createIcon(
+  <>
+    <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="3 2" />
+    <path d="M3 9h6v4H3" />
+  </>
+);
+
+export const ColumnsSplitIcon = createIcon(
+  <>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <line x1="3" y1="12" x2="21" y2="12" strokeDasharray="3 2" />
+  </>
+);
