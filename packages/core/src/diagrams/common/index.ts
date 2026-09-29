@@ -7,6 +7,8 @@ export {
   generateUniqueId,
   getDiagramTheme,
   setDiagramTheme,
+  getDiagramTitle,
+  setDiagramTitle,
   MERMAID_THEMES,
 } from './diagramHeader';
 export type { SplitFrontmatterResult, MermaidTheme } from './diagramHeader';

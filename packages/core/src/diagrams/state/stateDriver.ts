@@ -8,8 +8,14 @@ import { stateDomAdapter } from './domAdapter';
 import { MermaidStateAST, MermaidStateType, StateDirection } from './types';
 import { parseMermaidStateDiagram } from './parser';
 import { serializeMermaidStateDiagram } from './serializer';
+import {
+  matchesHeader,
+  getDiagramTheme,
+  setDiagramTheme,
+  getDiagramTitle,
+  setDiagramTitle,
+} from '../common/diagramHeader';
 import { findNodeLinkUrl } from '../nodeLinks';
-import { matchesHeader, getDiagramTheme, setDiagramTheme } from '../common/diagramHeader';
 import * as st from './mutations';
 
 import {
@@ -54,6 +60,8 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
     supportsGroups: true,
     hasAnchors: true,
     supportsDefaultStyles: true,
+    supportsGroupDirection: true,
+    supportsTitle: true,
   },
 
   labels: {
@@ -202,6 +210,19 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
     getTheme: (ast) => getDiagramTheme(ast.frontmatter),
     setTheme: (ast, theme) => {
       ast.frontmatter = setDiagramTheme(ast.frontmatter, theme);
+    },
+
+    getGroupDirection: (ast, groupId) => ast.compositeStates.get(groupId)?.direction,
+    setGroupDirection: (ast, groupId, direction) => {
+      const comp = ast.compositeStates.get(groupId);
+      if (comp) {
+        comp.direction = direction ? (direction as StateDirection) : undefined;
+      }
+    },
+
+    getTitle: (ast) => getDiagramTitle(ast.frontmatter, ast.rawLines),
+    setTitle: (ast, title) => {
+      ast.frontmatter = setDiagramTitle(ast.frontmatter, title);
     },
 
     anchors: {

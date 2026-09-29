@@ -6,8 +6,14 @@
 
 import { DiagramDriver, ViewProjection } from '../types';
 import { ArrowType, MermaidEdgeDef, MermaidNodeDef, MermaidSubgraphDef } from '../viewModel';
-import { getDiagramTheme, matchesHeader, setDiagramTheme } from '../common/diagramHeader';
-import { findNodeLinkUrl } from '../nodeLinks';
+import {
+  getDiagramTheme,
+  matchesHeader,
+  setDiagramTheme,
+  getDiagramTitle,
+  setDiagramTitle,
+} from '../common/diagramHeader';
+import { findNodeLinkUrl, findNodeLinkDetails, updateNodeLinkInRawLines } from '../nodeLinks';
 import { ClassDirection, MermaidClassAST } from './types';
 import { parseMermaidClassDiagram } from './parser';
 import { serializeMermaidClassDiagram } from './serializer';
@@ -170,6 +176,8 @@ export const ClassDiagramDriver: DiagramDriver<MermaidClassAST> = {
     supportsDefaultStyles: true,
     supportsNodeStyles: true,
     supportsNodeMembers: true,
+    supportsNodeLinks: true,
+    supportsTitle: true,
   },
 
   labels: {
@@ -249,6 +257,17 @@ export const ClassDiagramDriver: DiagramDriver<MermaidClassAST> = {
     getTheme: (ast) => getDiagramTheme(ast.frontmatter),
     setTheme: (ast, theme) => {
       ast.frontmatter = setDiagramTheme(ast.frontmatter, theme);
+    },
+
+    getNodeLinkDetails: (ast, nodeId) =>
+      findNodeLinkDetails(ast.rawLines.map((r) => r.raw), nodeId),
+    setNodeLink: (ast, nodeId, link) => {
+      updateNodeLinkInRawLines(ast.rawLines, nodeId, link, 'link');
+    },
+
+    getTitle: (ast) => getDiagramTitle(ast.frontmatter, ast.rawLines),
+    setTitle: (ast, title) => {
+      ast.frontmatter = setDiagramTitle(ast.frontmatter, title);
     },
   },
 

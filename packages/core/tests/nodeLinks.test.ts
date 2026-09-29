@@ -5,6 +5,11 @@ import {
   parseClickLink,
   parseSequenceLink,
   findNodeLinkUrl,
+  parseClickLinkDetails,
+  parseSequenceLinkDetails,
+  findNodeLinkDetails,
+  formatNodeLinkStatement,
+  updateNodeLinkInRawLines,
 } from '../src/diagrams/nodeLinks';
 import { FlowchartDriver } from '../src/diagrams/flowchart/flowchartDriver';
 import { StateDiagramDriver } from '../src/diagrams/state/stateDriver';
@@ -72,4 +77,73 @@ test('nodeLinks: every editable driver exposes getNodeLink', () => {
   );
   assert.strictEqual(SequenceDiagramDriver.getNodeLink?.(seqAst, 'Alice'), 'https://example.com');
   assert.strictEqual(SequenceDiagramDriver.getNodeLink?.(seqAst, 'missing'), undefined);
+});
+
+test('nodeLinks: parse details with tooltip and target', () => {
+  const parsed1 = parseClickLinkDetails('click A href "https://example.com" "tooltip text" _blank');
+  assert.deepStrictEqual(parsed1, {
+    nodeId: 'A',
+    details: {
+      url: 'https://example.com',
+      tooltip: 'tooltip text',
+      target: '_blank',
+    },
+  });
+
+  const parsed2 = parseSequenceLinkDetails('link Alice: Dashboard App @ https://dashboard.org');
+  assert.deepStrictEqual(parsed2, {
+    nodeId: 'Alice',
+    details: {
+      url: 'https://dashboard.org',
+      tooltip: 'Dashboard App',
+    },
+  });
+
+  const lines = ['click Node1 "https://test.io" "My Tooltip" _self'];
+  const details = findNodeLinkDetails(lines, 'Node1');
+  assert.deepStrictEqual(details, {
+    url: 'https://test.io',
+    tooltip: 'My Tooltip',
+    target: '_self',
+  });
+});
+
+test('nodeLinks: formatNodeLinkStatement produces standard Mermaid', () => {
+  assert.equal(
+    formatNodeLinkStatement('A', { url: 'https://example.com' }),
+    'click A "https://example.com"'
+  );
+  assert.equal(
+    formatNodeLinkStatement('A', { url: 'https://example.com', tooltip: 'tip', target: '_blank' }),
+    'click A "https://example.com" "tip" _blank'
+  );
+  assert.equal(
+    formatNodeLinkStatement('B', { url: 'https://class.io', tooltip: 'Class Tip' }, 'link'),
+    'link B "https://class.io" "Class Tip"'
+  );
+  assert.equal(
+    formatNodeLinkStatement('Actor1', { url: 'https://actor.org', tooltip: 'Profile' }, 'sequence'),
+    'link Actor1: Profile @ https://actor.org'
+  );
+});
+
+test('nodeLinks: updateNodeLinkInRawLines adds, updates, and deletes links', () => {
+  const lines: Array<{ text: string }> = [
+    { text: 'A --> B' },
+  ];
+
+  // 1. Add link
+  updateNodeLinkInRawLines(lines, 'A', { url: 'https://a.com', tooltip: 'A Tip' }, 'click');
+  assert.equal(lines.length, 2);
+  assert.equal(lines[1].text, 'click A "https://a.com" "A Tip"');
+
+  // 2. Update link
+  updateNodeLinkInRawLines(lines, 'A', { url: 'https://new-a.com' }, 'click');
+  assert.equal(lines.length, 2);
+  assert.equal(lines[1].text, 'click A "https://new-a.com"');
+
+  // 3. Delete link
+  updateNodeLinkInRawLines(lines, 'A', null, 'click');
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0].text, 'A --> B');
 });

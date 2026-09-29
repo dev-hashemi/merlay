@@ -23,6 +23,9 @@ test('Driver surface: flowchart capabilities, labels, and projection', () => {
     supportsGroups: true,
     hasAnchors: false,
     supportsDefaultStyles: true,
+    supportsNodeLinks: true,
+    supportsGroupDirection: true,
+    supportsTitle: true,
   });
   assert.strictEqual(flowchartDriver.labels.node, 'Step');
   assert.strictEqual(flowchartDriver.mutations.anchors, undefined);
@@ -48,6 +51,8 @@ test('Driver surface: state capabilities, labels, and projection', () => {
     supportsGroups: true,
     hasAnchors: true,
     supportsDefaultStyles: true,
+    supportsGroupDirection: true,
+    supportsTitle: true,
   });
   assert.strictEqual(stateDriver.labels.node, 'State');
   assert.strictEqual(stateDriver.mutations.updateEdgeType, undefined);
@@ -131,6 +136,9 @@ test('Driver surface: sequence capabilities, labels, and projection', () => {
     supportsEdgeStyles: false,
     supportsGroups: true,
     hasAnchors: false,
+    supportsAutonumber: true,
+    supportsNodeLinks: true,
+    supportsTitle: true,
   });
   assert.strictEqual(sequenceDriver.labels.node, 'Participant');
   assert.strictEqual(sequenceDriver.labels.edge, 'Message');
@@ -175,6 +183,7 @@ test('Driver surface: mindmap capabilities, labels, and projection', () => {
     supportsGroups: false,
     hasAnchors: false,
     supportsNodeStyles: false,
+    supportsTitle: true,
   });
   assert.strictEqual(mindmapDriver.labels.node, 'Topic');
   assert.strictEqual(mindmapDriver.labels.edge, 'Branch');
@@ -218,6 +227,8 @@ test('Driver surface: class diagram capabilities, labels, and projection', () =>
     supportsDefaultStyles: true,
     supportsNodeStyles: true,
     supportsNodeMembers: true,
+    supportsNodeLinks: true,
+    supportsTitle: true,
   });
   assert.strictEqual(classDriver.labels.node, 'Class');
   assert.strictEqual(classDriver.labels.group, 'Namespace');

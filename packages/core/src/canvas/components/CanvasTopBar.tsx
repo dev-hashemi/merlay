@@ -44,6 +44,8 @@ export interface CanvasTopBarProps {
   notify?: NotifyFn;
   theme?: string;
   onSetTheme?: (theme: MermaidTheme | null) => void;
+  isAutonumbered?: boolean;
+  onToggleAutonumber?: () => void;
 }
 
 export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
@@ -73,6 +75,8 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
   notify,
   theme,
   onSetTheme,
+  isAutonumbered = false,
+  onToggleAutonumber,
 }) => {
   const { labels, capabilities } = driver;
   const isEditable = capabilities.editable !== false;
@@ -219,6 +223,19 @@ export const CanvasTopBar: React.FC<CanvasTopBarProps> = ({
             aria-label={`Toggle Flow Direction (Current: ${direction})`}
           >
             <span>Flow: {direction}</span>
+          </button>
+        )}
+
+        {isEditable && capabilities.supportsAutonumber && onToggleAutonumber && (
+          <button
+            type="button"
+            className={`mermaid-tool-btn ${isAutonumbered ? 'is-active' : ''}`}
+            onClick={onToggleAutonumber}
+            title={isAutonumbered ? 'Disable Step Numbers (autonumber)' : 'Enable Step Numbers (autonumber)'}
+            aria-label={isAutonumbered ? 'Disable Step Numbers' : 'Enable Step Numbers'}
+            aria-pressed={isAutonumbered}
+          >
+            <span># Numbers: {isAutonumbered ? 'On' : 'Off'}</span>
           </button>
         )}
 

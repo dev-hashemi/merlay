@@ -146,6 +146,18 @@ export function useSubgraphMutations({ astHook }: UseSubgraphMutationsOptions) {
     [m, driver, applyMutation]
   );
 
+  const handleToggleGroupDirection = useCallback(
+    (groupId: string) => {
+      if (!m.setGroupDirection) return;
+      applyMutation((a) => {
+        const current = m.getGroupDirection ? m.getGroupDirection(a, groupId) : undefined;
+        const next = current === 'LR' ? 'TB' : 'LR';
+        m.setGroupDirection!(a, groupId, next);
+      });
+    },
+    [m, applyMutation]
+  );
+
   return {
     handleAddGroup,
     handleApplySubgraphPreset,
@@ -157,5 +169,6 @@ export function useSubgraphMutations({ astHook }: UseSubgraphMutationsOptions) {
     handleMoveNodeToSubgraph,
     handleRemoveNodeFromGroup,
     handleCreateGroupWithNode,
+    handleToggleGroupDirection,
   };
 }

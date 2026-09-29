@@ -6,7 +6,13 @@
 
 import { DiagramDriver, NodeKindOption, ViewProjection } from '../types';
 import { MermaidEdgeDef, MermaidNodeDef } from '../viewModel';
-import { matchesHeader, getDiagramTheme, setDiagramTheme } from '../common/diagramHeader';
+import {
+  matchesHeader,
+  getDiagramTheme,
+  setDiagramTheme,
+  getDiagramTitle,
+  setDiagramTitle,
+} from '../common/diagramHeader';
 import { findNodeLinkUrl } from '../nodeLinks';
 import {
   MermaidMindmapAST,
@@ -120,6 +126,7 @@ export const MindmapDriver: DiagramDriver<MermaidMindmapAST> = {
     supportsGroups: false,
     hasAnchors: false,
     supportsNodeStyles: false,
+    supportsTitle: true,
   },
 
   canvasHint: {
@@ -185,6 +192,10 @@ export const MindmapDriver: DiagramDriver<MermaidMindmapAST> = {
     getTheme: (ast) => getDiagramTheme(ast.frontmatter),
     setTheme: (ast, theme) => {
       ast.frontmatter = setDiagramTheme(ast.frontmatter, theme);
+    },
+    getTitle: (ast) => getDiagramTitle(ast.frontmatter, ast.rawLines.map((r) => r.raw)),
+    setTitle: (ast, title) => {
+      ast.frontmatter = setDiagramTitle(ast.frontmatter, title);
     },
   },
 

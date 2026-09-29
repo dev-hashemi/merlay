@@ -10,8 +10,20 @@ import {
 } from './types';
 import { parseMermaidSequenceDiagram } from './parser';
 import { serializeMermaidSequenceDiagram } from './serializer';
-import { findNodeLinkUrl } from '../nodeLinks';
-import { matchesHeader, getDiagramTheme, setDiagramTheme } from '../common/diagramHeader';
+import {
+  findNodeLinkUrl,
+  findNodeLinkDetails,
+  formatNodeLinkStatement,
+  parseSequenceLink,
+  updateNodeLinkInRawLines,
+} from '../nodeLinks';
+import {
+  matchesHeader,
+  getDiagramTheme,
+  setDiagramTheme,
+  getDiagramTitle,
+  setDiagramTitle,
+} from '../common/diagramHeader';
 import {
   cloneSequenceAst,
   createEmptySequenceAst,
@@ -59,6 +71,9 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
     supportsEdgeStyles: false,
     supportsGroups: true,
     hasAnchors: false,
+    supportsAutonumber: true,
+    supportsNodeLinks: true,
+    supportsTitle: true,
   },
 
   canvasHint: {
@@ -208,6 +223,41 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
     getTheme: (ast) => getDiagramTheme(ast.frontmatter),
     setTheme: (ast, theme) => {
       ast.frontmatter = setDiagramTheme(ast.frontmatter, theme);
+    },
+
+    isAutonumbered: (ast) => !!ast.autonumber,
+    setAutonumbered: (ast, enabled) => {
+      ast.autonumber = enabled;
+    },
+
+    getNodeLinkDetails: (ast, nodeId) =>
+      findNodeLinkDetails(ast.rawLines.map((r) => r.text), nodeId),
+    setNodeLink: (ast, nodeId, link) => {
+      updateNodeLinkInRawLines(ast.rawLines, nodeId, link, 'sequence');
+      const isTargetTimeline = (text: string) => {
+        const p = parseSequenceLink(text);
+        return p?.nodeId === nodeId;
+      };
+      const timelineIdx = ast.timeline.findIndex(
+        (item) => item.type === 'raw' && isTargetTimeline(item.text)
+      );
+      if (!link || !link.url.trim()) {
+        if (timelineIdx !== -1) {
+          ast.timeline.splice(timelineIdx, 1);
+        }
+      } else {
+        const stmt = formatNodeLinkStatement(nodeId, link, 'sequence');
+        if (timelineIdx !== -1) {
+          ast.timeline[timelineIdx] = { type: 'raw', text: stmt };
+        } else {
+          ast.timeline.push({ type: 'raw', text: stmt });
+        }
+      }
+    },
+
+    getTitle: (ast) => getDiagramTitle(ast.frontmatter, ast.rawLines),
+    setTitle: (ast, title) => {
+      ast.frontmatter = setDiagramTitle(ast.frontmatter, title);
     },
   },
 

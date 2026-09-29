@@ -8,6 +8,7 @@
  */
 
 export * from './diagramTheme';
+export * from './diagramTitle';
 
 export interface SplitFrontmatterResult {
   /** Inner YAML lines (without the `---` delimiters), if a leading block exists. */

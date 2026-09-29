@@ -13,8 +13,14 @@ import {
 import { FLOWCHART_SHAPES } from './shapes';
 import { parseMermaidFlowchart } from './parser';
 import { serializeMermaidFlowchart } from './serializer';
-import { findNodeLinkUrl } from '../nodeLinks';
-import { matchesHeader, getDiagramTheme, setDiagramTheme } from '../common/diagramHeader';
+import { findNodeLinkUrl, findNodeLinkDetails, updateNodeLinkInRawLines } from '../nodeLinks';
+import {
+  matchesHeader,
+  getDiagramTheme,
+  setDiagramTheme,
+  getDiagramTitle,
+  setDiagramTitle,
+} from '../common/diagramHeader';
 import * as fc from './mutations';
 
 export const FLOWCHART_KIND_OPTIONS = FLOWCHART_SHAPES.map((d) => ({
@@ -104,6 +110,9 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
     supportsGroups: true,
     hasAnchors: false,
     supportsDefaultStyles: true,
+    supportsNodeLinks: true,
+    supportsGroupDirection: true,
+    supportsTitle: true,
   },
 
   labels: {
@@ -246,6 +255,25 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
     getTheme: (ast) => getDiagramTheme(ast.frontmatter),
     setTheme: (ast, theme) => {
       ast.frontmatter = setDiagramTheme(ast.frontmatter, theme);
+    },
+
+    getNodeLinkDetails: (ast, nodeId) =>
+      findNodeLinkDetails(ast.rawLines.map((r) => r.text), nodeId),
+    setNodeLink: (ast, nodeId, link) => {
+      updateNodeLinkInRawLines(ast.rawLines, nodeId, link, 'click');
+    },
+
+    getGroupDirection: (ast, groupId) => ast.subgraphs.get(groupId)?.direction,
+    setGroupDirection: (ast, groupId, direction) => {
+      const sub = ast.subgraphs.get(groupId);
+      if (sub) {
+        sub.direction = direction ? (direction as FlowchartDirection) : undefined;
+      }
+    },
+
+    getTitle: (ast) => getDiagramTitle(ast.frontmatter, ast.rawLines),
+    setTitle: (ast, title) => {
+      ast.frontmatter = setDiagramTitle(ast.frontmatter, title);
     },
   },
 

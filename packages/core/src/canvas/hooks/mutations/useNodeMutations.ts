@@ -3,6 +3,7 @@ import { useCanvasStore } from '../../store/canvasStore';
 import { useDiagramAst } from './useDiagramAst';
 import { useNodeStyleMutations } from './useNodeStyleMutations';
 import { MermaidTheme } from '../../../diagrams/common';
+import { NodeLinkDetails } from '../../../diagrams/nodeLinks';
 
 export interface UseNodeMutationsOptions {
   astHook: ReturnType<typeof useDiagramAst>;
@@ -225,6 +226,41 @@ export function useNodeMutations({
     });
   }, [anchors, applyMutation]);
 
+  const handleSetNodeLink = useCallback(
+    (nodeId: string, link: NodeLinkDetails | null) => {
+      applyMutation((a) => {
+        m.setNodeLink?.(a, nodeId, link);
+      });
+    },
+    [m, applyMutation]
+  );
+
+  const getNodeLinkDetails = useCallback(
+    (nodeId: string): NodeLinkDetails | undefined => {
+      return m.getNodeLinkDetails?.(ast, nodeId);
+    },
+    [m, ast]
+  );
+
+  const isAutonumbered = m.isAutonumbered ? m.isAutonumbered(ast) : false;
+  const handleToggleAutonumber = useCallback(() => {
+    if (!m.setAutonumbered || !m.isAutonumbered) return;
+    const current = m.isAutonumbered(ast);
+    applyMutation((a) => {
+      m.setAutonumbered?.(a, !current);
+    });
+  }, [m, ast, applyMutation]);
+
+  const diagramTitle = m.getTitle ? m.getTitle(ast) : undefined;
+  const handleSetDiagramTitle = useCallback(
+    (title: string | null) => {
+      applyMutation((a) => {
+        m.setTitle?.(a, title);
+      });
+    },
+    [m, applyMutation]
+  );
+
   return {
     handleSproutNextStep,
     handleDeleteSelectedNode,
@@ -244,5 +280,11 @@ export function useNodeMutations({
     handleConnectToEnd,
     hasStartState: anchors ? anchors.has(ast, 'start') : false,
     hasEndState: anchors ? anchors.has(ast, 'end') : false,
+    handleSetNodeLink,
+    getNodeLinkDetails,
+    isAutonumbered,
+    handleToggleAutonumber,
+    diagramTitle,
+    handleSetDiagramTitle,
   };
 }

@@ -64,6 +64,7 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
     selectedEdgeStyle,
     selectedSubgraphStyle,
     selectedNodeLink,
+    selectedNodeLinkDetails,
     nodeMemberCapabilities,
     canAddStart,
     canAddEnd,
@@ -152,6 +153,8 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         onDuplicateNode={mutations.handleDuplicateSelected}
         canRenameNode={canRenameSelectedNode}
         nodeLinkUrl={selectedNodeLink}
+        nodeLinkDetails={selectedNodeLinkDetails}
+        onSetNodeLink={mutations.handleSetNodeLink}
         onOpenNodeLink={
           selectedNodeLink
             ? () => window.open(selectedNodeLink, '_blank', 'noopener')
@@ -234,6 +237,11 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         onApplySubgraphPreset={mutations.handleApplySubgraphPreset}
         onUpdateSubgraphCustomStyle={mutations.handleUpdateSubgraphCustomStyle}
         onClearSubgraphStyle={mutations.handleClearSubgraphStyle}
+        onToggleSubgraphDirection={
+          driver.capabilities.supportsGroupDirection && selectedSubgraphId
+            ? () => mutations.handleToggleGroupDirection(selectedSubgraphId)
+            : undefined
+        }
         unmatchedSubgraphIds={selection.unmatchedSubgraphIds}
         onSelectUnmatchedSubgraph={(subId, idx) => {
           selection.isolateSelection('subgraph', subId);

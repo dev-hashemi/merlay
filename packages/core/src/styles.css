@@ -1748,6 +1748,248 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
   color: var(--text-muted);
 }
 
+/* Hyperlink Popover & HUD Link Indicator */
+.mermaid-link-popover {
+  min-width: 280px;
+  max-width: 340px;
+  padding: 10px 12px;
+}
+
+.mermaid-popover-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.mermaid-popover-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--mermaid-text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mermaid-popover-close-btn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--mermaid-text);
+}
+
+.mermaid-link-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mermaid-link-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mermaid-link-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--mermaid-text-muted);
+}
+
+.mermaid-link-input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid var(--mermaid-border);
+  border-radius: 6px;
+  background: var(--mermaid-bg);
+  color: var(--mermaid-text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+
+.mermaid-link-input:focus {
+  border-color: var(--mermaid-accent);
+  box-shadow: 0 0 0 2px var(--mermaid-accent-subtle);
+}
+
+.mermaid-link-checkbox-row {
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.mermaid-link-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--mermaid-text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.mermaid-link-checkbox-label input[type="checkbox"] {
+  accent-color: var(--mermaid-accent);
+  cursor: pointer;
+}
+
+.mermaid-link-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--mermaid-border);
+}
+
+.mermaid-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 500;
+  background: var(--mermaid-accent);
+  color: var(--text-on-accent, #ffffff);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mermaid-btn-primary:hover:not(:disabled) {
+  background: var(--mermaid-accent-hover);
+}
+
+.mermaid-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mermaid-btn-danger-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 11.5px;
+  background: transparent;
+  color: var(--text-error, #ef4444);
+  border: 1px solid var(--text-error, #ef4444);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mermaid-btn-danger-outline:hover {
+  background: var(--background-modifier-error, rgba(239, 68, 68, 0.15));
+}
+
+.mermaid-hud-btn.has-link {
+  color: var(--mermaid-accent);
+}
+
+/* In-Canvas Diagram Title Header */
+.mermaid-canvas-title-wrapper {
+  position: absolute;
+  top: 56px;
+  left: 16px;
+  z-index: 100;
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+}
+
+.mermaid-canvas-title-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--mermaid-bg-secondary);
+  border: 1px solid var(--mermaid-border);
+  border-radius: 8px;
+  box-shadow: var(--mermaid-shadow);
+  color: var(--mermaid-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: default;
+  transition: all 0.15s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.mermaid-canvas-title-badge.is-clickable {
+  cursor: pointer;
+}
+
+.mermaid-canvas-title-badge.is-clickable:hover {
+  border-color: var(--mermaid-accent);
+  background: var(--background-modifier-hover);
+}
+
+.mermaid-canvas-title-edit-hint {
+  opacity: 0;
+  color: var(--mermaid-text-muted);
+  transition: opacity 0.15s ease;
+  display: flex;
+  align-items: center;
+}
+
+.mermaid-canvas-title-badge:hover .mermaid-canvas-title-edit-hint {
+  opacity: 1;
+}
+
+.mermaid-canvas-add-title-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: transparent;
+  border: 1px dashed var(--mermaid-border);
+  border-radius: 6px;
+  color: var(--mermaid-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.15s ease;
+}
+
+.mermaid-canvas-add-title-btn:hover {
+  opacity: 1;
+  border-color: var(--mermaid-accent);
+  color: var(--mermaid-accent);
+  background: var(--mermaid-bg-secondary);
+}
+
+.mermaid-canvas-title-edit-box {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--mermaid-bg-secondary);
+  border: 1px solid var(--mermaid-accent);
+  border-radius: 8px;
+  box-shadow: var(--mermaid-shadow);
+  padding: 3px 6px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.mermaid-canvas-title-input {
+  border: none;
+  background: transparent;
+  color: var(--mermaid-text);
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  padding: 2px 4px;
+  min-width: 140px;
+}
+
 /* ==========================================================================
    7. Touch / small-screen layout (mobile best practices)
    ========================================================================== */
@@ -1882,6 +2124,8 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
   .mermaid-inline-member-textarea,
   .mermaid-edge-input,
   .mermaid-shape-search input,
+  .mermaid-link-input,
+  .mermaid-canvas-title-input,
   .mermaid-code-drawer-textarea {
     font-size: 16px;
   }

@@ -38,7 +38,7 @@ export interface NodeActionHudProps {
   activeNodePopover: ActiveNodePopover;
   onSproutNextStep: () => void;
   onRename: () => void;
-  onTogglePopover: (popover: 'shape' | 'style' | 'subgraph') => void;
+  onTogglePopover: (popover: 'shape' | 'style' | 'subgraph' | 'link') => void;
   onRemoveFromGroup?: () => void;
   onDelete: () => void;
   /** Duplicate without a keyboard (Ctrl+D on desktop). */
@@ -220,8 +220,22 @@ export const NodeActionHud: React.FC<NodeActionHudProps> = ({
           </button>
         )}
 
-      {/* Open Link Button (only when a click/link statement attaches a URL) */}
-      {nodeLinkUrl && onOpenNodeLink && (
+      {/* Hyperlink Button (Add/Edit link when supported) */}
+      {capabilities.supportsNodeLinks && !isAnchor && (
+        <button
+          type="button"
+          className={`mermaid-hud-btn icon-only ${
+            activeNodePopover === 'link' ? 'is-active' : ''
+          } ${nodeLinkUrl ? 'has-link' : ''}`}
+          onClick={() => onTogglePopover('link')}
+          title={nodeLinkUrl ? `Edit Link: ${nodeLinkUrl}` : 'Add Link'}
+        >
+          <LinkIcon size={13} />
+        </button>
+      )}
+
+      {/* Fallback Open Link Button if driver does not support editing node links but node has a link */}
+      {!capabilities.supportsNodeLinks && nodeLinkUrl && onOpenNodeLink && (
         <button
           type="button"
           className="mermaid-hud-btn icon-only"

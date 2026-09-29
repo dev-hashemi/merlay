@@ -7,10 +7,12 @@ import { ActiveNodePopover, PopoverPos, Rect } from '../types';
 import { ThemePreset } from '../constants';
 import { MermaidNodeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
 import { DiagramDriver, NodeMemberCapabilities } from '../../diagrams/types';
+import { NodeLinkDetails } from '../../diagrams/nodeLinks';
 import { NodeActionHud } from '../components/NodeActionHud';
 import { KindPopover } from '../components/KindPopover';
 import { NodeStylePopover } from '../components/NodeStylePopover';
 import { SubgraphPopover } from '../components/SubgraphPopover';
+import { LinkPopover } from '../components/LinkPopover';
 
 export interface NodeOverlaysProps {
   selectedNodeRect: Rect | null;
@@ -26,11 +28,13 @@ export interface NodeOverlaysProps {
   activeNodePopover: ActiveNodePopover;
   onSproutNextStep: (nodeId: string) => void;
   onStartEditingNode: (nodeId: string) => void;
-  onToggleNodePopover: (popover: 'shape' | 'style' | 'subgraph') => void;
+  onToggleNodePopover: (popover: 'shape' | 'style' | 'subgraph' | 'link') => void;
   onDeleteNode: () => void;
   onDuplicateNode?: () => void;
   canRenameNode?: boolean;
   nodeLinkUrl?: string;
+  nodeLinkDetails?: NodeLinkDetails;
+  onSetNodeLink?: (nodeId: string, details: NodeLinkDetails | null) => void;
   onOpenNodeLink?: () => void;
 
   popoverPos: PopoverPos | null;
@@ -73,6 +77,8 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
   onDuplicateNode,
   canRenameNode,
   nodeLinkUrl,
+  nodeLinkDetails,
+  onSetNodeLink,
   onOpenNodeLink,
   popoverPos,
   onSelectNodeKind,
@@ -187,6 +193,25 @@ export const NodeOverlays: React.FC<NodeOverlaysProps> = ({
           />
         </div>
       )}
+
+      {/* Hyperlink Popover */}
+      {activeNodePopover === 'link' &&
+        driver.capabilities.supportsNodeLinks &&
+        popoverPos &&
+        selectedNodeId && (
+          <LinkPopover
+            popoverPos={popoverPos}
+            initialDetails={nodeLinkDetails}
+            onApply={(details) => onSetNodeLink?.(selectedNodeId, details)}
+            onRemove={() => onSetNodeLink?.(selectedNodeId, null)}
+            onClose={() => onToggleNodePopover('link')}
+            onOpenLink={
+              onOpenNodeLink
+                ? () => onOpenNodeLink()
+                : (url) => window.open(url, '_blank', 'noopener')
+            }
+          />
+        )}
     </>
   );
 };

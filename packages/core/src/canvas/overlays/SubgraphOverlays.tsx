@@ -35,6 +35,7 @@ export interface SubgraphOverlaysProps {
   canAddEnd?: boolean;
   onAddStart?: () => void;
   onAddEnd?: () => void;
+  onToggleSubgraphDirection?: () => void;
 }
 
 export const SubgraphOverlays: React.FC<SubgraphOverlaysProps> = ({
@@ -62,6 +63,7 @@ export const SubgraphOverlays: React.FC<SubgraphOverlaysProps> = ({
   canAddEnd,
   onAddStart,
   onAddEnd,
+  onToggleSubgraphDirection,
 }) => {
   const currentParentSubgraphId = useMemo(() => {
     if (!selectedSubgraphId) return undefined;
@@ -116,6 +118,7 @@ export const SubgraphOverlays: React.FC<SubgraphOverlaysProps> = ({
             canAddEnd={canAddEnd}
             onAddStart={onAddStart}
             onAddEnd={onAddEnd}
+            onToggleDirection={onToggleSubgraphDirection}
           />
         )}
 

@@ -18,6 +18,7 @@ export interface SubgraphActionHudProps {
   canAddEnd?: boolean;
   onAddStart?: () => void;
   onAddEnd?: () => void;
+  onToggleDirection?: () => void;
 }
 
 export const SubgraphActionHud: React.FC<SubgraphActionHudProps> = ({
@@ -36,6 +37,7 @@ export const SubgraphActionHud: React.FC<SubgraphActionHudProps> = ({
   canAddEnd,
   onAddStart,
   onAddEnd,
+  onToggleDirection,
 }) => {
   return (
     <div
@@ -61,6 +63,17 @@ export const SubgraphActionHud: React.FC<SubgraphActionHudProps> = ({
       >
         <PencilIcon size={13} />
       </button>
+
+      {onToggleDirection && (
+        <button
+          type="button"
+          className="mermaid-hud-btn"
+          onClick={onToggleDirection}
+          title={`Toggle Group Flow Direction (Current: ${subgraph.direction || 'Default'})`}
+        >
+          <span>{subgraph.direction ? `${subgraph.direction}` : 'Direction'}</span>
+        </button>
+      )}
 
       <button
         type="button"

@@ -14,6 +14,7 @@ import {
   MermaidSubgraphDef,
 } from './viewModel';
 import { MermaidTheme } from './common';
+import { NodeLinkDetails } from './nodeLinks';
 
 
 export type SupportedDiagramType =
@@ -83,6 +84,14 @@ export interface DiagramCapabilities {
   supportsNodeStyles?: boolean;
   /** Node internal rows/members (e.g. attributes/methods in class diagrams, fields in ER diagrams). */
   supportsNodeMembers?: boolean;
+  /** Whether nodes support external hyperlinks / click actions. Defaults to true. */
+  supportsNodeLinks?: boolean;
+  /** Whether the diagram supports step autonumbering (e.g. sequence diagrams). */
+  supportsAutonumber?: boolean;
+  /** Whether subgraphs / composite containers support independent direction override. */
+  supportsGroupDirection?: boolean;
+  /** Whether diagram supports title editing. Defaults to true. */
+  supportsTitle?: boolean;
 }
 
 /** UI vocabulary so components never hard-code diagram-specific nouns. */
@@ -260,6 +269,22 @@ export interface DiagramMutations<TAst = unknown> {
   setDirection(ast: TAst, direction: string): void;
   getTheme?(ast: TAst): MermaidTheme | undefined;
   setTheme?(ast: TAst, theme: MermaidTheme | null): void;
+
+  // Node links (optional — supportsNodeLinks)
+  getNodeLinkDetails?(ast: TAst, nodeId: string): NodeLinkDetails | undefined;
+  setNodeLink?(ast: TAst, nodeId: string, link: NodeLinkDetails | null): void;
+
+  // Autonumber (optional — supportsAutonumber)
+  isAutonumbered?(ast: TAst): boolean;
+  setAutonumbered?(ast: TAst, enabled: boolean): void;
+
+  // Group direction (optional — supportsGroupDirection)
+  getGroupDirection?(ast: TAst, groupId: string): string | undefined;
+  setGroupDirection?(ast: TAst, groupId: string, direction: string | null): void;
+
+  // Diagram title (optional — supportsTitle)
+  getTitle?(ast: TAst): string | undefined;
+  setTitle?(ast: TAst, title: string | null): void;
 
   // Start/end anchors (optional — hasAnchors)
   anchors?: AnchorApi<TAst>;
