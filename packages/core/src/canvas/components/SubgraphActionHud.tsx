@@ -89,25 +89,23 @@ export const SubgraphActionHud: React.FC<SubgraphActionHudProps> = ({
       {onToggleDirection && (
         <button
           type="button"
-          className={`mermaid-hud-btn ${subgraph.direction ? 'is-active' : ''}`}
+          className={`mermaid-hud-btn ${subgraph.direction ? 'is-active' : ''} ${hasDirectionConflict ? 'has-conflict' : ''}`}
           onClick={onToggleDirection}
           title={
-            subgraph.direction
+            hasDirectionConflict
+              ? `Group Flow: ${subgraph.direction} (rendered horizontal because inner steps connect outside. Connect group boundary to isolate flow.)`
+              : subgraph.direction
               ? `Group Flow: ${subgraph.direction} (Click to toggle or reset)`
               : 'Group Flow: Auto (Inherited) (Click to override)'
           }
         >
           <span>{subgraph.direction ? `${subgraph.direction}` : 'Auto'}</span>
+          {hasDirectionConflict && (
+            <span className="mermaid-hud-warning-icon" aria-hidden="true">
+              ⚠️
+            </span>
+          )}
         </button>
-      )}
-
-      {hasDirectionConflict && (
-        <div
-          className="mermaid-hud-warning-pill"
-          title="Mermaid rule: Dagre layout engine flattens group direction when inner steps connect directly across boundaries. Connect to/from the group boundary itself to preserve independent flow."
-        >
-          <span>⚠️ Flow restricted</span>
-        </div>
       )}
 
       {onSprout && (
