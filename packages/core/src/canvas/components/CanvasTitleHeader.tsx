@@ -6,20 +6,29 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { PencilIcon, CheckIcon, CloseIcon } from '../icons/Icons';
+import { DiagramAccessibility } from '../../diagrams/common';
+import { PencilIcon, CheckIcon, CloseIcon, InfoIcon } from '../icons/Icons';
+import { DiagramInfoPopover } from './DiagramInfoPopover';
 
 export interface CanvasTitleHeaderProps {
   title?: string;
   isEditable?: boolean;
+  accessibility?: DiagramAccessibility;
+  supportsAccessibility?: boolean;
   onUpdateTitle: (title: string | null) => void;
+  onUpdateAccessibility?: (acc: DiagramAccessibility | null) => void;
 }
 
 export const CanvasTitleHeader: React.FC<CanvasTitleHeaderProps> = ({
   title,
   isEditable = true,
+  accessibility,
+  supportsAccessibility = false,
   onUpdateTitle,
+  onUpdateAccessibility,
 }) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [draftTitle, setDraftTitle] = useState<string>(title || '');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -93,39 +102,72 @@ export const CanvasTitleHeader: React.FC<CanvasTitleHeaderProps> = ({
     );
   }
 
-  // Not editing: render title badge or subtle add placeholder
-  if (!title) {
-    if (!isEditable) return null;
-    return (
-      <div className="mermaid-canvas-title-wrapper nodrag">
+  return (
+    <div className="mermaid-canvas-title-wrapper nodrag" onClick={(e) => e.stopPropagation()}>
+      {!title ? (
+        isEditable && (
+          <button
+            type="button"
+            className="mermaid-canvas-add-title-btn"
+            onClick={() => setIsEditing(true)}
+            title="Add Diagram Title"
+          >
+            <span>+ Add Title</span>
+          </button>
+        )
+      ) : (
+        <div
+          className={`mermaid-canvas-title-badge ${isEditable ? 'is-clickable' : ''}`}
+          onClick={() => {
+            if (isEditable) setIsEditing(true);
+          }}
+          title={isEditable ? 'Click to edit diagram title' : undefined}
+        >
+          <span className="mermaid-canvas-title-text">{title}</span>
+          {isEditable && (
+            <span className="mermaid-canvas-title-edit-hint">
+              <PencilIcon size={11} />
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Info / A11y Button */}
+      {supportsAccessibility && (
         <button
           type="button"
-          className="mermaid-canvas-add-title-btn"
-          onClick={() => setIsEditing(true)}
-          title="Add Diagram Title"
+          className={`mermaid-canvas-info-btn ${isInfoOpen ? 'is-active' : ''} ${
+            accessibility?.accTitle || accessibility?.accDescr ? 'has-a11y' : ''
+          }`}
+          onClick={() => setIsInfoOpen(!isInfoOpen)}
+          title={
+            accessibility?.accTitle || accessibility?.accDescr
+              ? `Diagram Info & Accessibility: ${accessibility.accTitle || 'Description set'}`
+              : 'Diagram Info & Accessibility (accTitle, accDescr)'
+          }
+          aria-label="Diagram Info & Accessibility"
         >
-          <span>+ Add Title</span>
+          <InfoIcon size={12} />
         </button>
-      </div>
-    );
-  }
+      )}
 
-  return (
-    <div className="mermaid-canvas-title-wrapper nodrag">
-      <div
-        className={`mermaid-canvas-title-badge ${isEditable ? 'is-clickable' : ''}`}
-        onClick={() => {
-          if (isEditable) setIsEditing(true);
-        }}
-        title={isEditable ? 'Click to edit diagram title' : undefined}
-      >
-        <span className="mermaid-canvas-title-text">{title}</span>
-        {isEditable && (
-          <span className="mermaid-canvas-title-edit-hint">
-            <PencilIcon size={11} />
-          </span>
-        )}
-      </div>
+      {/* Info Popover */}
+      {isInfoOpen && (
+        <DiagramInfoPopover
+          popoverPos={{
+            left: 0,
+            top: 32,
+            transform: 'none',
+          }}
+          initialTitle={title}
+          initialAccessibility={accessibility}
+          onApply={({ title: newTitle, accessibility: newAcc }) => {
+            onUpdateTitle(newTitle);
+            onUpdateAccessibility?.(newAcc);
+          }}
+          onClose={() => setIsInfoOpen(false)}
+        />
+      )}
     </div>
   );
 };

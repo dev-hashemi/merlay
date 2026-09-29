@@ -28,6 +28,8 @@ import {
   parseSequenceNote,
   formatSequenceNote,
   DiagramNoteDetails,
+  parseDiagramAccessibility,
+  updateDiagramAccessibility,
 } from '../common';
 import {
   cloneSequenceAst,
@@ -81,6 +83,7 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
     supportsTitle: true,
     supportsNotes: true,
     notePositions: ['left', 'over', 'right'] as const,
+    supportsAccessibility: true,
   },
 
   canvasHint: {
@@ -309,6 +312,27 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
           } else {
             ast.timeline.push({ type: 'raw', text: stmt });
           }
+        }
+      }
+    },
+
+    getAccessibility: (ast) =>
+      parseDiagramAccessibility([...(ast.directives || []), ...ast.rawLines]),
+    setAccessibility: (ast, acc) => {
+      updateDiagramAccessibility(ast.rawLines, acc);
+      if (!ast.directives) ast.directives = [];
+      ast.directives = ast.directives.filter(
+        (d) => !/^accTitle\b/i.test(d.trim()) && !/^accDescr\b/i.test(d.trim())
+      );
+      if (acc?.accTitle?.trim()) {
+        ast.directives.push(`accTitle: ${acc.accTitle.trim()}`);
+      }
+      if (acc?.accDescr?.trim()) {
+        if (acc.accDescr.includes('\n')) {
+          const block = ['accDescr {', ...acc.accDescr.split('\n').map((l) => `    ${l.trim()}`), '}'];
+          ast.directives.push(block.join('\n'));
+        } else {
+          ast.directives.push(`accDescr: ${acc.accDescr.trim()}`);
         }
       }
     },

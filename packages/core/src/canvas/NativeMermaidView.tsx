@@ -532,7 +532,10 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
         <CanvasTitleHeader
           title={mutations.diagramTitle}
           isEditable={isEditable}
+          accessibility={mutations.diagramAccessibility}
+          supportsAccessibility={driver.capabilities.supportsAccessibility}
           onUpdateTitle={mutations.handleSetDiagramTitle}
+          onUpdateAccessibility={mutations.handleSetAccessibility}
         />
       )}
 

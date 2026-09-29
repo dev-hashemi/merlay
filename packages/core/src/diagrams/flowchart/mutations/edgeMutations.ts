@@ -68,11 +68,26 @@ export function updateEdgeLabel(
 export function updateEdgeType(
   ast: MermaidFlowchartAST,
   edgeId: string,
-  newType: ArrowType
+  newType: ArrowType,
+  newLength?: number
 ): boolean {
   const edge = ast.edges.find((e) => e.id === edgeId);
   if (!edge) return false;
   edge.arrowType = newType;
+  if (newLength !== undefined) {
+    edge.length = newLength > 1 ? newLength : undefined;
+  }
+  return true;
+}
+
+export function updateEdgeLength(
+  ast: MermaidFlowchartAST,
+  edgeId: string,
+  length: number
+): boolean {
+  const edge = ast.edges.find((e) => e.id === edgeId);
+  if (!edge) return false;
+  edge.length = length > 1 ? length : undefined;
   return true;
 }
 

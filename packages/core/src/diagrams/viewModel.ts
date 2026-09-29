@@ -76,15 +76,18 @@ export type MermaidShapeType =
   | 'image';
 
 export type ArrowType =
-  | 'arrow'          // -->
-  | 'dotted'         // -.->
-  | 'thick'          // ==>
-  | 'open'           // ---
-  | 'dotted_open'    // -.-
-  | 'thick_open'     // ===
-  | 'bidirectional'  // <-->
-  | 'cross'          // --x
-  | 'circle';        // --o
+  | 'arrow'                 // -->
+  | 'dotted'                // -.->
+  | 'thick'                 // ==>
+  | 'open'                  // ---
+  | 'dotted_open'           // -.-
+  | 'thick_open'            // ===
+  | 'bidirectional'         // <-->
+  | 'cross'                 // --x
+  | 'cross_bidirectional'   // x--x
+  | 'circle'                // --o
+  | 'circle_bidirectional'  // o--o
+  | 'invisible';            // ~~~
 
 export interface MermaidNodeDef {
   type: 'node';
@@ -112,6 +115,8 @@ export interface MermaidEdgeDef {
   arrowType: ArrowType;
   label?: string;
   style?: Record<string, string>;
+  /** Visual/Dagre rank length (1 = default, 2 = long e.g. --->, 3 = extra long e.g. ---->) */
+  length?: number;
 }
 
 export interface MermaidSubgraphDef {

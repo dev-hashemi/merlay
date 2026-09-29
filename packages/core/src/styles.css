@@ -2084,6 +2084,149 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
   min-width: 140px;
 }
 
+.mermaid-canvas-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--mermaid-border);
+  background: var(--mermaid-bg-secondary);
+  color: var(--mermaid-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 6px;
+  box-shadow: var(--mermaid-shadow);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.mermaid-canvas-info-btn:hover {
+  color: var(--mermaid-text);
+  background: var(--background-modifier-hover);
+  border-color: var(--mermaid-accent);
+}
+
+.mermaid-canvas-info-btn.is-active,
+.mermaid-canvas-info-btn.has-a11y {
+  color: var(--mermaid-accent);
+}
+
+/* Edge Type Popover */
+.mermaid-edge-type-popover {
+  min-width: 240px;
+  max-width: 320px;
+  padding: 10px 12px;
+}
+
+.mermaid-edge-length-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--mermaid-border);
+}
+
+.mermaid-edge-length-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--mermaid-text-muted);
+  white-space: nowrap;
+}
+
+.mermaid-edge-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+
+/* Diagram Info & Accessibility Popover */
+.mermaid-info-popover {
+  min-width: 280px;
+  max-width: 360px;
+  padding: 10px 12px;
+}
+
+.mermaid-info-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mermaid-info-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mermaid-info-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--mermaid-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mermaid-info-badge {
+  font-size: 9.5px;
+  font-family: var(--font-monospace);
+  background: var(--mermaid-bg-secondary);
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: var(--mermaid-text-muted);
+  border: 1px solid var(--mermaid-border);
+}
+
+.mermaid-info-input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid var(--mermaid-border);
+  border-radius: 6px;
+  background: var(--mermaid-bg);
+  color: var(--mermaid-text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+
+.mermaid-info-input:focus {
+  border-color: var(--mermaid-accent);
+  box-shadow: 0 0 0 2px var(--mermaid-accent-subtle);
+}
+
+.mermaid-info-textarea {
+  width: 100%;
+  min-height: 60px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 6px 8px;
+  border: 1px solid var(--mermaid-border);
+  border-radius: 6px;
+  background: var(--mermaid-bg);
+  color: var(--mermaid-text);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mermaid-info-textarea:focus {
+  border-color: var(--mermaid-accent);
+  box-shadow: 0 0 0 2px var(--mermaid-accent-subtle);
+}
+
+.mermaid-info-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
 /* ==========================================================================
    7. Touch / small-screen layout (mobile best practices)
    ========================================================================== */
@@ -2186,7 +2329,9 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
   .mermaid-popover-menu,
   .mermaid-subgraph-popover,
   .mermaid-theme-popover,
-  .mermaid-export-popover {
+  .mermaid-export-popover,
+  .mermaid-edge-type-popover,
+  .mermaid-info-popover {
     max-width: calc(100vw - 24px);
   }
 
@@ -2221,6 +2366,8 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
   .mermaid-link-input,
   .mermaid-note-textarea,
   .mermaid-canvas-title-input,
+  .mermaid-info-input,
+  .mermaid-info-textarea,
   .mermaid-code-drawer-textarea {
     font-size: 16px;
   }

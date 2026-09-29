@@ -13,7 +13,7 @@ import {
   MermaidNodeDef,
   MermaidSubgraphDef,
 } from './viewModel';
-import { MermaidTheme, NotePosition, DiagramNoteDetails } from './common';
+import { MermaidTheme, NotePosition, DiagramNoteDetails, DiagramAccessibility } from './common';
 import { NodeLinkDetails } from './nodeLinks';
 
 
@@ -96,6 +96,8 @@ export interface DiagramCapabilities {
   supportsNotes?: boolean;
   /** Available placement options for notes in this diagram (e.g. ['left', 'over', 'right']). */
   notePositions?: readonly NotePosition[];
+  /** Whether the diagram supports accessibility directives (accTitle, accDescr). */
+  supportsAccessibility?: boolean;
 }
 
 /** UI vocabulary so components never hard-code diagram-specific nouns. */
@@ -227,7 +229,7 @@ export interface DiagramMutations<TAst = unknown> {
   reverseEdge(ast: TAst, edgeId: string): string | null;
   /** Split an edge with a new node; returns the created node id. */
   insertNodeOnEdge(ast: TAst, edgeId: string, label: string): string | null;
-  updateEdgeType?(ast: TAst, edgeId: string, type: string): void;
+  updateEdgeType?(ast: TAst, edgeId: string, type: string, length?: number): void;
   updateEdgesType?(ast: TAst, edgeIds: Iterable<string>, type: string): void;
 
   // Node styles
@@ -293,6 +295,10 @@ export interface DiagramMutations<TAst = unknown> {
   // Attached notes (optional — supportsNotes)
   getNotes?(ast: TAst, targetId?: string): DiagramNoteDetails[];
   setNote?(ast: TAst, targetId: string, note: DiagramNoteDetails | null): void;
+
+  // Diagram accessibility (optional — supportsAccessibility)
+  getAccessibility?(ast: TAst): DiagramAccessibility | undefined;
+  setAccessibility?(ast: TAst, acc: DiagramAccessibility | null): void;
 
   // Start/end anchors (optional — hasAnchors)
   anchors?: AnchorApi<TAst>;

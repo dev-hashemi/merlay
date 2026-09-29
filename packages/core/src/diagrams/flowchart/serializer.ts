@@ -86,7 +86,7 @@ export function serializeMermaidFlowchart(ast: MermaidFlowchartAST): string {
 
   // 4. Edges
   for (const edge of ast.edges) {
-    const arrowStr = formatArrow(edge.arrowType, edge.label);
+    const arrowStr = formatArrow(edge.arrowType, edge.label, edge.length);
     lines.push(`    ${edge.from} ${arrowStr} ${edge.to}`);
   }
 
@@ -247,29 +247,52 @@ function formatShape(shape: MermaidShapeType, label: string): string {
   }
 }
 
-function formatArrow(type: ArrowType, label?: string): string {
+function formatArrow(type: ArrowType, label?: string, length?: number): string {
+  const len = Math.max(1, length || 1);
   const labelPart = label ? `|${escapeLabel(label)}|` : '';
+  let base = '';
+
   switch (type) {
+    case 'invisible':
+      base = '~'.repeat(2 + len);
+      break;
     case 'dotted':
-      return label ? `-.->${labelPart}` : '-.->';
-    case 'thick':
-      return label ? `==>${labelPart}` : '==>';
-    case 'bidirectional':
-      return label ? `<-->${labelPart}` : '<-->';
-    case 'cross':
-      return label ? `--x${labelPart}` : '--x';
-    case 'circle':
-      return label ? `--o${labelPart}` : '--o';
-    case 'open':
-      return label ? `---${labelPart}` : '---';
+      base = `-${'.'.repeat(len)}->`;
+      break;
     case 'dotted_open':
-      return label ? `-.-${labelPart}` : '-.-';
+      base = `-${'.'.repeat(len)}-`;
+      break;
+    case 'thick':
+      base = `${'='.repeat(1 + len)}>`;
+      break;
     case 'thick_open':
-      return label ? `===${labelPart}` : '===';
+      base = '='.repeat(2 + len);
+      break;
+    case 'bidirectional':
+      base = `<${'-'.repeat(1 + len)}>`;
+      break;
+    case 'circle':
+      base = `${'-'.repeat(1 + len)}o`;
+      break;
+    case 'circle_bidirectional':
+      base = `o${'-'.repeat(1 + len)}o`;
+      break;
+    case 'cross':
+      base = `${'-'.repeat(1 + len)}x`;
+      break;
+    case 'cross_bidirectional':
+      base = `x${'-'.repeat(1 + len)}x`;
+      break;
+    case 'open':
+      base = '-'.repeat(2 + len);
+      break;
     case 'arrow':
     default:
-      return label ? `-->${labelPart}` : '-->';
+      base = `${'-'.repeat(1 + len)}>`;
+      break;
   }
+
+  return labelPart ? `${base}${labelPart}` : base;
 }
 
 function escapeLabel(label: string): string {

@@ -14,29 +14,14 @@ export interface ShapeMatch {
   length: number;
 }
 
-const ARROW_PATTERNS = [
-  '<-->',
-  '<-.->',
-  '<==>',
-  '-.->',
-  '==>',
-  '-->',
-  '--o',
-  '--x',
-  'o--o',
-  'x--x',
-  '---',
-  '-.-',
-  '===',
-  '->',
-];
+const ARROW_REGEX =
+  /^(?:~{3,}|<={2,}>|<-[.]+->|<-{2,}>|={2,}>|={3,}|-[.]+->|-[.]+-|-{2,}>|-{2,}o|-{2,}x|o-{2,}o|x-{2,}x|o-{2,}|x-{2,}|-{3,}|->)/;
 
 export function matchArrow(str: string, pos: number): ArrowMatch | null {
   const sub = str.substring(pos);
-  for (const pat of ARROW_PATTERNS) {
-    if (sub.startsWith(pat)) {
-      return { arrow: pat, length: pat.length };
-    }
+  const match = sub.match(ARROW_REGEX);
+  if (match) {
+    return { arrow: match[0], length: match[0].length };
   }
   return null;
 }

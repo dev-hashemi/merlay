@@ -45,30 +45,113 @@ export function parseStyleDeclarations(fullStr: string): Record<string, string> 
   return styleMap;
 }
 
-export function mapArrowType(raw: string): ArrowType {
-  switch (raw) {
-    case '-.->':
-    case '<-.->':
-      return 'dotted';
-    case '==>':
-    case '<==>':
-      return 'thick';
-    case '<-->':
-      return 'bidirectional';
-    case '--x':
-      return 'cross';
-    case '--o':
-      return 'circle';
-    case '---':
-      return 'open';
-    case '-.-':
-      return 'dotted_open';
-    case '===':
-      return 'thick_open';
-    case '-->':
-    default:
-      return 'arrow';
+export interface ArrowDetails {
+  arrowType: ArrowType;
+  length: number;
+}
+
+export function parseArrowDetails(raw: string): ArrowDetails {
+  // 1. Invisible edges (~~~, ~~~~, ~~~~~)
+  if (raw.startsWith('~')) {
+    return {
+      arrowType: 'invisible',
+      length: Math.max(1, raw.length - 2),
+    };
   }
+
+  // 2. Bidirectional Circle (o--o, o---o, etc.)
+  if (raw.startsWith('o-') && raw.endsWith('o')) {
+    return {
+      arrowType: 'circle_bidirectional',
+      length: Math.max(1, raw.length - 3),
+    };
+  }
+
+  // 3. Bidirectional Cross (x--x, x---x, etc.)
+  if (raw.startsWith('x-') && raw.endsWith('x')) {
+    return {
+      arrowType: 'cross_bidirectional',
+      length: Math.max(1, raw.length - 3),
+    };
+  }
+
+  // 4. Single Circle head (--o, ---o, etc.) or tail (o--, o---)
+  if (raw.endsWith('o') || raw.startsWith('o-')) {
+    return {
+      arrowType: 'circle',
+      length: Math.max(1, raw.length - 2),
+    };
+  }
+
+  // 5. Single Cross head (--x, ---x, etc.) or tail (x--, x---)
+  if (raw.endsWith('x') || raw.startsWith('x-')) {
+    return {
+      arrowType: 'cross',
+      length: Math.max(1, raw.length - 2),
+    };
+  }
+
+  // 6. Thick edges (==>, <==>, ===, etc.)
+  if (raw.includes('=')) {
+    if (raw.startsWith('<') && raw.endsWith('>')) {
+      return {
+        arrowType: 'thick',
+        length: Math.max(1, raw.length - 3),
+      };
+    }
+    if (raw.endsWith('>')) {
+      return {
+        arrowType: 'thick',
+        length: Math.max(1, raw.length - 2),
+      };
+    }
+    return {
+      arrowType: 'thick_open',
+      length: Math.max(1, raw.length - 2),
+    };
+  }
+
+  // 7. Dotted edges (-.->, <-.->, -.-, etc.)
+  if (raw.includes('.')) {
+    const dotCount = (raw.match(/\./g) || []).length;
+    if (raw.endsWith('>')) {
+      return {
+        arrowType: 'dotted',
+        length: Math.max(1, dotCount),
+      };
+    }
+    return {
+      arrowType: 'dotted_open',
+      length: Math.max(1, dotCount),
+    };
+  }
+
+  // 8. Bidirectional standard (<-->, <--->)
+  if (raw.startsWith('<') && raw.endsWith('>')) {
+    return {
+      arrowType: 'bidirectional',
+      length: Math.max(1, raw.length - 3),
+    };
+  }
+
+  // 9. Standard arrow (--> or -> or --->)
+  if (raw.endsWith('>')) {
+    if (raw === '->') return { arrowType: 'arrow', length: 1 };
+    return {
+      arrowType: 'arrow',
+      length: Math.max(1, raw.length - 2),
+    };
+  }
+
+  // 10. Open line (---, ----, -----)
+  return {
+    arrowType: 'open',
+    length: Math.max(1, raw.length - 2),
+  };
+}
+
+export function mapArrowType(raw: string): ArrowType {
+  return parseArrowDetails(raw).arrowType;
 }
 
 export interface PendingLinkStyle {

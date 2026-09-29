@@ -16,6 +16,8 @@ import {
   setDiagramTitle,
   findNotesForTarget,
   updateNoteInRawLines,
+  parseDiagramAccessibility,
+  updateDiagramAccessibility,
 } from '../common';
 import { findNodeLinkUrl } from '../nodeLinks';
 import * as st from './mutations';
@@ -66,6 +68,7 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
     supportsTitle: true,
     supportsNotes: true,
     notePositions: ['left', 'right'] as const,
+    supportsAccessibility: true,
   },
 
   labels: {
@@ -235,6 +238,11 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
     },
     setNote: (ast, targetId, note) => {
       updateNoteInRawLines(ast.rawLines, targetId, note, 'state');
+    },
+
+    getAccessibility: (ast) => parseDiagramAccessibility(ast.rawLines),
+    setAccessibility: (ast, acc) => {
+      updateDiagramAccessibility(ast.rawLines, acc);
     },
 
     anchors: {

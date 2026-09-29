@@ -20,7 +20,9 @@ import {
   setDiagramTheme,
   getDiagramTitle,
   setDiagramTitle,
-} from '../common/diagramHeader';
+  parseDiagramAccessibility,
+  updateDiagramAccessibility,
+} from '../common';
 import * as fc from './mutations';
 
 export const FLOWCHART_KIND_OPTIONS = FLOWCHART_SHAPES.map((d) => ({
@@ -113,6 +115,7 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
     supportsNodeLinks: true,
     supportsGroupDirection: true,
     supportsTitle: true,
+    supportsAccessibility: true,
   },
 
   labels: {
@@ -170,8 +173,8 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
       const res = fc.insertNodeOnEdge(ast, edgeId, label);
       return res ? res.nodeId : null;
     },
-    updateEdgeType: (ast, edgeId, type) => {
-      fc.updateEdgeType(ast, edgeId, type as ArrowType);
+    updateEdgeType: (ast, edgeId, type, length) => {
+      fc.updateEdgeType(ast, edgeId, type as ArrowType, length);
     },
     updateEdgesType: (ast, edgeIds, type) => {
       fc.updateEdgesType(ast, edgeIds, type as ArrowType);
@@ -274,6 +277,11 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
     getTitle: (ast) => getDiagramTitle(ast.frontmatter, ast.rawLines),
     setTitle: (ast, title) => {
       ast.frontmatter = setDiagramTitle(ast.frontmatter, title);
+    },
+
+    getAccessibility: (ast) => parseDiagramAccessibility(ast.rawLines),
+    setAccessibility: (ast, acc) => {
+      updateDiagramAccessibility(ast.rawLines, acc);
     },
   },
 

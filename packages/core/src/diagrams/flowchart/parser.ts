@@ -14,6 +14,7 @@ import {
 import {
   parseStyleDeclarations,
   mapArrowType,
+  parseArrowDetails,
   resolveStylesOntoAst,
   PendingLinkStyle,
 } from './styleParser';
@@ -235,6 +236,7 @@ export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
     // Check if followed by an arrow (Edge)
     while (currentToken().type === 'ARROW' || currentToken().type === 'ARROW_LABEL') {
       let arrowType: ArrowType = 'arrow';
+      let edgeLength: number | undefined;
       let edgeLabel: string | undefined;
 
       if (currentToken().type === 'ARROW_LABEL') {
@@ -242,7 +244,11 @@ export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
       }
 
       if (currentToken().type === 'ARROW') {
-        arrowType = mapArrowType(advance().value);
+        const details = parseArrowDetails(advance().value);
+        arrowType = details.arrowType;
+        if (details.length > 1) {
+          edgeLength = details.length;
+        }
       }
 
       if (currentToken().type === 'ARROW_LABEL') {
@@ -263,6 +269,7 @@ export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
         to: rightNode.id,
         arrowType,
         label: edgeLabel,
+        length: edgeLength,
       };
 
       ast.edges.push(edgeDef);

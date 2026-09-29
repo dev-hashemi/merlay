@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { useDiagramAst } from './useDiagramAst';
 import { useNodeStyleMutations } from './useNodeStyleMutations';
-import { MermaidTheme, DiagramNoteDetails } from '../../../diagrams/common';
+import { MermaidTheme, DiagramNoteDetails, DiagramAccessibility } from '../../../diagrams/common';
 import { NodeLinkDetails } from '../../../diagrams/nodeLinks';
 
 export interface UseNodeMutationsOptions {
@@ -277,6 +277,16 @@ export function useNodeMutations({
     [m, ast]
   );
 
+  const diagramAccessibility = m.getAccessibility ? m.getAccessibility(ast) : undefined;
+  const handleSetAccessibility = useCallback(
+    (acc: DiagramAccessibility | null) => {
+      applyMutation((a) => {
+        m.setAccessibility?.(a, acc);
+      });
+    },
+    [m, applyMutation]
+  );
+
   return {
     handleSproutNextStep,
     handleDeleteSelectedNode,
@@ -302,6 +312,8 @@ export function useNodeMutations({
     handleToggleAutonumber,
     diagramTitle,
     handleSetDiagramTitle,
+    diagramAccessibility,
+    handleSetAccessibility,
     handleSetNote,
     getNodeNotes,
   };

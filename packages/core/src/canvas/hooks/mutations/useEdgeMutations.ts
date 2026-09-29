@@ -26,16 +26,29 @@ export function useEdgeMutations({
   };
 
   const handleChangeEdgeType = useCallback(
-    (newType: string) => {
+    (newType: string, length?: number) => {
       const selectedEdgeId = getSelectedEdgeId();
       if (!selectedEdgeId || !m.updateEdgeType) return;
       applyMutation((a) => {
-        m.updateEdgeType!(a, selectedEdgeId, newType);
+        m.updateEdgeType!(a, selectedEdgeId, newType, length);
       });
       const pos = useCanvasStore.getState().selectedEdgePos;
       if (pos) {
         useCanvasStore.getState().setSelectedEdgePos({ ...pos, arrowType: newType as ArrowType });
       }
+    },
+    [m, applyMutation]
+  );
+
+  const handleUpdateEdgeLength = useCallback(
+    (length: number) => {
+      const selectedEdgeId = getSelectedEdgeId();
+      if (!selectedEdgeId || !m.updateEdgeType) return;
+      const pos = useCanvasStore.getState().selectedEdgePos;
+      const currentType = pos?.arrowType || 'arrow';
+      applyMutation((a) => {
+        m.updateEdgeType!(a, selectedEdgeId, currentType, length);
+      });
     },
     [m, applyMutation]
   );
@@ -198,6 +211,7 @@ export function useEdgeMutations({
 
   return {
     handleChangeEdgeType,
+    handleUpdateEdgeLength,
     handleReverseEdge,
     handleInsertNodeOnEdge,
     handleDeleteSelectedEdge,

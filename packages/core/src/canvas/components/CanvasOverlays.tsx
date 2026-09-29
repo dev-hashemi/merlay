@@ -199,6 +199,15 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         selectedEdgeStyle={selectedEdgeStyle}
         activeEdgePopover={selection.activeEdgePopover}
         onChangeEdgeType={mutations.handleChangeEdgeType}
+        onToggleEdgeType={() =>
+          selection.setActiveEdgePopover((prev) => (prev === 'type' ? null : 'type'))
+        }
+        onUpdateEdgeLength={mutations.handleUpdateEdgeLength}
+        edgeLength={
+          selectedEdgeId
+            ? mutations.displayEdges.find((e) => e.id === selectedEdgeId)?.length
+            : undefined
+        }
         onReverseEdge={mutations.handleReverseEdge}
         onInsertNodeOnEdge={mutations.handleInsertNodeOnEdge}
         onUpdateEdgeLabel={mutations.handleUpdateEdgeLabel}

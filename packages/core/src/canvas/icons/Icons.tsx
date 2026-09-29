@@ -265,6 +265,54 @@ export const ArrowBidirectionalIcon = createIcon(
 
 export const ArrowOpenIcon = createIcon(<line x1="3" y1="12" x2="21" y2="12" />);
 
+export const ArrowCircleIcon = createIcon(
+  <>
+    <line x1="3" y1="12" x2="16" y2="12" />
+    <circle cx="18.5" cy="12" r="2.5" />
+  </>
+);
+
+export const ArrowCircleBidirectionalIcon = createIcon(
+  <>
+    <circle cx="5.5" cy="12" r="2.5" />
+    <line x1="8" y1="12" x2="16" y2="12" />
+    <circle cx="18.5" cy="12" r="2.5" />
+  </>
+);
+
+export const ArrowCrossIcon = createIcon(
+  <>
+    <line x1="3" y1="12" x2="17" y2="12" />
+    <line x1="17" y1="9" x2="21" y2="15" />
+    <line x1="17" y1="15" x2="21" y2="9" />
+  </>
+);
+
+export const ArrowCrossBidirectionalIcon = createIcon(
+  <>
+    <line x1="3" y1="9" x2="7" y2="15" />
+    <line x1="3" y1="15" x2="7" y2="9" />
+    <line x1="7" y1="12" x2="17" y2="12" />
+    <line x1="17" y1="9" x2="21" y2="15" />
+    <line x1="17" y1="15" x2="21" y2="9" />
+  </>
+);
+
+export const ArrowInvisibleIcon = createIcon(
+  <>
+    <path d="M3 12h3m3 0h3m3 0h3m3 0h3" strokeDasharray="2 2" opacity="0.6" />
+    <line x1="4" y1="4" x2="20" y2="20" opacity="0.4" />
+  </>
+);
+
+export const InfoIcon = createIcon(
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <line x1="12" y1="16" x2="12" y2="12" />
+    <circle cx="12" cy="8" r="0.8" fill="currentColor" />
+  </>
+);
+
 export const InsertStepIcon = createIcon(
   <>
     <circle cx="12" cy="12" r="9" />

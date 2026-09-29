@@ -23,4 +23,9 @@ export {
   updateNoteInRawLines,
 } from './diagramNotes';
 export type { NotePosition, DiagramNoteDetails } from './diagramNotes';
+export {
+  parseDiagramAccessibility,
+  updateDiagramAccessibility,
+} from './diagramAccessibility';
+export type { DiagramAccessibility } from './diagramAccessibility';
 

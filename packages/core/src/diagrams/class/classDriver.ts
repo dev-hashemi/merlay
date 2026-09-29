@@ -14,6 +14,8 @@ import {
   setDiagramTitle,
   findNotesForTarget,
   updateNoteInRawLines as updateNoteInCommonRawLines,
+  parseDiagramAccessibility,
+  updateDiagramAccessibility,
 } from '../common';
 import { findNodeLinkUrl, findNodeLinkDetails, updateNodeLinkInRawLines } from '../nodeLinks';
 import { ClassDirection, MermaidClassAST } from './types';
@@ -181,6 +183,7 @@ export const ClassDiagramDriver: DiagramDriver<MermaidClassAST> = {
     supportsNodeLinks: true,
     supportsTitle: true,
     supportsNotes: true,
+    supportsAccessibility: true,
   },
 
   labels: {
@@ -279,6 +282,11 @@ export const ClassDiagramDriver: DiagramDriver<MermaidClassAST> = {
     },
     setNote: (ast, targetId, note) => {
       updateNoteInCommonRawLines(ast.rawLines, targetId, note, 'class');
+    },
+
+    getAccessibility: (ast) => parseDiagramAccessibility(ast.rawLines),
+    setAccessibility: (ast, acc) => {
+      updateDiagramAccessibility(ast.rawLines, acc);
     },
   },
 

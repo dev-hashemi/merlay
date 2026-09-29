@@ -6,6 +6,7 @@ import {
   ArrowOpenIcon,
   ArrowSolidIcon,
   ArrowThickIcon,
+  ArrowCircleIcon,
   InsertStepIcon,
   PaletteIcon,
   ReverseIcon,
@@ -20,6 +21,7 @@ export interface EdgeActionHudProps {
   selectedEdgeStyle: Record<string, string> | undefined;
   activeEdgePopover: ActiveEdgePopover;
   onChangeEdgeType: (newType: string) => void;
+  onToggleTypePopover: () => void;
   onReverseEdge: () => void;
   onInsertNodeOnEdge: () => void;
   onUpdateEdgeLabel: (label: string) => void;
@@ -34,6 +36,7 @@ export const EdgeActionHud: React.FC<EdgeActionHudProps> = ({
   selectedEdgeStyle,
   activeEdgePopover,
   onChangeEdgeType,
+  onToggleTypePopover,
   onReverseEdge,
   onInsertNodeOnEdge,
   onUpdateEdgeLabel,
@@ -93,23 +96,17 @@ export const EdgeActionHud: React.FC<EdgeActionHudProps> = ({
           <button
             type="button"
             className={`mermaid-hud-btn icon-only ${
-              selectedEdgePos.arrowType === 'open' ? 'is-active' : ''
+              activeEdgePopover === 'type' ||
+              (selectedEdgePos.arrowType !== 'arrow' &&
+                selectedEdgePos.arrowType !== 'dotted' &&
+                selectedEdgePos.arrowType !== 'thick')
+                ? 'is-active'
+                : ''
             }`}
-            onClick={() => onChangeEdgeType('open')}
-            title="Open Line (---)"
+            onClick={onToggleTypePopover}
+            title="All Arrowheads & Line Types (Circle, Cross, Both, Invisible...)"
           >
-            <ArrowOpenIcon size={14} />
-          </button>
-
-          <button
-            type="button"
-            className={`mermaid-hud-btn icon-only ${
-              selectedEdgePos.arrowType === 'bidirectional' ? 'is-active' : ''
-            }`}
-            onClick={() => onChangeEdgeType('bidirectional')}
-            title="Bidirectional Arrow (<-->)"
-          >
-            <ArrowBidirectionalIcon size={14} />
+            <ArrowCircleIcon size={14} />
           </button>
 
           <div className="mermaid-hud-divider" />

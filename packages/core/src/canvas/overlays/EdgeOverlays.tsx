@@ -8,6 +8,8 @@ import { EdgeThemePreset } from '../constants';
 import { DiagramDriver } from '../../diagrams/types';
 import { EdgeActionHud } from '../components/EdgeActionHud';
 import { EdgeStylePopover } from '../components/EdgeStylePopover';
+import { EdgeTypePopover } from '../components/EdgeTypePopover';
+import { ArrowType } from '../../diagrams/viewModel';
 
 export interface EdgeOverlaysProps {
   selectedEdgePos: SelectedEdgePos | null;
@@ -17,6 +19,9 @@ export interface EdgeOverlaysProps {
   selectedEdgeStyle: Record<string, string> | undefined;
   activeEdgePopover: ActiveEdgePopover;
   onChangeEdgeType: (newType: string) => void;
+  onToggleEdgeType?: () => void;
+  onUpdateEdgeLength?: (length: number) => void;
+  edgeLength?: number;
   onReverseEdge: () => void;
   onInsertNodeOnEdge: (edgeId: string) => void;
   onUpdateEdgeLabel: (newLabel: string) => void;
@@ -38,6 +43,9 @@ export const EdgeOverlays: React.FC<EdgeOverlaysProps> = ({
   selectedEdgeStyle,
   activeEdgePopover,
   onChangeEdgeType,
+  onToggleEdgeType,
+  onUpdateEdgeLength,
+  edgeLength,
   onReverseEdge,
   onInsertNodeOnEdge,
   onUpdateEdgeLabel,
@@ -61,6 +69,7 @@ export const EdgeOverlays: React.FC<EdgeOverlaysProps> = ({
           selectedEdgeStyle={selectedEdgeStyle}
           activeEdgePopover={activeEdgePopover}
           onChangeEdgeType={onChangeEdgeType}
+          onToggleTypePopover={onToggleEdgeType || (() => {})}
           onReverseEdge={onReverseEdge}
           onInsertNodeOnEdge={() => onInsertNodeOnEdge(selectedEdgeId)}
           onUpdateEdgeLabel={onUpdateEdgeLabel}
@@ -68,6 +77,26 @@ export const EdgeOverlays: React.FC<EdgeOverlaysProps> = ({
           onDeleteEdge={onDeleteEdge}
         />
       )}
+
+      {/* Edge Type Popover */}
+      {activeEdgePopover === 'type' &&
+        driver.capabilities.supportsEdgeTypes &&
+        selectedEdgePos &&
+        selectedEdgeId &&
+        !isMultiSelect && (
+          <EdgeTypePopover
+            popoverPos={{
+              left: selectedEdgePos.x,
+              top: selectedEdgePos.y + 14,
+              transform: 'translate(-50%, 0)',
+            }}
+            currentType={selectedEdgePos.arrowType as ArrowType}
+            currentLength={edgeLength}
+            onSelectType={(type) => onChangeEdgeType(type)}
+            onSelectLength={onUpdateEdgeLength}
+            onClose={onToggleEdgeType}
+          />
+        )}
 
       {/* Edge Style Popover (only when the diagram supports edge styling) */}
       {activeEdgePopover === 'style' &&
