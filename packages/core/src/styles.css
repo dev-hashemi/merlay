@@ -1222,13 +1222,15 @@ summary.mermaid-shape-group-title::-webkit-details-marker {
 }
 
 .mermaid-hud-btn.has-conflict {
-  border-color: var(--border-warning, rgba(245, 158, 11, 0.4));
-  background: var(--background-modifier-warning, rgba(245, 158, 11, 0.15));
-  color: var(--text-warning, #d97706);
+  border-color: var(--text-warning, #f59e0b);
+  background: var(--background-modifier-warning, rgba(245, 158, 11, 0.12));
+  color: var(--text-normal);
+  font-weight: 600;
 }
 
 .mermaid-hud-btn.has-conflict:hover {
-  background: var(--background-modifier-warning, rgba(245, 158, 11, 0.25));
+  background: var(--background-modifier-warning, rgba(245, 158, 11, 0.22));
+  color: var(--text-normal);
 }
 
 .mermaid-hud-warning-icon {
