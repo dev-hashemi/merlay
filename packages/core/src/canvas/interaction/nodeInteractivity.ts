@@ -62,8 +62,14 @@ export function setupNodeInteractivity({
 
     // Empty subgraphs degrade to plain `.node` elements with id `{diagramId}-{subId}`
     if (!matchedNodeId && idAttr && !prefixes.some((p) => idAttr.includes(p))) {
-      for (const subId of displaySubgraphs.keys()) {
-        if (idAttr === subId || idAttr.endsWith(`-${subId}`) || prefixes.some((p) => idAttr.includes(`${p}${subId}-`))) {
+      const text = htmlEl.textContent?.trim();
+      for (const [subId, subDef] of displaySubgraphs.entries()) {
+        if (
+          idAttr === subId ||
+          idAttr.endsWith(`-${subId}`) ||
+          prefixes.some((p) => idAttr.includes(`${p}${subId}-`)) ||
+          (text && (text === subDef.label || text === subId))
+        ) {
           htmlEl.setAttribute('data-mermaid-subgraph-id', subId);
           const targetSubId = subId;
           htmlEl.onclick = (e) => {

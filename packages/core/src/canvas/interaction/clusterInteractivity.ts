@@ -203,16 +203,20 @@ export function setupClusterInteractivity({
     const idAttr = htmlEl.getAttribute('id') || '';
     if (idAttr) {
       const prefixes = dom?.clusterIdPrefixes || dom?.nodeIdPrefixes || ['flowchart-', 'state-'];
-      for (const subId of displaySubgraphs.keys()) {
+      const sortedSubIds = Array.from(displaySubgraphs.keys()).sort((a, b) => b.length - a.length);
+      for (const subId of sortedSubIds) {
         if (usedSubIds.has(subId)) continue;
+        const isMatch = prefixes.some((p) => {
+          const fullPrefix = `${p}${subId}-`;
+          const idx = idAttr.indexOf(fullPrefix);
+          if (idx !== -1) {
+            const suffix = idAttr.substring(idx + fullPrefix.length);
+            return /^\d+$/.test(suffix) || suffix === '';
+          }
+          return idAttr === `${p}${subId}`;
+        });
         if (
-          prefixes.some(
-            (p) => idAttr.includes(`${p}${subId}-`) || idAttr === `${p}${subId}`
-          ) ||
-          idAttr.includes(`flowchart-${subId}-`) ||
-          idAttr === `flowchart-${subId}` ||
-          idAttr.includes(`state-${subId}-`) ||
-          idAttr === `state-${subId}` ||
+          isMatch ||
           idAttr.endsWith(`-${subId}`) ||
           idAttr === subId
         ) {

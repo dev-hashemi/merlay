@@ -45,12 +45,24 @@ export function matchNodeElementId(
   }
 
   // 4. Prefix or exact ID matching (flowchart/state nodes)
-  for (const nid of displayNodes.keys()) {
+  // Sort candidate IDs by length descending so longer/more specific IDs match first
+  const sortedNodeIds = Array.from(displayNodes.keys()).sort((a, b) => b.length - a.length);
+
+  for (const nid of sortedNodeIds) {
     if (nid === anchorNodeId) continue;
+    const isPrefixMatch = prefixes.some((p) => {
+      const fullPrefix = `${p}${nid}-`;
+      const idx = idAttr.indexOf(fullPrefix);
+      if (idx !== -1) {
+        const suffix = idAttr.substring(idx + fullPrefix.length);
+        // Mermaid appends a numeric index (-0, -1) or point marker
+        return /^\d+$/.test(suffix) || suffix.startsWith('point-') || suffix === '';
+      }
+      return idAttr === `${p}${nid}`;
+    });
+
     if (
-      prefixes.some(
-        (p) => idAttr.includes(`${p}${nid}-`) || idAttr === `${p}${nid}`
-      ) ||
+      isPrefixMatch ||
       idAttr.endsWith(`-${nid}`) ||
       idAttr === nid
     ) {
