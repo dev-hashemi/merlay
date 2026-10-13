@@ -2,7 +2,7 @@
  * Tokenizer for Mermaid Flowcharts
  */
 
-import { matchArrow, matchShape, matchShapeMeta } from './lexerMatchers';
+import { matchArrow, matchInfixArrow, matchShape, matchShapeMeta } from './lexerMatchers';
 
 export type TokenType =
   | 'DIRECTIVE'       // flowchart, graph
@@ -15,6 +15,7 @@ export type TokenType =
   | 'SHAPE_META'      // @{ shape: docs, label: "..." } (Mermaid v11.3+)
   | 'ARROW'           // -->, -.->, ==>, etc.
   | 'ARROW_LABEL'     // |label|
+  | 'AND'             // &
   | 'STYLE'           // style
   | 'LINK_STYLE'      // linkStyle
   | 'CLASS_DEF'       // classDef
@@ -91,11 +92,40 @@ export function tokenize(input: string): Token[] {
         continue;
       }
 
-      // Check for Arrow Label |label|
+      // Check for '&' operator (fan-out / fan-in)
+      if (char === '&') {
+        tokens.push({
+          type: 'AND',
+          value: '&',
+          line: lineIdx + 1,
+          col: pos + 1,
+        });
+        pos++;
+        continue;
+      }
+
+      // Check for Arrow Label |label| (respects quotes so |"A | B"| does not split)
       if (char === '|') {
-        const endPipe = rawLine.indexOf('|', pos + 1);
+        let endPipe = -1;
+        let inQuotes = false;
+        for (let i = pos + 1; i < rawLine.length; i++) {
+          const ch = rawLine[i];
+          if (ch === '"' && rawLine[i - 1] !== '\\') {
+            inQuotes = !inQuotes;
+          }
+          if (ch === '|' && !inQuotes) {
+            endPipe = i;
+            break;
+          }
+        }
         if (endPipe !== -1) {
-          const label = rawLine.substring(pos + 1, endPipe);
+          let label = rawLine.substring(pos + 1, endPipe);
+          if (
+            (label.startsWith('"') && label.endsWith('"')) ||
+            (label.startsWith("'") && label.endsWith("'"))
+          ) {
+            label = label.slice(1, -1);
+          }
           tokens.push({
             type: 'ARROW_LABEL',
             value: label,
@@ -106,6 +136,26 @@ export function tokenize(input: string): Token[] {
           pos = endPipe + 1;
           continue;
         }
+      }
+
+      // Check for infix arrows: -- label -->
+      const infixMatch = matchInfixArrow(rawLine, pos);
+      if (infixMatch) {
+        tokens.push({
+          type: 'ARROW',
+          value: infixMatch.arrow,
+          line: lineIdx + 1,
+          col: pos + 1,
+        });
+        tokens.push({
+          type: 'ARROW_LABEL',
+          value: infixMatch.label,
+          labelText: infixMatch.label,
+          line: lineIdx + 1,
+          col: pos + 1 + infixMatch.prefix.length,
+        });
+        pos += infixMatch.length;
+        continue;
       }
 
       // Check for arrows
@@ -180,12 +230,14 @@ export function tokenize(input: string): Token[] {
         }
       }
 
-      // General word / identifier (stops before @{ shape meta)
+      // General word / identifier (stops before @{ shape meta, arrow, or operators)
       let wordEnd = pos;
       while (
         wordEnd < rawLine.length &&
         !/[\s[(){}|%">]/.test(rawLine[wordEnd]) &&
+        rawLine[wordEnd] !== '&' &&
         !(rawLine[wordEnd] === '@' && rawLine[wordEnd + 1] === '{') &&
+        !matchInfixArrow(rawLine, wordEnd) &&
         !matchArrow(rawLine, wordEnd) &&
         !rawLine.startsWith(':::', wordEnd)
       ) {
@@ -200,7 +252,13 @@ export function tokenize(input: string): Token[] {
           tokens.push({ type: 'DIRECTIVE', value: word, line: lineIdx + 1, col: pos + 1 });
         } else if (word.toLowerCase() === 'direction') {
           tokens.push({ type: 'DIRECTION_KEYWORD', value: word, line: lineIdx + 1, col: pos + 1 });
-        } else if (['TB', 'TD', 'BT', 'RL', 'LR'].includes(upper)) {
+        } else if (
+          ['TB', 'TD', 'BT', 'RL', 'LR'].includes(upper) &&
+          tokens.length > 0 &&
+          tokens[tokens.length - 1].line === lineIdx + 1 &&
+          (tokens[tokens.length - 1].type === 'DIRECTIVE' ||
+            tokens[tokens.length - 1].type === 'DIRECTION_KEYWORD')
+        ) {
           tokens.push({ type: 'DIRECTION', value: upper, line: lineIdx + 1, col: pos + 1 });
         } else if (word.toLowerCase() === 'subgraph') {
           tokens.push({ type: 'SUBGRAPH', value: word, line: lineIdx + 1, col: pos + 1 });

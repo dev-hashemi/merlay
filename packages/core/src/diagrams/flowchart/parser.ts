@@ -160,15 +160,6 @@ export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
       continue;
     }
 
-    if (token.type === 'DIRECTION' && subgraphStack.length > 0) {
-      const dirVal = advance().value as FlowchartDirection;
-      const currentSubId = subgraphStack[subgraphStack.length - 1];
-      if (ast.subgraphs.has(currentSubId)) {
-        ast.subgraphs.get(currentSubId)!.direction = dirVal;
-      }
-      continue;
-    }
-
     // 5. Style definition: style NodeID fill:#...,stroke:#...
     if (token.type === 'STYLE') {
       cursor = parseStyleStatement(tokens, cursor, ast);
@@ -206,7 +197,7 @@ export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
     }
 
     // 8. Node / Edge statements
-    if (token.type === 'IDENTIFIER') {
+    if (token.type === 'IDENTIFIER' || token.type === 'DIRECTION') {
       parseNodeOrEdgeStatement();
       continue;
     }
@@ -237,13 +228,28 @@ export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
     ensureNodeInAst(ast, currentSubId, nodeInfo);
   }
 
-  function parseNodeOrEdgeStatement() {
-    const parsedLeft = parseSingleNode(tokens, cursor);
-    if (!parsedLeft.node) return;
-    cursor = parsedLeft.nextCursor;
-    let leftNode = parsedLeft.node;
+  function parseNodeGroup(): FlowchartNodeInfo[] {
+    const group: FlowchartNodeInfo[] = [];
+    const parsedFirst = parseSingleNode(tokens, cursor);
+    if (!parsedFirst.node) return group;
+    cursor = parsedFirst.nextCursor;
+    ensureNodeExists(parsedFirst.node);
+    group.push(parsedFirst.node);
 
-    ensureNodeExists(leftNode);
+    while (currentToken().type === 'AND') {
+      advance(); // consume '&'
+      const parsedNext = parseSingleNode(tokens, cursor);
+      if (!parsedNext.node) break;
+      cursor = parsedNext.nextCursor;
+      ensureNodeExists(parsedNext.node);
+      group.push(parsedNext.node);
+    }
+    return group;
+  }
+
+  function parseNodeOrEdgeStatement() {
+    let leftNodes = parseNodeGroup();
+    if (leftNodes.length === 0) return;
 
     // Check if followed by an arrow (Edge)
     while (currentToken().type === 'ARROW' || currentToken().type === 'ARROW_LABEL') {
@@ -267,25 +273,26 @@ export function parseMermaidFlowchart(input: string): MermaidFlowchartAST {
         edgeLabel = advance().labelText;
       }
 
-      const parsedRight = parseSingleNode(tokens, cursor);
-      if (!parsedRight.node) break;
-      cursor = parsedRight.nextCursor;
-      const rightNode = parsedRight.node;
+      const rightNodes = parseNodeGroup();
+      if (rightNodes.length === 0) break;
 
-      ensureNodeExists(rightNode);
+      for (const leftNode of leftNodes) {
+        for (const rightNode of rightNodes) {
+          const edgeDef: MermaidEdgeDef = {
+            type: 'edge',
+            id: `e_${leftNode.id}_${rightNode.id}_${ast.edges.length + 1}`,
+            from: leftNode.id,
+            to: rightNode.id,
+            arrowType,
+            label: edgeLabel,
+            length: edgeLength,
+          };
 
-      const edgeDef: MermaidEdgeDef = {
-        type: 'edge',
-        id: `e_${leftNode.id}_${rightNode.id}_${ast.edges.length + 1}`,
-        from: leftNode.id,
-        to: rightNode.id,
-        arrowType,
-        label: edgeLabel,
-        length: edgeLength,
-      };
+          ast.edges.push(edgeDef);
+        }
+      }
 
-      ast.edges.push(edgeDef);
-      leftNode = rightNode;
+      leftNodes = rightNodes;
     }
   }
 }

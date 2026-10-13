@@ -26,6 +26,32 @@ export function matchArrow(str: string, pos: number): ArrowMatch | null {
   return null;
 }
 
+export interface InfixArrowMatch {
+  raw: string;
+  prefix: string;
+  label: string;
+  arrow: string;
+  length: number;
+}
+
+const INFIX_ARROW_REGEX =
+  /^(?:(-{2,}|<={2,}|<-{2,}|o-{2,}|x-{2,}|-\.{1,}|={2,})\s+(".*?"|'.*?'|.+?)\s+(-{2,}>|-{3,}|={2,}>|={3,}|\.{1,}->|\.{1,}-|-{2,}o|-{2,}x|<={2,}>|<-{2,}>|o-{2,}o|x-{2,}x))/;
+
+export function matchInfixArrow(str: string, pos: number): InfixArrowMatch | null {
+  const sub = str.substring(pos);
+  const match = sub.match(INFIX_ARROW_REGEX);
+  if (!match) return null;
+  const rawLabel = match[2].trim();
+  const label = rawLabel.replace(/^["']|["']$/g, '');
+  return {
+    raw: match[0],
+    prefix: match[1],
+    label,
+    arrow: match[3],
+    length: match[0].length,
+  };
+}
+
 const SHAPES: Array<{
   open: string;
   close: string;

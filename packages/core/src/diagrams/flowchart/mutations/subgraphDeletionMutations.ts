@@ -5,10 +5,20 @@
 import { MermaidFlowchartAST } from '../types';
 import { deleteNodes } from './nodeMutations';
 
+export function findParentSubgraphId(
+  ast: MermaidFlowchartAST,
+  childId: string
+): string | null {
+  for (const [id, sub] of ast.subgraphs.entries()) {
+    if (sub.subgraphIds?.includes(childId)) return id;
+  }
+  return null;
+}
+
 /**
  * Delete a subgraph.
- * If deleteInnerNodes is false (default), the subgraph is dissolved (nodes become ungrouped).
- * If deleteInnerNodes is true, all inner nodes and their edges are deleted.
+ * If deleteInnerNodes is false (default), the subgraph is dissolved (nodes become ungrouped or reparented to parent).
+ * If deleteInnerNodes is true, all inner nodes, nested subgraphs, and their edges are deleted recursively.
  */
 export function deleteSubgraph(
   ast: MermaidFlowchartAST,
@@ -18,22 +28,45 @@ export function deleteSubgraph(
   if (!ast.subgraphs.has(subgraphId)) return false;
 
   const sub = ast.subgraphs.get(subgraphId)!;
-  const innerNodeIds = [...sub.nodeIds];
+  const parentSubId = findParentSubgraphId(ast, subgraphId);
+  const parentSub = parentSubId ? ast.subgraphs.get(parentSubId) : undefined;
 
   if (deleteInnerNodes) {
-    deleteNodes(ast, innerNodeIds);
+    // Recursively delete all nested child subgraphs
+    const childSubs = [...(sub.subgraphIds || [])];
+    for (const childId of childSubs) {
+      deleteSubgraph(ast, childId, true);
+    }
+    // Delete inner nodes
+    deleteNodes(ast, [...sub.nodeIds]);
   } else {
-    for (const nid of innerNodeIds) {
+    // Dissolve: reparent inner nodes to parent subgraph or to root
+    for (const nid of sub.nodeIds) {
       const node = ast.nodes.get(nid);
       if (node && node.subgraphId === subgraphId) {
-        delete node.subgraphId;
+        if (parentSub) {
+          node.subgraphId = parentSub.id;
+          if (!parentSub.nodeIds.includes(nid)) {
+            parentSub.nodeIds.push(nid);
+          }
+        } else {
+          delete node.subgraphId;
+        }
+      }
+    }
+    // Reparent nested child subgraphs to parent subgraph if nested
+    if (sub.subgraphIds && parentSub) {
+      for (const childId of sub.subgraphIds) {
+        if (!parentSub.subgraphIds.includes(childId)) {
+          parentSub.subgraphIds.push(childId);
+        }
       }
     }
   }
 
   // Remove from parent subgraphs if nested
-  for (const parentSub of ast.subgraphs.values()) {
-    parentSub.subgraphIds = parentSub.subgraphIds.filter((id) => id !== subgraphId);
+  for (const p of ast.subgraphs.values()) {
+    p.subgraphIds = p.subgraphIds.filter((id) => id !== subgraphId);
   }
 
   // Remove style if any

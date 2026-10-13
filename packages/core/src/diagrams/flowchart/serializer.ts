@@ -41,8 +41,9 @@ export function serializeMermaidFlowchart(ast: MermaidFlowchartAST): string {
     if (!subDef || emittedSubIds.has(subId)) return;
     emittedSubIds.add(subId);
 
+    const safeSubId = /\s/.test(subId) ? `"${escapeLabel(subId)}"` : subId;
     const labelPart = subDef.label ? ` ["${escapeLabel(subDef.label)}"]` : '';
-    lines.push(`${indent}subgraph ${subId}${labelPart}`);
+    lines.push(`${indent}subgraph ${safeSubId}${labelPart}`);
 
     const inner = indent + '    ';
     if (subDef.direction) {
@@ -88,7 +89,9 @@ export function serializeMermaidFlowchart(ast: MermaidFlowchartAST): string {
   // 4. Edges
   for (const edge of ast.edges) {
     const arrowStr = formatArrow(edge.arrowType, edge.label, edge.length);
-    lines.push(`    ${edge.from} ${arrowStr} ${edge.to}`);
+    const fromStr = /\s/.test(edge.from) ? `"${escapeLabel(edge.from)}"` : edge.from;
+    const toStr = /\s/.test(edge.to) ? `"${escapeLabel(edge.to)}"` : edge.to;
+    lines.push(`    ${fromStr} ${arrowStr} ${toStr}`);
   }
 
   // 5. ClassDefs
@@ -253,7 +256,11 @@ function formatShape(shape: MermaidShapeType, label: string): string {
 
 function formatArrow(type: ArrowType, label?: string, length?: number): string {
   const len = Math.max(1, length || 1);
-  const labelPart = label ? `|${escapeLabel(label)}|` : '';
+  let safeLabel = label ? escapeLabel(label) : '';
+  if (safeLabel.includes('|')) {
+    safeLabel = `"${safeLabel}"`;
+  }
+  const labelPart = label ? `|${safeLabel}|` : '';
   let base = '';
 
   switch (type) {
@@ -300,5 +307,5 @@ function formatArrow(type: ArrowType, label?: string, length?: number): string {
 }
 
 function escapeLabel(label: string): string {
-  return label.replace(/"/g, '#quot;');
+  return label.replace(/"/g, '#quot;').replace(/\r?\n/g, '<br/>');
 }

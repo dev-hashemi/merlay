@@ -3,9 +3,13 @@
  */
 
 import { MermaidFlowchartAST, MermaidSubgraphDef } from '../types';
-import { deleteSubgraph, pruneEmptySubgraph } from './subgraphDeletionMutations';
+import {
+  deleteSubgraph,
+  pruneEmptySubgraph,
+  findParentSubgraphId,
+} from './subgraphDeletionMutations';
 
-export { deleteSubgraph, pruneEmptySubgraph };
+export { deleteSubgraph, pruneEmptySubgraph, findParentSubgraphId };
 
 /**
  * Generate a unique subgraph ID that doesn't collide with existing subgraphs.
@@ -21,19 +25,6 @@ export function generateUniqueSubgraphId(
     candidate = `${base}_${counter}`;
   }
   return candidate;
-}
-
-/**
- * Find the parent group of a node or subgroup, if any.
- */
-export function findParentSubgraphId(
-  ast: MermaidFlowchartAST,
-  childId: string
-): string | null {
-  for (const [id, sub] of ast.subgraphs.entries()) {
-    if (sub.subgraphIds?.includes(childId)) return id;
-  }
-  return null;
 }
 
 /**

@@ -18,11 +18,12 @@ export function parseSingleNode(
   tokens: readonly Token[],
   cursor: number
 ): { node: FlowchartNodeInfo | null; nextCursor: number } {
-  if (tokens[cursor]?.type !== 'IDENTIFIER') {
+  const tok = tokens[cursor];
+  if (tok?.type !== 'IDENTIFIER' && tok?.type !== 'DIRECTION') {
     return { node: null, nextCursor: cursor };
   }
 
-  const id = tokens[cursor].value;
+  const id = tok.value;
   let cur = cursor + 1;
   let label: string | undefined;
   let shape: MermaidShapeType | undefined;

@@ -180,11 +180,17 @@ export function resolveStylesOntoAst(
     }
   }
 
-  // 3. Link explicit styles to node definitions (highest precedence)
+  // 3. Link explicit styles to node and subgraph definitions (highest precedence)
   for (const s of ast.styles) {
     if (ast.nodes.has(s.targetId)) {
       ast.nodes.get(s.targetId)!.style = {
         ...(ast.nodes.get(s.targetId)!.style || {}),
+        ...s.styles,
+      };
+    }
+    if (ast.subgraphs.has(s.targetId)) {
+      ast.subgraphs.get(s.targetId)!.style = {
+        ...(ast.subgraphs.get(s.targetId)!.style || {}),
         ...s.styles,
       };
     }

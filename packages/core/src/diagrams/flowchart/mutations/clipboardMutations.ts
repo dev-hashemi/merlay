@@ -28,6 +28,7 @@ export function duplicateNodes(
       id: newId,
       label: `${oldNode.label} (copy)`,
       shape: oldNode.shape,
+      shapeParams: oldNode.shapeParams ? { ...oldNode.shapeParams } : undefined,
       subgraphId: oldNode.subgraphId,
       style: oldNode.style ? { ...oldNode.style } : undefined,
       classes: oldNode.classes ? [...oldNode.classes] : undefined,
@@ -35,6 +36,24 @@ export function duplicateNodes(
 
     ast.nodes.set(newId, clonedNode);
     newCreatedNodeIds.push(newId);
+
+    // Copy explicit styles to ast.styles so serialized Mermaid includes them
+    const oldStyles = ast.styles.filter((s) => s.targetId === oldId);
+    if (oldStyles.length > 0) {
+      for (const s of oldStyles) {
+        ast.styles.push({
+          type: 'style',
+          targetId: newId,
+          styles: { ...s.styles },
+        });
+      }
+    } else if (oldNode.style && Object.keys(oldNode.style).length > 0) {
+      ast.styles.push({
+        type: 'style',
+        targetId: newId,
+        styles: { ...oldNode.style },
+      });
+    }
 
     if (clonedNode.subgraphId && ast.subgraphs.has(clonedNode.subgraphId)) {
       ast.subgraphs.get(clonedNode.subgraphId)!.nodeIds.push(newId);
