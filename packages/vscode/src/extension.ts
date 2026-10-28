@@ -13,7 +13,7 @@ import {
   openFenceEditor,
   selectDiagram,
 } from './fenceLens';
-import { findMermaidFences } from './fences';
+import { findMermaidFences, findNearestFence } from './fences';
 
 export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
@@ -56,9 +56,20 @@ export function activate(context: vscode.ExtensionContext): void {
       const cursorLine = e.selections[0]?.active.line;
       if (cursorLine === undefined) return;
       const fences = findMermaidFences(doc.getText());
-      const fence = fences.find((f) => cursorLine >= f.startLine && cursorLine <= f.endLine);
+      if (fences.length === 0) return;
+
+      const fence =
+        fences.find((f) => cursorLine >= f.startLine && cursorLine <= f.endLine) ||
+        (fences.length === 1 ? fences[0] : findNearestFence(fences, cursorLine));
+
       if (fence) {
-        void openFenceEditor(context.extensionUri, doc.uri.toString(), fence.startLine);
+        const distance = Math.min(
+          Math.abs(cursorLine - fence.startLine),
+          Math.abs(cursorLine - fence.endLine)
+        );
+        if (distance <= 5 || fences.length === 1) {
+          void openFenceEditor(context.extensionUri, doc.uri.toString(), fence.startLine);
+        }
       }
     }),
     vscode.window.registerUriHandler({

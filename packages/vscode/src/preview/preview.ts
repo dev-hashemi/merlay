@@ -53,13 +53,37 @@
       e.preventDefault();
       e.stopPropagation();
 
-      // Find the code-line element to compute the exact source line coordinates
-      const lineEl =
-        wrapper.querySelector<HTMLElement>('[data-line]') ||
-        wrapper.closest<HTMLElement>('[data-line]');
-      const ref = lineEl || wrapper;
-      const bounds = ref.getBoundingClientRect();
+      // Find closest preceding element with data-line to approximate source line
+      let estimatedLine = 0;
+      let prev: Element | null = wrapper.previousElementSibling;
+      while (prev) {
+        const dl =
+          prev.getAttribute('data-line') ||
+          prev.querySelector('[data-line]')?.getAttribute('data-line');
+        if (dl) {
+          estimatedLine = parseInt(dl, 10) + 1;
+          break;
+        }
+        prev = prev.previousElementSibling;
+      }
 
+      // Method 1: Try posting 'didClick' directly through VS Code webview host bridge
+      try {
+        const parentWindow = window.parent as unknown as Record<string, unknown> | null;
+        const postFn = parentWindow?.['__vscode_post_message__'] as
+          | ((cmd: string, data: unknown) => void)
+          | undefined;
+        if (typeof postFn === 'function') {
+          postFn.call(parentWindow, 'onmessage', {
+            message: { type: 'didClick', line: estimatedLine },
+          });
+        }
+      } catch {
+        // Sandboxed fallback
+      }
+
+      // Method 2: Always dispatch synthetic dblclick with explicit pageX/pageY coordinates
+      const bounds = wrapper.getBoundingClientRect();
       const pageY = window.scrollY + bounds.top + Math.min(30, Math.max(10, bounds.height / 2));
       const clientY = Math.min(window.innerHeight - 10, Math.max(10, bounds.top + 20));
       const clientX = Math.min(
@@ -75,14 +99,13 @@
         clientY,
       });
 
-      // Explicitly define pageX/pageY so VS Code scroll-sync accurately calculates the line
       Object.defineProperty(dblClick, 'pageX', { value: clientX, configurable: true });
       Object.defineProperty(dblClick, 'pageY', { value: pageY, configurable: true });
       Object.defineProperty(dblClick, 'clientX', { value: clientX, configurable: true });
       Object.defineProperty(dblClick, 'clientY', { value: clientY, configurable: true });
 
       const svg = wrapper.querySelector('svg');
-      const target = (svg as HTMLElement | null) || ref;
+      const target = (svg as HTMLElement | null) || wrapper;
       target.dispatchEvent(dblClick);
     });
 
