@@ -39,3 +39,36 @@ export function findMermaidFences(text: string): MermaidFence[] {
   }
   return fences;
 }
+
+/** Find the fence containing the line, or the closest fence if outside. */
+export function findNearestFence(fences: MermaidFence[], line: number): MermaidFence | undefined {
+  if (fences.length === 0) return undefined;
+  const inside = fences.find((f) => line >= f.startLine && line <= f.endLine);
+  if (inside) return inside;
+  let nearest = fences[0];
+  let minDistance = Math.min(Math.abs(line - nearest.startLine), Math.abs(line - nearest.endLine));
+  for (let i = 1; i < fences.length; i++) {
+    const f = fences[i];
+    const dist = Math.min(Math.abs(line - f.startLine), Math.abs(line - f.endLine));
+    if (dist < minDistance) {
+      minDistance = dist;
+      nearest = f;
+    }
+  }
+  return nearest;
+}
+
+/** Compute human-readable panel title for a given fence in a document. */
+export function formatFenceTitle(
+  docPath: string,
+  fenceStartLine: number,
+  fences: MermaidFence[]
+): string {
+  const fileName = docPath.split(/[/\\]/).pop() ?? 'Document';
+  if (fences.length <= 1) {
+    return `Merlay: ${fileName} (L${fenceStartLine + 1})`;
+  }
+  const index = fences.findIndex((f) => f.startLine === fenceStartLine);
+  const indexStr = index >= 0 ? `${index + 1}/${fences.length}` : `L${fenceStartLine + 1}`;
+  return `Merlay: ${fileName} [${indexStr}]`;
+}

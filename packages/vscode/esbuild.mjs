@@ -48,11 +48,38 @@ const webview = await esbuild.context({
   ],
 });
 
+// 3. Markdown preview script (browser sandbox): lightweight IIFE.
+const preview = await esbuild.context({
+  ...sharedOptions,
+  entryPoints: [join(here, 'src/preview/preview.ts')],
+  format: 'iife',
+  platform: 'browser',
+  sourcemap: prod ? false : 'inline',
+  outfile: join(here, 'dist/preview.js'),
+  minify: prod,
+  plugins: [
+    {
+      name: 'copy-preview-css',
+      setup(build) {
+        build.onEnd(() => {
+          const src = join(here, 'src', 'preview', 'preview.css');
+          if (fs.existsSync(src)) {
+            fs.mkdirSync(join(here, 'dist'), { recursive: true });
+            fs.copyFileSync(src, join(here, 'dist', 'preview.css'));
+          }
+        });
+      },
+    },
+  ],
+});
+
 if (prod) {
   await host.rebuild();
   await webview.rebuild();
+  await preview.rebuild();
   process.exit(0);
 } else {
   await host.watch();
   await webview.watch();
+  await preview.watch();
 }

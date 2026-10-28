@@ -22,8 +22,11 @@
     "onCustomEditor:merlay.mermaidEditor",
     "onCommand:merlay.openVisualEditor",
     "onCommand:merlay.editMermaidFence",
+    "onCommand:merlay.editDiagramAtCursor",
+    "onCommand:merlay.selectDiagram",
     "onLanguage:markdown",
-    "onLanguage:mermaid"
+    "onLanguage:mermaid",
+    "onUri"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -44,18 +47,62 @@
         "title": "Merlay: New Diagram"
       },
       {
+        "command": "merlay.editDiagramAtCursor",
+        "title": "Merlay: Edit Diagram at Cursor",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "merlay.selectDiagram",
+        "title": "Merlay: Select Diagram to Edit..."
+      },
+      {
         "command": "merlay.editMermaidFence",
         "title": "Merlay: Edit Mermaid Fence Visually"
       }
     ],
     "menus": {
+      "editor/title": [
+        {
+          "command": "merlay.editDiagramAtCursor",
+          "when": "resourceLangId == markdown || resourceLangId == mermaid",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "merlay.editDiagramAtCursor",
+          "when": "resourceLangId == markdown || resourceLangId == mermaid",
+          "group": "1_modification@40"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "merlay.editDiagramAtCursor",
+          "when": "webviewSection == 'mermaid'",
+          "group": "navigation@0"
+        }
+      ],
       "commandPalette": [
         {
           "command": "merlay.editMermaidFence",
           "when": "false"
+        },
+        {
+          "command": "merlay.editDiagramAtCursor",
+          "when": "resourceLangId == markdown || resourceLangId == mermaid"
+        },
+        {
+          "command": "merlay.selectDiagram",
+          "when": "resourceLangId == markdown"
         }
       ]
     },
+    "markdown.previewScripts": [
+      "./dist/preview.js"
+    ],
+    "markdown.previewStyles": [
+      "./dist/preview.css"
+    ],
     "languages": [
       {
         "id": "mermaid",

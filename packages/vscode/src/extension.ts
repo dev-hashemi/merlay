@@ -3,10 +3,17 @@ import { DIAGRAM_TEMPLATES } from '@merlay/core';
 import { MERLAY_EDITOR_VIEW_TYPE } from './protocol';
 import { MermaidEditorProvider } from './mermaidEditor';
 import {
+  EDIT_AT_CURSOR_COMMAND,
   EDIT_FENCE_COMMAND,
+  SELECT_DIAGRAM_COMMAND,
   MermaidFenceCodeLensProvider,
+  editDiagramAtCursor,
+  handleUriFenceEdit,
+  isPanelActive,
   openFenceEditor,
+  selectDiagram,
 } from './fenceLens';
+import { findMermaidFences } from './fences';
 
 export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
@@ -27,7 +34,43 @@ export function activate(context: vscode.ExtensionContext): void {
       EDIT_FENCE_COMMAND,
       (uriString?: string, startLine?: number) =>
         openFenceEditor(context.extensionUri, uriString, startLine)
-    )
+    ),
+    vscode.commands.registerCommand(EDIT_AT_CURSOR_COMMAND, () =>
+      editDiagramAtCursor(context.extensionUri)
+    ),
+    vscode.commands.registerCommand(SELECT_DIAGRAM_COMMAND, () =>
+      selectDiagram(context.extensionUri)
+    ),
+    vscode.window.onDidChangeTextEditorSelection((e) => {
+      // If panel is not active, do not auto-open on normal keyboard typing or editor clicks
+      if (
+        !isPanelActive() &&
+        (e.kind === vscode.TextEditorSelectionChangeKind.Keyboard ||
+          e.kind === vscode.TextEditorSelectionChangeKind.Mouse)
+      ) {
+        return;
+      }
+
+      const doc = e.textEditor.document;
+      if (doc.languageId !== 'markdown') return;
+      const cursorLine = e.selections[0]?.active.line;
+      if (cursorLine === undefined) return;
+      const fences = findMermaidFences(doc.getText());
+      const fence = fences.find((f) => cursorLine >= f.startLine && cursorLine <= f.endLine);
+      if (fence) {
+        void openFenceEditor(context.extensionUri, doc.uri.toString(), fence.startLine);
+      }
+    }),
+    vscode.window.registerUriHandler({
+      async handleUri(uri: vscode.Uri) {
+        if (uri.path === '/edit-fence' || uri.path === '/edit') {
+          const params = new URLSearchParams(uri.query);
+          const lineStr = params.get('line');
+          const targetLine = lineStr ? parseInt(lineStr, 10) : undefined;
+          await handleUriFenceEdit(context.extensionUri, targetLine);
+        }
+      },
+    })
   );
 }
 

@@ -29,9 +29,15 @@ export function getWebviewHtml(
 -->
 <style nonce="${nonce}">body {
   color-scheme: light dark;
+  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-size: var(--vscode-font-size, 13px);
+  --font-monospace: var(--vscode-editor-font-family, monospace);
+  --radius-m: 3px;
+  --radius-s: 2px;
+  --radius-l: 4px;
   --background-primary: var(--vscode-editor-background);
   --background-secondary: var(--vscode-editorWidget-background, var(--vscode-sideBar-background));
-  --background-modifier-border: var(--vscode-widget-border, var(--vscode-panel-border));
+  --background-modifier-border: var(--vscode-contrastBorder, var(--vscode-widget-border, var(--vscode-panel-border)));
   --background-modifier-hover: var(--vscode-list-hoverBackground);
   --background-modifier-active-hover: var(--vscode-list-activeSelectionBackground);
   --background-modifier-error: var(--vscode-inputValidation-errorBackground);
