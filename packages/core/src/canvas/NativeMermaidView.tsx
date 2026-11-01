@@ -48,6 +48,13 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
   );
 
   const [isFullscreen, setIsFullscreen] = useState<boolean>(externalIsFullscreen ?? false);
+
+  // Clear any stale selection / hover / connecting state carried over from a
+  // previous diagram when this view instance mounts (e.g. switching diagrams
+  // in a reused VS Code tab remounts the canvas).
+  useEffect(() => {
+    useCanvasStore.getState().resetTransientUiState();
+  }, []);
   const handleToggleFullscreen = onToggleFullscreen
     ? () => {
         onToggleFullscreen();

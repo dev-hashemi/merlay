@@ -33,6 +33,12 @@ function MerlayWebviewApp(): React.ReactElement {
   const [docCode, setDocCode] = React.useState<string | null>(() =>
     apiRef.current ? null : FALLBACK_CODE
   );
+  // Tracks the latest code shown so we can tell a real diagram switch
+  // (different diagram) from an echo of our own write-back (same code).
+  const docCodeRef = React.useRef<string | null>(apiRef.current ? null : FALLBACK_CODE);
+  // Bumped on every genuine switch so NativeMermaidView fully remounts with
+  // fresh state instead of trying to patch a stale component instance.
+  const [viewKey, setViewKey] = React.useState(0);
   const themeSubsRef = React.useRef(new Set<() => void>());
 
   const host = React.useMemo<HostAdapter>(
@@ -57,8 +63,19 @@ function MerlayWebviewApp(): React.ReactElement {
     const onMessage = (event: MessageEvent): void => {
       const message = event.data as HostToWebviewMessage;
       if (message.type === 'merlay/init' || message.type === 'merlay/update') {
-        // Echo guard: identical code is a no-op (React bails out, canvas keeps history).
-        setDocCode((prev) => (prev === message.code ? prev : message.code));
+        const prev = docCodeRef.current;
+        // Echo guard: identical code (up to surrounding whitespace) is a no-op so
+        // our own write-back round-trips keep canvas history and camera.
+        if (prev !== null && prev.trim() === message.code.trim()) {
+          return;
+        }
+        // A genuine change (e.g. switching to another diagram in the same tab):
+        // remount the canvas so no stale state from the previous diagram leaks.
+        if (prev !== null) {
+          setViewKey((k) => k + 1);
+        }
+        docCodeRef.current = message.code;
+        setDocCode(message.code);
       } else if (message.type === 'merlay/theme') {
         themeSubsRef.current.forEach((cb) => cb());
       }
@@ -69,6 +86,7 @@ function MerlayWebviewApp(): React.ReactElement {
   }, []);
 
   const handleCodeChange = React.useCallback((code: string) => {
+    docCodeRef.current = code;
     apiRef.current?.postMessage({ type: 'merlay/codeChange', code });
   }, []);
 
@@ -76,7 +94,7 @@ function MerlayWebviewApp(): React.ReactElement {
     return <div className="merlay-webview-loading">Loading diagram…</div>;
   }
   return (
-    <NativeMermaidView host={host} initialCode={docCode} onCodeChange={handleCodeChange} />
+    <NativeMermaidView key={viewKey} host={host} initialCode={docCode} onCodeChange={handleCodeChange} />
   );
 }
 
