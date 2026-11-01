@@ -84,15 +84,21 @@ export function activate(context: vscode.ExtensionContext): void {
       async handleUri(uri: vscode.Uri) {
         // Parse the encoded query from the URI string: `uri.query` is already
         // decoded, which loses separators inside file paths.
-        const parsed = parseEditFenceUri(uri.path, getEncodedQuery(uri.toString()));
-        if (parsed) {
-          await handleUriFenceEdit(
-            context.extensionUri,
-            parsed.targetLine,
-            parsed.targetFile,
-            parsed.diagramIndex
-          );
-        }
+        // VS Code delivers the (decoded) query on `uri.query`. The raw
+        // `uri.toString()` is double-encoded and cannot be parsed reliably.
+        const decodedQuery = uri.query || '';
+        const lineMatch = decodedQuery.match(/(?:^|&)line=(\d+)/);
+        const indexMatch = decodedQuery.match(/(?:^|&)index=(\d+)/);
+        const fileMatch = decodedQuery.match(/(?:^|&)file=(.*)$/);
+        const targetLine = lineMatch ? parseInt(lineMatch[1], 10) : undefined;
+        const diagramIndex = indexMatch ? parseInt(indexMatch[1], 10) : undefined;
+        const targetFile = fileMatch ? fileMatch[1] : undefined;
+        await handleUriFenceEdit(
+          context.extensionUri,
+          targetLine,
+          targetFile,
+          diagramIndex
+        );
       },
     })
   );

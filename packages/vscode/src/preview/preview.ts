@@ -44,18 +44,32 @@
   }
 
   function getDiagramIndex(wrapper: HTMLElement): number {
-    // Count every Mermaid block, not just rendered wrappers: a diagram that
-    // fails to render keeps its `.mermaid` element but gets no wrapper, which
-    // would otherwise shift the indices of all following diagrams.
+    // Resolve the owning diagram wrapper first. Indexing against the wrapper
+    // list (not `.mermaid` nodes) keeps the index aligned with the document's
+    // fence order even when a diagram fails to render or `.mermaid` nodes are
+    // rebuilt by the preview.
+    const owner =
+      wrapper.classList.contains('mermaid-wrapper') ||
+      wrapper.classList.contains('vscode-mermaid-container')
+        ? wrapper
+        : wrapper.closest<HTMLElement>('.mermaid-wrapper, .vscode-mermaid-container');
+    const wrappers = Array.from(
+      document.querySelectorAll<HTMLElement>('.mermaid-wrapper, .vscode-mermaid-container')
+    );
+    if (owner) {
+      const idx = wrappers.indexOf(owner);
+      if (idx >= 0) return idx;
+    }
+    // Fallback: count rendered `.mermaid` nodes.
     const container = wrapper.classList.contains('mermaid')
       ? wrapper
       : wrapper.querySelector<HTMLElement>('.mermaid');
-    const target = container ?? wrapper;
-    const candidates = container
-      ? document.querySelectorAll<HTMLElement>('.mermaid')
-      : document.querySelectorAll<HTMLElement>('.mermaid-wrapper, .vscode-mermaid-container');
-    const idx = Array.from(candidates).indexOf(target);
-    return idx >= 0 ? idx : 0;
+    if (container) {
+      const mermaids = Array.from(document.querySelectorAll<HTMLElement>('.mermaid'));
+      const mi = mermaids.indexOf(container);
+      if (mi >= 0) return mi;
+    }
+    return 0;
   }
 
   function getEstimatedLine(wrapper: HTMLElement): number | undefined {
@@ -166,7 +180,8 @@
     }
 
     const wrapper =
-      zoomControls.closest<HTMLElement>('.mermaid-wrapper') || zoomControls.parentElement;
+      zoomControls.closest<HTMLElement>('.mermaid-wrapper, .vscode-mermaid-container') ||
+      zoomControls.parentElement;
     if (!wrapper) return;
 
     wrapper.setAttribute(
