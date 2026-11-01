@@ -72,3 +72,63 @@ export function formatFenceTitle(
   const indexStr = index >= 0 ? `${index + 1}/${fences.length}` : `L${fenceStartLine + 1}`;
   return `Merlay: ${fileName} [${indexStr}]`;
 }
+
+export interface EditFenceUriParams {
+  targetLine?: number;
+  diagramIndex?: number;
+  targetFile?: string;
+}
+
+/**
+ * Extract the percent-encoded query from a URI string.
+ * `vscode.Uri.query` is already decoded, which loses separators inside values
+ * such as a file path containing `&`; the raw URI string keeps them encoded.
+ */
+export function getEncodedQuery(uriString: string): string {
+  const start = uriString.indexOf('?');
+  const hash = uriString.indexOf('#');
+  if (start < 0 || (hash >= 0 && hash < start)) return '';
+  return uriString.slice(start + 1, hash < 0 ? undefined : hash);
+}
+
+/**
+ * Parse an incoming custom URI query for editing a mermaid fence.
+ * Supported format: vscode://dev-hashemi.merlay/edit-fence?line=15&index=0&file=...
+ */
+export function parseEditFenceUri(
+  uriPath: string,
+  queryString: string
+): EditFenceUriParams | undefined {
+  if (uriPath !== '/edit-fence' && uriPath !== '/edit') return undefined;
+  const params = new URLSearchParams(queryString);
+  const lineStr = params.get('line');
+  const targetLine = lineStr ? parseInt(lineStr, 10) : undefined;
+  const indexStr = params.get('index');
+  const diagramIndex = indexStr ? parseInt(indexStr, 10) : undefined;
+  const targetFile = params.get('file') || undefined;
+  return {
+    targetLine: typeof targetLine === 'number' && !isNaN(targetLine) ? targetLine : undefined,
+    diagramIndex:
+      typeof diagramIndex === 'number' && !isNaN(diagramIndex) ? diagramIndex : undefined,
+    targetFile,
+  };
+}
+
+/**
+ * Resolve the target fence using index or line number with sensible fallbacks.
+ */
+export function resolveTargetFence(
+  fences: MermaidFence[],
+  targetLine?: number,
+  diagramIndex?: number
+): MermaidFence | undefined {
+  if (fences.length === 0) return undefined;
+  if (diagramIndex !== undefined && diagramIndex >= 0 && diagramIndex < fences.length) {
+    return fences[diagramIndex];
+  }
+  if (targetLine !== undefined) {
+    return findNearestFence(fences, targetLine);
+  }
+  return fences[0];
+}
+

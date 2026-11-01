@@ -13,7 +13,12 @@ import {
   openFenceEditor,
   selectDiagram,
 } from './fenceLens';
-import { findMermaidFences, findNearestFence } from './fences';
+import {
+  findMermaidFences,
+  findNearestFence,
+  getEncodedQuery,
+  parseEditFenceUri,
+} from './fences';
 
 export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
@@ -63,22 +68,30 @@ export function activate(context: vscode.ExtensionContext): void {
         (fences.length === 1 ? fences[0] : findNearestFence(fences, cursorLine));
 
       if (fence) {
-        const distance = Math.min(
-          Math.abs(cursorLine - fence.startLine),
-          Math.abs(cursorLine - fence.endLine)
-        );
-        if (distance <= 5 || fences.length === 1) {
+        const isInside = cursorLine >= fence.startLine && cursorLine <= fence.endLine;
+        const distance = isInside
+          ? 0
+          : Math.min(
+              Math.abs(cursorLine - fence.startLine),
+              Math.abs(cursorLine - fence.endLine)
+            );
+        if (isInside || distance <= 15 || fences.length === 1) {
           void openFenceEditor(context.extensionUri, doc.uri.toString(), fence.startLine);
         }
       }
     }),
     vscode.window.registerUriHandler({
       async handleUri(uri: vscode.Uri) {
-        if (uri.path === '/edit-fence' || uri.path === '/edit') {
-          const params = new URLSearchParams(uri.query);
-          const lineStr = params.get('line');
-          const targetLine = lineStr ? parseInt(lineStr, 10) : undefined;
-          await handleUriFenceEdit(context.extensionUri, targetLine);
+        // Parse the encoded query from the URI string: `uri.query` is already
+        // decoded, which loses separators inside file paths.
+        const parsed = parseEditFenceUri(uri.path, getEncodedQuery(uri.toString()));
+        if (parsed) {
+          await handleUriFenceEdit(
+            context.extensionUri,
+            parsed.targetLine,
+            parsed.targetFile,
+            parsed.diagramIndex
+          );
         }
       },
     })

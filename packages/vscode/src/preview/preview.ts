@@ -35,12 +35,116 @@
     return svg;
   }
 
-  function createEditButton(wrapper: HTMLElement): HTMLButtonElement {
-    const btn = document.createElement('button');
-    btn.type = 'button';
+  function getUriScheme(): string {
+    const ua = navigator.userAgent || '';
+    if (/insiders/i.test(ua)) return 'vscode-insiders';
+    if (/cursor/i.test(ua)) return 'cursor';
+    if (/codium/i.test(ua)) return 'vscodium';
+    return 'vscode';
+  }
+
+  function getDiagramIndex(wrapper: HTMLElement): number {
+    // Count every Mermaid block, not just rendered wrappers: a diagram that
+    // fails to render keeps its `.mermaid` element but gets no wrapper, which
+    // would otherwise shift the indices of all following diagrams.
+    const container = wrapper.classList.contains('mermaid')
+      ? wrapper
+      : wrapper.querySelector<HTMLElement>('.mermaid');
+    const target = container ?? wrapper;
+    const candidates = container
+      ? document.querySelectorAll<HTMLElement>('.mermaid')
+      : document.querySelectorAll<HTMLElement>('.mermaid-wrapper, .vscode-mermaid-container');
+    const idx = Array.from(candidates).indexOf(target);
+    return idx >= 0 ? idx : 0;
+  }
+
+  function getEstimatedLine(wrapper: HTMLElement): number | undefined {
+    const directLine =
+      wrapper.getAttribute('data-line') ||
+      wrapper.querySelector('[data-line]')?.getAttribute('data-line') ||
+      wrapper.closest('[data-line]')?.getAttribute('data-line');
+    if (directLine) {
+      const parsed = parseInt(directLine, 10);
+      if (!isNaN(parsed)) return parsed;
+    }
+
+    let prev: Element | null = wrapper.previousElementSibling;
+    while (prev) {
+      const dl =
+        prev.getAttribute('data-line') ||
+        prev.querySelector('[data-line]')?.getAttribute('data-line');
+      if (dl) {
+        const parsed = parseInt(dl, 10);
+        if (!isNaN(parsed)) return parsed + 1;
+      }
+      prev = prev.previousElementSibling;
+    }
+    return undefined;
+  }
+
+  function getDocumentSource(): string | undefined {
+    // VS Code stores the exact source document URI on the preview meta tag.
+    // This preserves remote/untitled schemes that a relative `.md` link loses.
+    const settings = document
+      .getElementById('vscode-markdown-preview-data')
+      ?.getAttribute('data-settings');
+    if (settings) {
+      try {
+        const parsed = JSON.parse(settings) as { source?: unknown };
+        if (typeof parsed.source === 'string' && parsed.source) {
+          return parsed.source;
+        }
+      } catch {
+        // Fall through to legacy attributes below.
+      }
+    }
+
+    return (
+      document.body.getAttribute('data-source') ||
+      document.body.dataset['source'] ||
+      document.querySelector('[data-source]')?.getAttribute('data-source') ||
+      undefined
+    );
+  }
+
+  function buildMerlayUri(wrapper: HTMLElement): string {
+    const scheme = getUriScheme();
+    const line = getEstimatedLine(wrapper);
+    const index = getDiagramIndex(wrapper);
+    const file = getDocumentSource();
+
+    const params = new URLSearchParams();
+    if (line !== undefined) {
+      params.set('line', String(line));
+    }
+    params.set('index', String(index));
+    if (file) {
+      params.set('file', file);
+    }
+
+    return `${scheme}://dev-hashemi.merlay/edit-fence?${params.toString()}`;
+  }
+
+  function createEditButton(wrapper: HTMLElement): HTMLElement {
+    const btn = document.createElement('a');
     btn.className = BUTTON_CLASS;
     btn.title = 'Edit visually (Merlay)';
     btn.setAttribute('aria-label', 'Edit visually (Merlay)');
+    btn.setAttribute('role', 'button');
+    btn.setAttribute(
+      'data-vscode-context',
+      JSON.stringify({ webviewSection: 'mermaid', preventDefaultContextMenuItems: false })
+    );
+
+    const updateHref = () => {
+      // Always use Merlay's custom URI scheme. A relative `.md#L` link (or a
+      // `data-href`) is intercepted by VS Code's preview as a Markdown link,
+      // so it never reaches Merlay's URI handler.
+      btn.href = buildMerlayUri(wrapper);
+      btn.removeAttribute('data-href');
+    };
+
+    updateHref();
 
     btn.appendChild(createSparkleIcon());
 
@@ -49,77 +153,26 @@
     label.textContent = BUTTON_TEXT;
     btn.appendChild(label);
 
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      // Find closest preceding element with data-line to approximate source line
-      let estimatedLine = 0;
-      let prev: Element | null = wrapper.previousElementSibling;
-      while (prev) {
-        const dl =
-          prev.getAttribute('data-line') ||
-          prev.querySelector('[data-line]')?.getAttribute('data-line');
-        if (dl) {
-          estimatedLine = parseInt(dl, 10) + 1;
-          break;
-        }
-        prev = prev.previousElementSibling;
-      }
-
-      // Method 1: Try posting 'didClick' directly through VS Code webview host bridge
-      try {
-        const parentWindow = window.parent as unknown as Record<string, unknown> | null;
-        const postFn = parentWindow?.['__vscode_post_message__'] as
-          | ((cmd: string, data: unknown) => void)
-          | undefined;
-        if (typeof postFn === 'function') {
-          postFn.call(parentWindow, 'onmessage', {
-            message: { type: 'didClick', line: estimatedLine },
-          });
-        }
-      } catch {
-        // Sandboxed fallback
-      }
-
-      // Method 2: Always dispatch synthetic dblclick with explicit pageX/pageY coordinates
-      const bounds = wrapper.getBoundingClientRect();
-      const pageY = window.scrollY + bounds.top + Math.min(30, Math.max(10, bounds.height / 2));
-      const clientY = Math.min(window.innerHeight - 10, Math.max(10, bounds.top + 20));
-      const clientX = Math.min(
-        window.innerWidth - 10,
-        Math.max(10, bounds.left + bounds.width / 2)
-      );
-
-      const dblClick = new MouseEvent('dblclick', {
-        bubbles: true,
-        cancelable: true,
-        view: window,
-        clientX,
-        clientY,
-      });
-
-      Object.defineProperty(dblClick, 'pageX', { value: clientX, configurable: true });
-      Object.defineProperty(dblClick, 'pageY', { value: pageY, configurable: true });
-      Object.defineProperty(dblClick, 'clientX', { value: clientX, configurable: true });
-      Object.defineProperty(dblClick, 'clientY', { value: clientY, configurable: true });
-
-      const svg = wrapper.querySelector('svg');
-      const target = (svg as HTMLElement | null) || wrapper;
-      target.dispatchEvent(dblClick);
-    });
+    btn.addEventListener('pointerenter', updateHref);
+    btn.addEventListener('focus', updateHref);
+    btn.addEventListener('click', updateHref);
 
     return btn;
   }
 
   function dockToolbarButton(zoomControls: HTMLElement) {
-    if (zoomControls.querySelector(`button.${BUTTON_CLASS}`)) {
+    if (zoomControls.querySelector(`.${BUTTON_CLASS}`)) {
       return;
     }
 
     const wrapper =
       zoomControls.closest<HTMLElement>('.mermaid-wrapper') || zoomControls.parentElement;
     if (!wrapper) return;
+
+    wrapper.setAttribute(
+      'data-vscode-context',
+      JSON.stringify({ webviewSection: 'mermaid', preventDefaultContextMenuItems: false })
+    );
 
     const btn = createEditButton(wrapper);
 
@@ -142,7 +195,12 @@
     // Only dock if diagram is rendered (has an SVG) and doesn't already have zoom controls or our button
     if (!wrapper.querySelector('svg')) return;
     if (wrapper.querySelector('.mermaid-zoom-controls')) return;
-    if (wrapper.querySelector(`button.${BUTTON_CLASS}`)) return;
+    if (wrapper.querySelector(`.${BUTTON_CLASS}`)) return;
+
+    wrapper.setAttribute(
+      'data-vscode-context',
+      JSON.stringify({ webviewSection: 'mermaid', preventDefaultContextMenuItems: false })
+    );
 
     const computedPos = window.getComputedStyle(wrapper).position;
     if (computedPos === 'static') {

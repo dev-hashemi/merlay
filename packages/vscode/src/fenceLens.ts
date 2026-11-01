@@ -11,7 +11,13 @@
 
 import * as vscode from 'vscode';
 import { replaceMermaidBlock } from '@merlay/core';
-import { findMermaidFences, findNearestFence, formatFenceTitle, type MermaidFence } from './fences';
+import {
+  findMermaidFences,
+  findNearestFence,
+  formatFenceTitle,
+  resolveTargetFence,
+  type MermaidFence,
+} from './fences';
 import { attachVisualPanel, createVisualPanel, fullDocRange } from './panels';
 import { MERLAY_EDITOR_VIEW_TYPE } from './protocol';
 
@@ -156,24 +162,32 @@ export async function openFenceEditor(
  * Provides fallback access when CodeLens is disabled.
  */
 export async function editDiagramAtCursor(extensionUri: vscode.Uri): Promise<void> {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) {
+  let doc = vscode.window.activeTextEditor?.document;
+  let cursorLine = vscode.window.activeTextEditor?.selection.active.line;
+
+  if (!doc) {
+    const visible = vscode.window.visibleTextEditors.find(
+      (e) => e.document.languageId === 'markdown' || e.document.languageId === 'mermaid'
+    );
+    doc = visible?.document;
+    cursorLine = visible?.selection.active.line;
+  }
+
+  if (!doc) {
+    doc = vscode.workspace.textDocuments.find(
+      (d) => d.languageId === 'markdown' || d.languageId === 'mermaid'
+    );
+  }
+
+  if (!doc) {
     void vscode.window.showInformationMessage(
       'Merlay: open a Markdown or Mermaid file to edit diagrams.'
     );
     return;
   }
 
-  const doc = editor.document;
   if (doc.languageId === 'mermaid') {
     await vscode.commands.executeCommand('vscode.openWith', doc.uri, MERLAY_EDITOR_VIEW_TYPE);
-    return;
-  }
-
-  if (doc.languageId !== 'markdown') {
-    void vscode.window.showInformationMessage(
-      'Merlay: active document is not a Markdown or Mermaid file.'
-    );
     return;
   }
 
@@ -185,20 +199,24 @@ export async function editDiagramAtCursor(extensionUri: vscode.Uri): Promise<voi
     return;
   }
 
-  const cursorLine = editor.selection.active.line;
-  const targetFence = findNearestFence(fences, cursorLine);
-
-  // If inside or near (< 6 lines), open directly
-  if (targetFence) {
-    const isInside = cursorLine >= targetFence.startLine && cursorLine <= targetFence.endLine;
-    const distance = Math.min(
-      Math.abs(cursorLine - targetFence.startLine),
-      Math.abs(cursorLine - targetFence.endLine)
-    );
-    if (isInside || distance <= 5 || fences.length === 1) {
-      await openFenceEditor(extensionUri, doc.uri.toString(), targetFence.startLine);
-      return;
+  if (cursorLine !== undefined) {
+    const targetFence = findNearestFence(fences, cursorLine);
+    if (targetFence) {
+      const isInside = cursorLine >= targetFence.startLine && cursorLine <= targetFence.endLine;
+      const distance = Math.min(
+        Math.abs(cursorLine - targetFence.startLine),
+        Math.abs(cursorLine - targetFence.endLine)
+      );
+      if (isInside || distance <= 5 || fences.length === 1) {
+        await openFenceEditor(extensionUri, doc.uri.toString(), targetFence.startLine);
+        return;
+      }
     }
+  }
+
+  if (fences.length === 1) {
+    await openFenceEditor(extensionUri, doc.uri.toString(), fences[0].startLine);
+    return;
   }
 
   // If far from any diagram and multiple exist, prompt via QuickPick
@@ -258,26 +276,60 @@ export async function selectDiagram(extensionUri: vscode.Uri): Promise<void> {
   }
 }
 
+/** Parse a document URI from the preview, or a plain path as a fallback. */
+function toDocumentUri(target: string): vscode.Uri {
+  // A Windows drive path (`C:\...`) also matches the scheme pattern, so keep
+  // those as file paths instead of treating `C:` as a URI scheme.
+  const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(target) && !/^[a-z]:[\\/]/i.test(target);
+  return hasScheme ? vscode.Uri.parse(target) : vscode.Uri.file(target);
+}
+
 /**
  * Handle custom URI requests (e.g. from the Markdown Preview overlay button).
- * Scheme: vscode://dev-hashemi.merlay/edit-fence?line=15
+ * Scheme: vscode://dev-hashemi.merlay/edit-fence?line=15&index=0&file=...
  */
 export async function handleUriFenceEdit(
   extensionUri: vscode.Uri,
-  targetLine?: number
+  targetLine?: number,
+  targetFile?: string,
+  diagramIndex?: number
 ): Promise<void> {
   // Find the active or most relevant markdown document
-  let doc = vscode.window.activeTextEditor?.document;
-  if (!doc || doc.languageId !== 'markdown') {
+  let doc: vscode.TextDocument | undefined;
+
+  if (targetFile) {
+    const targetUri = toDocumentUri(targetFile);
+    doc = vscode.workspace.textDocuments.find(
+      (d) => d.uri.toString() === targetUri.toString() || d.uri.fsPath === targetUri.fsPath
+    );
+    if (!doc) {
+      try {
+        doc = await vscode.workspace.openTextDocument(targetUri);
+      } catch {
+        // Fallback to active/visible docs
+      }
+    }
+  }
+
+  if (!doc) {
+    const active = vscode.window.activeTextEditor?.document;
+    if (active && (active.languageId === 'markdown' || active.languageId === 'mermaid')) {
+      doc = active;
+    }
+  }
+
+  if (!doc) {
     const visible = vscode.window.visibleTextEditors.find(
-      (e) => e.document.languageId === 'markdown'
+      (e) => e.document.languageId === 'markdown' || e.document.languageId === 'mermaid'
     );
     doc = visible?.document;
   }
 
   if (!doc) {
     // Check all open text documents
-    doc = vscode.workspace.textDocuments.find((d) => d.languageId === 'markdown');
+    doc = vscode.workspace.textDocuments.find(
+      (d) => d.languageId === 'markdown' || d.languageId === 'mermaid'
+    );
   }
 
   if (!doc) {
@@ -287,14 +339,18 @@ export async function handleUriFenceEdit(
     return;
   }
 
+  if (doc.languageId === 'mermaid') {
+    await vscode.commands.executeCommand('vscode.openWith', doc.uri, MERLAY_EDITOR_VIEW_TYPE);
+    return;
+  }
+
   const fences = findMermaidFences(doc.getText());
   if (fences.length === 0) {
     void vscode.window.showInformationMessage('Merlay: no diagrams found in the active document.');
     return;
   }
 
-  const targetFence =
-    targetLine !== undefined ? findNearestFence(fences, targetLine) : fences[0];
+  const targetFence = resolveTargetFence(fences, targetLine, diagramIndex);
 
   if (targetFence) {
     await openFenceEditor(extensionUri, doc.uri.toString(), targetFence.startLine);

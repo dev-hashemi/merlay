@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { findMermaidFences, findNearestFence, formatFenceTitle } from '../src/fences';
+import {
+  findMermaidFences,
+  findNearestFence,
+  formatFenceTitle,
+  getEncodedQuery,
+  parseEditFenceUri,
+  resolveTargetFence,
+} from '../src/fences';
 
 test('Fences: enumerates multiple closed blocks with code', () => {
   const text = [
@@ -115,3 +122,75 @@ test('Fences: formatFenceTitle provides human-friendly titles with progress indi
     'Merlay: notes.md [3/3]'
   );
 });
+
+test('Fences: parseEditFenceUri parses path and query arguments', () => {
+  // Full URI params
+  const res1 = parseEditFenceUri(
+    '/edit-fence',
+    'line=14&index=1&file=file%3A%2F%2F%2Fpath%2Fnote.md'
+  );
+  assert.deepStrictEqual(res1, {
+    targetLine: 14,
+    diagramIndex: 1,
+    targetFile: 'file:///path/note.md',
+  });
+
+  // Short path /edit
+  const res2 = parseEditFenceUri('/edit', 'line=5');
+  assert.deepStrictEqual(res2, {
+    targetLine: 5,
+    diagramIndex: undefined,
+    targetFile: undefined,
+  });
+
+  // Invalid path
+  assert.strictEqual(parseEditFenceUri('/other-path', 'line=5'), undefined);
+
+  // Non-numeric line/index
+  const res3 = parseEditFenceUri('/edit-fence', 'line=abc&index=xyz&file=note.md');
+  assert.deepStrictEqual(res3, {
+    targetLine: undefined,
+    diagramIndex: undefined,
+    targetFile: 'note.md',
+  });
+});
+
+test('Fences: getEncodedQuery keeps separators inside encoded file paths', () => {
+  const uri =
+    'vscode://dev-hashemi.merlay/edit-fence?line=3&index=0&file=file%3A%2F%2F%2Ftmp%2Fa%26b.md#frag';
+  const parsed = parseEditFenceUri('/edit-fence', getEncodedQuery(uri));
+  assert.deepStrictEqual(parsed, {
+    targetLine: 3,
+    diagramIndex: 0,
+    targetFile: 'file:///tmp/a&b.md',
+  });
+
+  assert.strictEqual(getEncodedQuery('vscode://dev-hashemi.merlay/edit-fence'), '');
+  assert.strictEqual(
+    getEncodedQuery('vscode://dev-hashemi.merlay/edit-fence#frag?not-a-query'),
+    ''
+  );
+});
+
+test('Fences: resolveTargetFence resolves by index, line, or fallback', () => {
+  const fences = [
+    { startLine: 5, endLine: 10, code: 'flowchart LR' },
+    { startLine: 20, endLine: 25, code: 'sequenceDiagram' },
+    { startLine: 40, endLine: 45, code: 'classDiagram' },
+  ];
+
+  // Empty fences
+  assert.strictEqual(resolveTargetFence([], 5, 0), undefined);
+
+  // Direct index resolution
+  assert.strictEqual(resolveTargetFence(fences, undefined, 1)?.startLine, 20);
+  assert.strictEqual(resolveTargetFence(fences, 5, 2)?.startLine, 40);
+
+  // Line resolution when index is undefined or out of range
+  assert.strictEqual(resolveTargetFence(fences, 22, undefined)?.startLine, 20);
+  assert.strictEqual(resolveTargetFence(fences, 42, 99)?.startLine, 40);
+
+  // Default fallback to first fence when neither matches
+  assert.strictEqual(resolveTargetFence(fences, undefined, undefined)?.startLine, 5);
+});
+

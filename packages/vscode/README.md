@@ -32,6 +32,7 @@ clean Mermaid code writes itself.
 |---|---|
 | Edit a `.mmd` / `.mermaid` file | Just open it (or _Open With…_ → _Merlay Visual Editor_) |
 | Edit a fence inside markdown | Click **✨ Edit visually** above the block |
+| Edit a fence in the Markdown preview | Hover a diagram → **✨ Edit visually** (allow the one-time URI prompt) |
 | Start a new diagram | Command palette → _Merlay: New Diagram_ |
 | Undo / redo | Toolbar buttons or `Ctrl+Z` / `Ctrl+Shift+Z` (`Cmd` on macOS) |
 | Pan / zoom | Drag empty canvas or hold `Space`; `Ctrl` + scroll to zoom, double-click background to fit |
