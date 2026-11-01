@@ -165,21 +165,41 @@ test('Obsidian compliance: no innerHTML/outerHTML setters in code', () => {
   );
 });
 
+const VSCODE_SRC = join(REPO, 'packages', 'vscode', 'src');
+
+function shippedFiles(): { path: string; rel: string; code: string }[] {
+  return [CORE_SRC, OBSIDIAN_SRC, VSCODE_SRC]
+    .flatMap((dir) => collectTsFiles(dir))
+    .map((path) => ({
+      path,
+      rel: relative(REPO, path),
+      code: readFileSync(path, 'utf8'),
+    }));
+}
+
 test('Obsidian compliance: no static style assignments (obsidianmd/no-static-styles-assignment)', () => {
   assertNoMatch(
-    srcFiles(),
+    shippedFiles(),
     /\.style\.[a-zA-Z]+\s*=\s*['"][^'"]*['"]/,
     'use CSS classes or dynamic variables instead of static style assignments'
   );
   assertNoMatch(
-    srcFiles(),
+    shippedFiles(),
     /\.style(?:\??\.)?setProperty\(\s*['"][^'"]+['"]\s*,\s*['"][^'"]*['"]\s*\)/,
     'use CSS classes or dynamic variables instead of static setProperty calls'
   );
   assertNoMatch(
-    srcFiles(),
+    shippedFiles(),
     /\.setAttribute\(\s*['"]style['"]\s*,\s*['"][^'"]*['"]\s*\)/,
     'use CSS classes or dynamic variables instead of setAttribute("style", ...)'
+  );
+});
+
+test('Obsidian compliance: no navigator OS detection (obsidianmd/platform)', () => {
+  assertNoMatch(
+    shippedFiles(),
+    /\bnavigator\.(userAgent|platform|appVersion)\b/,
+    'avoid navigator API for OS detection; use Platform API in Obsidian or avoid raw navigator'
   );
 });
 
@@ -214,18 +234,6 @@ test('Obsidian compliance: no telemetry / analytics identifiers', () => {
 
 // --- Review-blocking: Obsidian rejects eslint-disable for no-console as an
 // error and flags console.log, scanning the whole repo (including vscode) ---
-
-const VSCODE_SRC = join(REPO, 'packages', 'vscode', 'src');
-
-function shippedFiles(): { path: string; rel: string; code: string }[] {
-  return [CORE_SRC, OBSIDIAN_SRC, VSCODE_SRC]
-    .flatMap((dir) => collectTsFiles(dir))
-    .map((path) => ({
-      path,
-      rel: relative(REPO, path),
-      code: readFileSync(path, 'utf8'),
-    }));
-}
 
 test('Obsidian compliance: no console.log in shipped source (no-console)', () => {
   assertNoMatch(

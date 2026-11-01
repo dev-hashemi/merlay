@@ -58,6 +58,10 @@
 }
 
 /* Fallback button styling (when no existing toolbar is found) */
+.merlay-positioned {
+  position: relative;
+}
+
 .merlay-preview-edit-btn {
   display: inline-flex;
   align-items: center;
