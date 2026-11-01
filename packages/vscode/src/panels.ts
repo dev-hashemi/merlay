@@ -24,7 +24,7 @@ export function createVisualPanel(
   title: string,
   extensionUri: vscode.Uri
 ): vscode.WebviewPanel {
-  const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Beside, {
+  const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, {
     enableScripts: true,
     retainContextWhenHidden: true,
   });

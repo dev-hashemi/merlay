@@ -137,7 +137,7 @@ export async function openFenceEditor(
     return;
   }
 
-  // Create new panel beside the active editor
+  // Open in the active editor column: a full-width tab, not a narrow split.
   const panel = createVisualPanel('merlay.fenceEditor', title, extensionUri);
   const wiring = wirePanel(panel);
 
