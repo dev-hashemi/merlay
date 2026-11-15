@@ -73,6 +73,7 @@ export function useCanvasSelection({
       applySelectedNodeHalos(
         svgMountRef.current,
         targets ?? selectedNodeIdsRef.current,
+        undefined,
         useCanvasStore.getState().selectedStarKind
       );
     },

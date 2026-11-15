@@ -25,12 +25,14 @@ export function setupLifelineHitArea({
   onStartEditingNode,
   onHoverNode,
 }: SetupLifelineHitAreaOptions): void {
-  const lineEl = htmlEl as unknown as SVGLineElement;
-  const hitArea = createSvgElement('line');
-  hitArea.setAttribute('x1', lineEl.getAttribute('x1') || '0');
-  hitArea.setAttribute('y1', lineEl.getAttribute('y1') || '0');
-  hitArea.setAttribute('x2', lineEl.getAttribute('x2') || '0');
-  hitArea.setAttribute('y2', lineEl.getAttribute('y2') || '0');
+  const lineEl = htmlEl;
+  const isPath = lineEl.tagName.toLowerCase() === 'path';
+  const hitArea = createSvgElement(isPath ? 'path' : 'line');
+  if (isPath) {
+    hitArea.setAttribute('d', lineEl.getAttribute('d') || '');
+  } else {
+    for (const attr of ['x1', 'y1', 'x2', 'y2']) hitArea.setAttribute(attr, lineEl.getAttribute(attr) || '0');
+  }
   hitArea.setAttribute('class', 'mermaid-lifeline-hit-area');
   hitArea.setAttribute('data-mermaid-node-id', targetNodeId);
   hitArea.setAttribute('fill', 'none');

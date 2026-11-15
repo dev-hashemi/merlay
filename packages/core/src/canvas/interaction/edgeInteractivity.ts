@@ -86,10 +86,20 @@ export function setupEdgeInteractivity({
     return null;
   };
 
+  const peleEdges = Array.from(mountEl.querySelectorAll('.pele-edge:not(.pele-note-edge)'));
   const findEdgeForElement = (
     el: Element,
     fallbackIdx?: number
   ): MermaidEdgeDef | null => {
+    const peleGroup = el.closest('.pele-edge, .pele-edge-label');
+    if (peleGroup) {
+      // Pele emits edges in source order. Labels share their edge's data-id;
+      // text matching would confuse repeated captions or parallel arrows.
+      const nativeId = peleGroup.getAttribute('data-id');
+      const edge = peleGroup.classList.contains('pele-edge') ? peleGroup :
+        peleEdges.find((candidate) => candidate.getAttribute('data-id') === nativeId);
+      return edge ? displayEdges[peleEdges.indexOf(edge)] ?? null : null;
+    }
     const edgeGroup = el.closest(
       '.edgePath, .edgeLabel, [class*="edgePath"], [class*="edgeLabel"]'
     );
@@ -118,7 +128,7 @@ export function setupEdgeInteractivity({
 
   const defaultEdgeSelector =
     '.edgePaths path, .edgePath path, path.flowchart-link, [class*="flowchart-link"], line.messageLine0, line.messageLine1, [class*="messageLine"], path.messageLine0, path.messageLine1';
-  const edgeSelector = dom?.edgeSelector || defaultEdgeSelector;
+  const edgeSelector = `${dom?.edgeSelector || defaultEdgeSelector}, .pele-edge:not(.pele-note-edge) > path:not(.pele-marker), path.pele-edge`;
   const rawEdgePaths = mountEl.querySelectorAll(edgeSelector);
   const edgePaths: SVGGraphicsElement[] = [];
   rawEdgePaths.forEach((p) => {
@@ -291,7 +301,7 @@ export function setupEdgeInteractivity({
 
   // Setup Edge Labels
   const edgeLabels = mountEl.querySelectorAll(
-    '.edgeLabels .edgeLabel, .edgeLabel, [class*="edgeLabel"], .messageText, [class*="messageText"]'
+    '.edgeLabels .edgeLabel, .edgeLabel, [class*="edgeLabel"], .messageText, [class*="messageText"], .pele-edge-label'
   );
   edgeLabels.forEach((el, idx) => {
     const htmlEl = el as SVGGraphicsElement;

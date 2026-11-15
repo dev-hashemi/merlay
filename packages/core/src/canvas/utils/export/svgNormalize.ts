@@ -14,6 +14,7 @@ import {
   injectSvgBackground,
   injectThemeCssVariables,
   stripEditorOverlays,
+  copyPeleThemeVariables,
 } from './svgStyling';
 import { convertForeignObjectsToSvgText } from './foreignObjects';
 
@@ -171,9 +172,11 @@ export async function getExportSvgResult(
   if (!svg) return null;
 
   const isDark = isDarkThemeActive();
+  const isPele = svg.classList.contains('pele');
+  copyPeleThemeVariables(svg, target.svgMountEl);
 
   // 3. In Dark Mode, mathematically bake Obsidian's theme colors into the SVG markup
-  if (isDark) {
+  if (isDark && !isPele) {
     transformSvgForDarkMode(svg);
   }
 
@@ -181,7 +184,7 @@ export async function getExportSvgResult(
   convertForeignObjectsToSvgText(svg, isDark);
 
   // 5. Apply theme fallbacks and ensure edge labels have clean backgrounds
-  applyThemeStyling(svg, isDark);
+  if (!isPele) applyThemeStyling(svg, isDark);
 
   // 6. Normalize dimensions and viewBox
   const { width, height } = normalizeExportSvg(svg);
@@ -224,6 +227,7 @@ export function serializeCleanSvg(
 
   const clone = liveSvg.cloneNode(true) as SVGSVGElement;
   stripEditorOverlays(clone);
+  copyPeleThemeVariables(clone, target.svgMountEl);
 
   const isDark = isDarkThemeActive();
   const { width, height } = normalizeExportSvg(clone, liveSvg);

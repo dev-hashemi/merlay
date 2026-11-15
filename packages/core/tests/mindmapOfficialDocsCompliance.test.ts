@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert';
+import { JSDOM } from 'jsdom';
 import { MindmapDriver } from '../src/diagrams/mindmap/mindmapDriver';
 import { parseMermaidMindmap } from '../src/diagrams/mindmap/parser';
 import { serializeMermaidMindmap } from '../src/diagrams/mindmap/serializer';
@@ -185,9 +186,8 @@ test('Mindmap Official Docs: Projection to Canvas ViewProjection', () => {
   assert.strictEqual(nodeKeys[3], 'B');
 
   // Verify DOM resolveNodeId maps preorder index node_(\d+) to the exact node key
-  const mockEl0 = { getAttribute: (attr: string) => (attr === 'id' ? 'mermaid-123-node_0' : null) } as any;
-  const mockEl2 = { getAttribute: (attr: string) => (attr === 'id' ? 'node_2' : null) } as any;
-  const mockEl3 = { getAttribute: (attr: string) => (attr === 'id' ? 'flowchart-node_3' : null) } as any;
+  const document = new JSDOM('<svg><g class="node" id="mermaid-123-node_0"/><g class="node" id="node_2"/><g class="node" id="flowchart-node_3"/></svg>').window.document;
+  const [mockEl0, mockEl2, mockEl3] = Array.from(document.querySelectorAll('.node'));
 
   assert.strictEqual(MindmapDriver.dom.resolveNodeId?.(mockEl0, projection.nodes), 'root');
   assert.strictEqual(MindmapDriver.dom.resolveNodeId?.(mockEl2, projection.nodes), 'A1');

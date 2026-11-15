@@ -11,6 +11,7 @@ import { attachTapGestures, guardClickAfterLongPress } from './touchGestures';
 import { matchNodeElementId } from './matchNodeElement';
 import { setupLifelineHitArea } from './lifelineInteractivity';
 import { applyStyles } from '../../platform/dom';
+import { findNodeEditElement } from './nodeElement';
 
 export type StartEndKind = 'start' | 'end' | null;
 
@@ -51,10 +52,11 @@ export function setupNodeInteractivity({
   // Remove stale lifeline hit areas from previous render
   mountEl.querySelectorAll('.mermaid-lifeline-hit-area').forEach((el) => el.remove());
 
-  const nodeSelector = dom.nodeSelector || '.node, [class*="node "]';
+  const nodeSelector = `${dom.nodeSelector || '.node, [class*="node "]'}, .pele-node, .pele-lifeline`;
   const nodeElements = mountEl.querySelectorAll(nodeSelector);
   nodeElements.forEach((el) => {
     const htmlEl = el as SVGGraphicsElement;
+    if (htmlEl.classList.contains('pele-note')) return;
     applyStyles(htmlEl, { cursor: 'pointer' });
 
     const idAttr = htmlEl.getAttribute('id') || '';
@@ -98,7 +100,7 @@ export function setupNodeInteractivity({
     }
 
     // Bottom mirrored actors in sequence diagrams should only allow click selection, no hover handles
-    if (htmlEl.classList.contains('actor-bottom') || htmlEl.closest('.actor-bottom')) {
+    if (htmlEl.matches('.actor-bottom, .pele-actor-footer') || htmlEl.closest('.actor-bottom')) {
       htmlEl.onclick = (e) => {
         // Edit mode owns clicks: a linked node (<a> wrapper from mermaid's
         // click/link statements) must select, never navigate away.
@@ -111,18 +113,14 @@ export function setupNodeInteractivity({
     }
 
     const isLifeline =
-      (htmlEl.classList.contains('actor-line') || htmlEl.getAttribute('id')?.startsWith('actor')) &&
-      htmlEl.tagName.toLowerCase() === 'line';
+      ((htmlEl.classList.contains('actor-line') || htmlEl.getAttribute('id')?.startsWith('actor')) &&
+      htmlEl.tagName.toLowerCase() === 'line') || htmlEl.classList.contains('pele-lifeline');
 
     const isText = htmlEl.tagName.toLowerCase() === 'text' || !!htmlEl.closest('text');
-    const isActor = htmlEl.classList.contains('actor') || htmlEl.classList.contains('actor-top');
+    const isActor = htmlEl.matches('.actor, .actor-top, .pele-actor');
 
     const getPrimaryHeaderEl = (): Element | null => {
-      return (
-        mountEl.querySelector(
-          `rect.actor-top[name="${targetNodeId}"], g.actor-top[name="${targetNodeId}"], rect.actor[name="${targetNodeId}"], [data-mermaid-node-id="${targetNodeId}"]:not(.actor-line):not(.mermaid-lifeline-hit-area):not(text):not(line)`
-        ) || null
-      );
+      return findNodeEditElement(mountEl, targetNodeId);
     };
 
     htmlEl.onclick = (e) => {
@@ -275,6 +273,7 @@ export function setupNodeInteractivity({
     };
 
     rawNoteElements.forEach((rawEl) => {
+      if (rawEl.matches('.pele-notes, .pele-note-edge')) return;
       const container = (rawEl.closest('g[data-et="note"], g.note, g[id*="Note"], g') || rawEl) as SVGGraphicsElement;
       if (handledNotes.has(container)) return;
       handledNotes.add(container);

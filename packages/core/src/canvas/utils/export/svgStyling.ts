@@ -4,6 +4,18 @@
 
 import { createSvgElement } from '../../../platform/dom';
 
+/** Bake Pele's inherited host palette into an export that has no host stylesheet. */
+export function copyPeleThemeVariables(svg: SVGSVGElement, mount?: HTMLElement | null): void {
+  if (!svg.classList.contains('pele')) return;
+  const liveSvg = mount?.querySelector('svg.pele');
+  if (!liveSvg) return;
+  const styles = window.getComputedStyle(liveSvg);
+  for (let i = 0; i < styles.length; i++) {
+    const name = styles.item(i);
+    if (name.startsWith('--pele-')) svg.style.setProperty(name, styles.getPropertyValue(name));
+  }
+}
+
 export function injectThemeCssVariables(svg: SVGSVGElement, isDark: boolean = true): void {
   if (typeof document === 'undefined') return;
   const textNormal = isDark ? '#f1f5f9' : '#1e293b';

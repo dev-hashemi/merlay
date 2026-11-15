@@ -3,13 +3,15 @@ import { SvgDomAdapter } from '../types';
 export const stateDomAdapter: SvgDomAdapter = {
   nodeIdPrefixes: ['state-'],
   anchorSelectors:
-    '.state-start, .state-end, [id*="root_start"], [id*="root_end"], [id*="_start"], [id*="_end"]',
+    '.state-start, .state-end, .pele-state-start, .pele-state-end, [id*="root_start"], [id*="root_end"], [id*="_start"], [id*="_end"]',
   anchorNodeId: '[*]',
   isAnchorElement(el) {
     const idAttr = el.getAttribute('id') || '';
     return (
       el.classList.contains('state-start') ||
       el.classList.contains('state-end') ||
+      el.classList.contains('pele-state-start') ||
+      el.classList.contains('pele-state-end') ||
       idAttr.includes('root_start') ||
       idAttr.includes('root_end') ||
       idAttr.includes('_start') ||
@@ -22,7 +24,7 @@ export const stateDomAdapter: SvgDomAdapter = {
     const attr = el.getAttribute('data-mermaid-start-end');
     if (attr === 'start' || attr === 'end') return attr;
     const container = el.closest('g.node, g') || el;
-    const idAttr = container.getAttribute('id') || el.getAttribute('id') || '';
+    const idAttr = container.getAttribute('data-id') || container.getAttribute('id') || el.getAttribute('id') || '';
     const match = idAttr.match(/^(?:state-)?(.+)_(start|end)(?:-\d+)?$/);
     if (match) {
       return match[2] as 'start' | 'end';
@@ -42,7 +44,7 @@ export const stateDomAdapter: SvgDomAdapter = {
   },
   getAnchorCompositeId(el) {
     const container = el.closest('g.node, g') || el;
-    const idAttr = container.getAttribute('id') || el.getAttribute('id') || '';
+    const idAttr = container.getAttribute('data-id') || container.getAttribute('id') || el.getAttribute('id') || '';
     const match =
       idAttr.match(/(?:^|-)state-(.+?)_(?:start|end)(?:-\d+)?$/) ||
       idAttr.match(/^(.+?)_(?:start|end)(?:-\d+)?$/);

@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Rect } from '../types';
+import { findNodeEditElement } from '../interaction/nodeElement';
 
 export interface UseCanvasCameraOptions {
   containerRef?: React.RefObject<HTMLDivElement>;
@@ -69,9 +70,7 @@ export function useCanvasCamera({
   // Record screen position of active node to stabilize camera across re-render
   const pinNodeForCamera = useCallback((nodeId: string) => {
     if (!svgMountRef.current) return;
-    const activeEl = svgMountRef.current.querySelector(
-      `[data-mermaid-node-id="${nodeId}"]`
-    );
+    const activeEl = findNodeEditElement(svgMountRef.current, nodeId);
     if (activeEl) {
       const b = activeEl.getBoundingClientRect();
       pendingCameraPinRef.current = {
@@ -88,9 +87,7 @@ export function useCanvasCamera({
     if (!pin || !svgMountRef.current) return;
     pendingCameraPinRef.current = null;
 
-    const activeEl = svgMountRef.current.querySelector(
-      `[data-mermaid-node-id="${pin.nodeId}"]`
-    );
+    const activeEl = findNodeEditElement(svgMountRef.current, pin.nodeId);
     if (!activeEl) return;
 
     const b = activeEl.getBoundingClientRect();

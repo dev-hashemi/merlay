@@ -204,6 +204,15 @@ export const MindmapDriver: DiagramDriver<MermaidMindmapAST> = {
     nodeSelector: '.node, [class*="mindmap-node"]',
     edgeSelector: '.edge, path.edge',
     resolveNodeId(el: Element, displayNodes: Map<string, MermaidNodeDef>): string | null {
+      if (el.classList.contains('pele-node')) {
+        const ids = Array.from(displayNodes.keys());
+        if (el.classList.contains('pele-root')) return ids[0] ?? null;
+        // Pele renders branches in preorder, followed by the root. Implicit
+        // labels are also data-ids, so duplicate topics need positional IDs.
+        const branches = Array.from(el.closest('svg')?.querySelectorAll('.pele-node:not(.pele-root)') ?? []);
+        const index = branches.indexOf(el);
+        return index < 0 ? null : ids[index + 1] ?? null;
+      }
       const container = el.closest?.('g.node, [class*="mindmap-node"]') || el;
       const idAttr = container.getAttribute?.('id') || el.getAttribute?.('id') || '';
       const match = idAttr.match(/(?:^|-)node_(\d+)$/);

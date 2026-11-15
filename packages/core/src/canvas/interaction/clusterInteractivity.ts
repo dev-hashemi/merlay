@@ -30,7 +30,7 @@ export function setupClusterInteractivity({
   onStartEditingSubgraph,
   onHoverSubgraph,
 }: SetupClusterInteractivityOptions): void {
-  const defaultClusterSelector = '.cluster, [class*="cluster"], .box, [class*="box"]';
+  const defaultClusterSelector = '.cluster, [class*="cluster"], .box, [class*="box"], .pele-frame';
   const clusterSelector = dom?.clusterSelector
     ? `${dom.clusterSelector}, ${defaultClusterSelector}`
     : defaultClusterSelector;
@@ -200,7 +200,7 @@ export function setupClusterInteractivity({
   };
 
   const matchById = (htmlEl: Element): string | null => {
-    const idAttr = htmlEl.getAttribute('id') || '';
+    const idAttr = htmlEl.getAttribute('data-id') || htmlEl.getAttribute('id') || '';
     if (idAttr) {
       const prefixes = dom?.clusterIdPrefixes || dom?.nodeIdPrefixes || ['flowchart-', 'state-'];
       const sortedSubIds = Array.from(displaySubgraphs.keys()).sort((a, b) => b.length - a.length);
@@ -304,7 +304,7 @@ export function setupClusterInteractivity({
 
   const getClusterLabelText = (el: Element): string => {
     // Sequence frames often split titles across multiple .loopText tspans and wrap with brackets [ ... ]
-    const loopTexts = Array.from(el.querySelectorAll('.loopText, .sectionTitle'))
+    const loopTexts = Array.from(el.querySelectorAll('.loopText, .sectionTitle, .pele-frame-label'))
       .map((t) => t.textContent?.trim() || '')
       .filter(Boolean)
       .join(' ')
@@ -325,13 +325,6 @@ export function setupClusterInteractivity({
   };
 
   // Second pass: label matching
-  const clustersByLabel = new Map<string, Element[]>();
-  for (const el of unlabeledClusters) {
-    const labelText = getClusterLabelText(el);
-    const key = labelText;
-    if (!clustersByLabel.has(key)) clustersByLabel.set(key, []);
-    clustersByLabel.get(key)!.push(el);
-  }
   const subsByLabel = new Map<string, string[]>();
   for (const [subId, subDef] of displaySubgraphs.entries()) {
     if (usedSubIds.has(subId)) continue;
@@ -350,18 +343,13 @@ export function setupClusterInteractivity({
       continue;
     }
     const labelText = getClusterLabelText(htmlEl);
-    const clusterQueue = clustersByLabel.get(labelText) ?? [];
     const subQueue = subsByLabel.get(labelText) ?? [];
-    if (subQueue.length === 0) {
+    const targetSubId = subQueue.find((id) => !usedSubIds.has(id));
+    if (!targetSubId) {
       pendingLabelClusters.push(htmlEl);
       continue;
     }
-    const idx = clusterQueue.indexOf(el);
-    const targetSubId = subQueue[Math.min(idx, subQueue.length - 1)];
-    if (usedSubIds.has(targetSubId)) continue;
     usedSubIds.add(targetSubId);
-    const qIdx = subQueue.indexOf(targetSubId);
-    if (qIdx !== -1) subQueue.splice(qIdx, 1);
     bindCluster(htmlEl, targetSubId);
   }
 
@@ -376,6 +364,7 @@ export function setupClusterInteractivity({
       return (
         el.getAttribute('data-et') === 'control-structure' ||
         el.classList.contains('loopGroup') ||
+        el.classList.contains('pele-frame') ||
         el.classList.contains('rect') ||
         el.tagName.toLowerCase() === 'rect' ||
         el.querySelector('line.loopLine, .loopLine, polygon.labelBox') !== null

@@ -4,6 +4,7 @@ import { useDiagramMutations } from '../hooks/useDiagramMutations';
 
 import { NodeLinkDetails } from '../../diagrams/nodeLinks';
 import { DiagramNoteDetails } from '../../diagrams/common';
+export { findNodeEditElement } from '../interaction/nodeElement';
 
 export interface OverlayDerivedState {
   selectedStarKind: string | null;
@@ -17,14 +18,6 @@ export interface OverlayDerivedState {
   nodeMemberCapabilities: ReturnType<NonNullable<ReturnType<typeof useDiagramMutations>['driver']['mutations']['getNodeMemberCapabilities']>> | undefined;
   canAddStart: boolean;
   canAddEnd: boolean;
-}
-
-export function findNodeEditElement(mount: Element | null, nodeId: string): Element | null {
-  return (
-    mount?.querySelector(
-      `rect.actor-top[name="${nodeId}"], g.actor-top[name="${nodeId}"], [data-mermaid-node-id="${nodeId}"]:not(.actor-line):not(.mermaid-lifeline-hit-area)`
-    ) || mount?.querySelector(`[data-mermaid-node-id="${nodeId}"]`) || null
-  );
 }
 
 export function findSubgraphEditElement(mount: Element | null, subId: string): Element | null {
