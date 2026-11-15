@@ -60,7 +60,8 @@ export function openDiagramModal(
       lineStart: blockMatch.lineStart,
       lineEnd: blockMatch.lineEnd,
     },
-    rawCode
+    rawCode,
+    content
   ).open();
   return true;
 }

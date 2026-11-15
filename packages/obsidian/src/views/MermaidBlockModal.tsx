@@ -21,13 +21,16 @@ export class MermaidBlockModal extends Modal {
   private saveTimeout: number | null = null;
   private saveChain: Promise<void> = Promise.resolve();
   private isFullscreen: boolean = false;
+  private recoveryModal: Modal | null = null;
+  private recoveryText: HTMLTextAreaElement | null = null;
 
   constructor(
     app: App,
     plugin: MerlayPlugin,
     filePath: string,
     sectionInfo: SectionInfo,
-    initialCode: string
+    initialCode: string,
+    private documentText: string
   ) {
     super(app);
     this.plugin = plugin;
@@ -113,28 +116,48 @@ export class MermaidBlockModal extends Modal {
   }
 
   private async writeCodeToNote(codeToSave: string): Promise<void> {
-    const file = this.app.vault.getAbstractFileByPath(this.filePath);
-    if (!(file instanceof TFile)) return;
-
     try {
+      const file = this.app.vault.getAbstractFileByPath(this.filePath);
+      if (!(file instanceof TFile)) throw new Error('The note was moved or deleted.');
+      const saved: { result?: ReturnType<typeof replaceMermaidBlock> } = {};
       await this.app.vault.process(file, (data) => {
-        const res = replaceMermaidBlock(
+        saved.result = replaceMermaidBlock(
           data,
           codeToSave,
           this.sectionInfo.lineStart,
           this.initialCode,
-          codeToSave
+          undefined,
+          this.documentText
         );
-
-        this.sectionInfo.lineStart = res.newStartLine;
-        this.sectionInfo.lineEnd = res.newEndLine;
-        if (this.latestCode === codeToSave) this.initialCode = codeToSave.trim();
-
-        return res.updatedText;
+        return saved.result.updatedText;
       });
+      if (!saved.result) throw new Error('The note could not be updated.');
+      this.sectionInfo.lineStart = saved.result.newStartLine;
+      this.sectionInfo.lineEnd = saved.result.newEndLine;
+      this.documentText = saved.result.updatedText;
+      this.initialCode = codeToSave.trim();
     } catch (e: unknown) {
-      console.error('Error saving mermaid block to note:', e);
-      new Notice(`Failed to save Mermaid diagram: ${e instanceof Error ? e.message : String(e)}`);
+      const detail = e instanceof Error ? e.message : String(e);
+      new Notice(`Failed to save Mermaid diagram: ${detail}`);
+      // The canvas may already have closed while its final save was pending.
+      // Keep a selectable recovery copy available even in that case.
+      if (!this.recoveryModal) {
+        this.recoveryModal = new Modal(this.app);
+        this.recoveryModal.contentEl.createEl('h2', { text: 'Unsaved diagram' });
+        this.recoveryModal.contentEl.createEl('p', {
+          text: 'Copy your diagram source before closing this window, then reopen the diagram to retry.',
+        });
+        this.recoveryText = this.recoveryModal.contentEl.createEl('textarea', {
+          cls: 'mermaid-code-drawer-textarea',
+          attr: { readonly: '', rows: '12', 'aria-label': 'Unsaved Mermaid source' },
+        });
+        this.recoveryModal.onClose = () => {
+          this.recoveryModal = null;
+          this.recoveryText = null;
+        };
+        this.recoveryModal.open();
+      }
+      if (this.recoveryText) this.recoveryText.value = this.latestCode;
     }
   }
 }

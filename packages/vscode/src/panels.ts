@@ -41,25 +41,70 @@ export function attachVisualPanel(
   document: vscode.TextDocument,
   source: VisualSource
 ): vscode.Disposable {
+  let saveChain = Promise.resolve();
+  let pendingWrites = 0;
+  let unsavedCode: string | undefined;
+  let recoveredCode: string | undefined;
+  let disposed = false;
   const post = (message: HostToWebviewMessage): void => {
-    void panel.webview.postMessage(message);
+    if (!disposed) void panel.webview.postMessage(message);
+  };
+  const openRecovery = async (): Promise<void> => {
+    const code = unsavedCode;
+    if (code === undefined || code === recoveredCode) return;
+    recoveredCode = code;
+    const recovery = await vscode.workspace.openTextDocument({ language: 'mermaid', content: code });
+    await vscode.window.showTextDocument(recovery);
+  };
+  const reportSaveError = async (error: unknown): Promise<void> => {
+    const detail = error instanceof Error ? error.message : String(error);
+    const action = await vscode.window.showErrorMessage(
+      `Could not save diagram: ${detail} Your edits are still in the visual editor.`,
+      'Open recovery copy'
+    );
+    if (action) await openRecovery();
+  };
+  const syncSource = (): void => {
+    if (pendingWrites || unsavedCode !== undefined) return;
+    try {
+      post({ type: 'merlay/update', code: source.readCode() });
+    } catch {
+      // Keep the canvas intact if its target disappeared; saving reports it.
+    }
   };
   const onMessage = panel.webview.onDidReceiveMessage((message: WebviewToHostMessage) => {
     if (message.type === 'merlay/ready') {
       post({ type: 'merlay/init', code: source.readCode() });
     } else if (message.type === 'merlay/codeChange') {
-      if (message.code === source.readCode()) return;
-      void source.writeCode(message.code);
+      unsavedCode = message.code;
+      pendingWrites++;
+      saveChain = saveChain.then(async () => {
+        try {
+          await source.writeCode(message.code);
+          if (pendingWrites === 1) unsavedCode = undefined;
+        } catch (error: unknown) {
+          void reportSaveError(error);
+        } finally {
+          pendingWrites--;
+          if (disposed && !pendingWrites) await openRecovery();
+          else syncSource();
+        }
+      });
     } else if (message.type === 'merlay/notify') {
       void vscode.window.showInformationMessage(message.message);
     }
   });
   const onDocChange = vscode.workspace.onDidChangeTextDocument((event) => {
     if (event.document.uri.toString() !== document.uri.toString()) return;
-    post({ type: 'merlay/update', code: source.readCode() });
+    syncSource();
   });
   const onTheme = vscode.window.onDidChangeActiveColorTheme(() => {
     post({ type: 'merlay/theme' });
   });
-  return vscode.Disposable.from(onMessage, onDocChange, onTheme);
+  return vscode.Disposable.from(onMessage, onDocChange, onTheme, {
+    dispose() {
+      disposed = true;
+      if (!pendingWrites) void openRecovery();
+    },
+  });
 }

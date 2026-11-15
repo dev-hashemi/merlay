@@ -1,7 +1,7 @@
 /**
  * Markdown ```mermaid fence integration: a CodeLens above every fence opens
  * a visual panel bound to that block. Write-back reuses core's
- * `replaceMermaidBlock` (fence-aware, auto-healing) with a moving anchor,
+ * `replaceMermaidBlock` with a document snapshot and moving anchor,
  * mirroring the Obsidian block modal's save chain.
  *
  * Implements single-panel reuse per workspace, multi-diagram navigation,
@@ -10,7 +10,7 @@
  */
 
 import * as vscode from 'vscode';
-import { replaceMermaidBlock } from '@merlay/core';
+import { findMermaidBlockBounds, replaceMermaidBlock } from '@merlay/core';
 import {
   findMermaidFences,
   findNearestFence,
@@ -41,8 +41,8 @@ export class MermaidFenceCodeLensProvider implements vscode.CodeLensProvider {
 
 interface FenceAnchor {
   hintLine: number;
-  initialCode: string;
   latestCode: string;
+  documentText: string;
 }
 
 interface ActiveFenceSession {
@@ -74,7 +74,7 @@ export async function openFenceEditor(
   }
   const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(uriString));
   const fences = findMermaidFences(document.getText());
-  const fence = fences.find((f) => f.startLine === startLine) ?? fences[0];
+  const fence = fences.find((f) => f.startLine === startLine);
   if (!fence) {
     void vscode.window.showErrorMessage('Merlay: that mermaid block moved or was deleted.');
     return;
@@ -82,8 +82,8 @@ export async function openFenceEditor(
 
   const anchor: FenceAnchor = {
     hintLine: fence.startLine,
-    initialCode: fence.code,
     latestCode: fence.code,
+    documentText: document.getText(),
   };
 
   const title = formatFenceTitle(document.uri.path, fence.startLine, fences);
@@ -92,14 +92,13 @@ export async function openFenceEditor(
   const wirePanel = (targetPanel: vscode.WebviewPanel) =>
     attachVisualPanel(targetPanel, document, {
       readCode: () => {
-        const currentFences = findMermaidFences(document.getText());
-        const current =
-          currentFences.find((f) => f.code.trim() === anchor.latestCode.trim()) ??
-          currentFences.find((f) => f.startLine === anchor.hintLine);
-        if (current) {
-          anchor.hintLine = current.startLine;
-          return current.code;
-        }
+        const text = document.getText();
+        const lines = text.split('\n');
+        const bounds = findMermaidBlockBounds(lines, anchor.hintLine, undefined, undefined, anchor.documentText);
+        if (!bounds) return anchor.latestCode;
+        anchor.hintLine = bounds.start;
+        anchor.latestCode = lines.slice(bounds.start + 1, bounds.end).join('\n');
+        anchor.documentText = text;
         return anchor.latestCode;
       },
       writeCode: async (code: string) => {
@@ -107,15 +106,16 @@ export async function openFenceEditor(
           document.getText(),
           code,
           anchor.hintLine,
-          anchor.initialCode,
-          anchor.latestCode
+          anchor.latestCode,
+          undefined,
+          anchor.documentText
         );
-        anchor.hintLine = res.newStartLine;
-        anchor.initialCode = code.trim();
-        anchor.latestCode = code;
         const edit = new vscode.WorkspaceEdit();
         edit.replace(document.uri, fullDocRange(document), res.updatedText);
-        await vscode.workspace.applyEdit(edit);
+        if (!(await vscode.workspace.applyEdit(edit))) throw new Error('The document could not be updated.');
+        anchor.hintLine = res.newStartLine;
+        anchor.latestCode = code;
+        anchor.documentText = res.updatedText;
       },
     });
 

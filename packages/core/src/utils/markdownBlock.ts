@@ -31,8 +31,15 @@ export function findMermaidBlockBounds(
   lines: string[],
   hintStartLine?: number,
   initialCode?: string,
-  latestCode?: string
+  latestCode?: string,
+  previousDocumentText?: string
 ): BlockBounds | null {
+  if (previousDocumentText !== undefined) {
+    const tracked = trackBlockBounds(previousDocumentText.split('\n'), lines, hintStartLine);
+    if (!tracked) return null;
+    const match = findMermaidBlockBounds(lines, tracked.start, initialCode, latestCode);
+    return match?.start === tracked.start && match.end === tracked.end ? match : null;
+  }
   const findClosingFence = (startIdx: number): number => {
     for (let i = startIdx + 1; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -43,24 +50,26 @@ export function findMermaidBlockBounds(
     return -1;
   };
 
-  // 1. Primary check when code content is available: match by code content
-  if (initialCode || latestCode) {
+  // A save with expected source must never fall back to an unrelated block.
+  if (initialCode !== undefined || latestCode !== undefined) {
     const rawInitial = initialCode?.trim();
     const rawLatest = latestCode?.trim();
+    const matches: BlockBounds[] = [];
     for (let i = 0; i < lines.length; i++) {
       if (lines[i].trim().startsWith('```mermaid')) {
         const end = findClosingFence(i);
         if (end !== -1) {
           const blockContent = lines.slice(i + 1, end).join('\n').trim();
           if (
-            (rawInitial && blockContent === rawInitial) ||
-            (rawLatest && blockContent === rawLatest)
+            blockContent === rawInitial || blockContent === rawLatest
           ) {
-            return { start: i, end };
+            matches.push({ start: i, end });
           }
         }
       }
     }
+    const atHint = matches.find((bounds) => bounds.start === hintStartLine);
+    return atHint ?? (matches.length === 1 ? matches[0] : null);
   }
 
   const hint = hintStartLine ?? 0;
@@ -106,11 +115,16 @@ export function replaceMermaidBlock(
   newCode: string,
   hintStartLine?: number,
   initialCode?: string,
-  latestCode?: string
+  latestCode?: string,
+  previousDocumentText?: string
 ): ReplaceResult {
   const lines = documentText.split('\n');
   const codeLines = newCode.trim().split('\n');
-  const bounds = findMermaidBlockBounds(lines, hintStartLine, initialCode, latestCode);
+  const bounds = findMermaidBlockBounds(lines, hintStartLine, initialCode, latestCode, previousDocumentText);
+
+  if (!bounds && (initialCode !== undefined || latestCode !== undefined || previousDocumentText !== undefined)) {
+    throw new Error('The diagram changed, moved, or was removed. Copy your edits before reopening it.');
+  }
 
   if (bounds) {
     const { start, end } = bounds;
@@ -188,4 +202,36 @@ export function replaceMermaidBlock(
     newStartLine: Math.max(0, appendLines.length - codeLines.length - 2),
     newEndLine: appendLines.length - 2,
   };
+}
+
+/** Track one contiguous document change; overlapping or uncertain changes fail closed. */
+function trackBlockBounds(previous: string[], current: string[], hint?: number): BlockBounds | null {
+  if (hint === undefined) return null;
+  const bounds = findMermaidBlockBounds(previous, hint);
+  if (!bounds || bounds.start !== hint) return null;
+
+  let prefix = 0;
+  while (prefix < previous.length && prefix < current.length && previous[prefix] === current[prefix]) {
+    prefix++;
+  }
+  let suffix = 0;
+  while (
+    suffix < previous.length - prefix && suffix < current.length - prefix &&
+    previous[previous.length - 1 - suffix] === current[current.length - 1 - suffix]
+  ) {
+    suffix++;
+  }
+
+  const oldChangeEnd = previous.length - suffix;
+  const lineDelta = current.length - previous.length;
+  if (oldChangeEnd <= bounds.start) {
+    return { start: bounds.start + lineDelta, end: bounds.end + lineDelta };
+  }
+  if (prefix > bounds.end) return bounds;
+  // Source edits inside the fences may sync to the canvas; saves still check
+  // expected content. Changing either fence loses the target's identity.
+  if (prefix > bounds.start && oldChangeEnd <= bounds.end) {
+    return { start: bounds.start, end: bounds.end + lineDelta };
+  }
+  return null;
 }

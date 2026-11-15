@@ -18,12 +18,18 @@ export class MermaidEditorProvider implements vscode.CustomTextEditorProvider {
   ): Promise<void> {
     webviewPanel.webview.options = { enableScripts: true };
     webviewPanel.webview.html = getWebviewHtml(webviewPanel.webview, this.extensionUri);
+    let savedCode = document.getText();
     const wiring = attachVisualPanel(webviewPanel, document, {
-      readCode: () => document.getText(),
+      readCode: () => {
+        savedCode = document.getText();
+        return savedCode;
+      },
       writeCode: async (code: string) => {
+        if (document.getText() !== savedCode) throw new Error('The diagram changed outside the visual editor.');
         const edit = new vscode.WorkspaceEdit();
         edit.replace(document.uri, fullDocRange(document), code);
-        await vscode.workspace.applyEdit(edit);
+        if (!(await vscode.workspace.applyEdit(edit))) throw new Error('The document could not be updated.');
+        savedCode = code;
       },
     });
     webviewPanel.onDidDispose(() => {
