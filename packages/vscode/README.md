@@ -14,14 +14,14 @@ clean Mermaid code writes itself.
 - **Markdown fences** — a ✨ Edit visually lens above every ` ```mermaid `
   block opens the visual editor for that block; edits write straight back
   into the fence.
-- **Flowchart, state, sequence & class diagrams** — each type gets its own
-  tailored toolbar (states, participants and messages, members and methods).
-- **Diagram themes** — Auto plus Default, Dark, Forest and Neutral presets,
-  stored as a directive in the code.
+- **Flowchart, state, sequence, mindmap & class diagrams** — each type gets its own
+  tailored controls for its elements and relationships.
+- **Diagram themes** — Auto plus Default, Dark, Forest, Neutral and Base presets,
+  stored as Mermaid frontmatter.
 - **Syntax drawer** — a slide-out panel shows the live Mermaid source for
   reading or hand-editing; it stays in sync both ways.
-- **Export** — copy the diagram as PNG or SVG, or download a high-resolution
-  PNG, all from the toolbar.
+- **Export** — copy PNG or SVG, download SVG, or download PNG at 1×, 2× or 3×
+  resolution, with an optional background, all from the toolbar.
 - **Clean output, no lock-in** — edits serialize to 100% standard Mermaid.
   No metadata, no proprietary format. The code is always the source of truth:
   typing, VS Code undo, and formatters sync live into the open editor.
@@ -35,7 +35,7 @@ clean Mermaid code writes itself.
 | Edit a fence in the Markdown preview | Hover a diagram → **✨ Edit visually** (allow the one-time URI prompt) |
 | Start a new diagram | Command palette → _Merlay: New Diagram_ |
 | Undo / redo | Toolbar buttons or `Ctrl+Z` / `Ctrl+Shift+Z` (`Cmd` on macOS) |
-| Pan / zoom | Drag empty canvas or hold `Space`; `Ctrl` + scroll to zoom, double-click background to fit |
+| Pan / zoom | Hand tool (`H`) + drag, or hold `Space` and drag; `Ctrl` / `Cmd` + scroll to zoom |
 
 ## Extension Settings
 
@@ -43,6 +43,7 @@ clean Mermaid code writes itself.
 
 ## Feedback & Source
 
+- Known syntax limitations and workarounds: [Known issues](https://github.com/dev-hashemi/merlay/blob/main/docs/KNOWN_ISSUES.md).
 - Issues and ideas: [GitHub issues](https://github.com/dev-hashemi/merlay/issues)
 - Source: [github.com/dev-hashemi/merlay](https://github.com/dev-hashemi/merlay)
 - Also available as an [Obsidian plugin](https://github.com/dev-hashemi/merlay),

@@ -11,7 +11,7 @@ Mermaid is a declarative, code-first diagramming language. It calculates layout 
 **Merlay** adopts a **structural, non-spatial architecture**:
 1. **Source of Truth**: The Mermaid syntax string in the Markdown document is always the single source of truth.
 2. **Pure AST Operations**: User actions (sprout, connect, rename, delete, style) mutate an in-memory Abstract Syntax Tree (AST), which serializes back to clean, standard Mermaid code.
-3. **100% Native Obsidian Rendering**: Code is passed directly to Obsidian's native Mermaid renderer. No custom layout engines or canvas libraries (React Flow, Elk) are used.
+3. **Native Host Rendering**: Obsidian supplies its renderer through `loadMermaid()` (Pele in Obsidian 1.15, Mermaid in earlier versions); VS Code uses the bundled Mermaid library. Merlay adds no separate layout engine or canvas framework. Renderer-specific SVG metadata must be mapped to the same driver view-model.
 4. **Interactive Direct-Manipulation Overlays**: Lightweight SVG/HTML overlays (selection halos, sprout buttons, drag-to-connect handles, floating HUDs, and inline text inputs) track the bounding boxes of rendered SVG elements without interfering with diagram layout.
 5. **Camera Stabilization**: Viewport tracking pins active nodes across re-renders to eliminate jarring view jumps.
 
@@ -20,7 +20,7 @@ flowchart LR
     MD["Markdown Note (Code)"] -->|Parse| AST["Diagram AST"]
     AST -->|Mutate| AST2["Mutated AST"]
     AST2 -->|Serialize| MMD["Mermaid Code"]
-    MMD -->|Obsidian Render| SVG["Native Mermaid SVG"]
+    MMD -->|Host renderer| SVG["Rendered SVG"]
     SVG -->|DOM Hit-Testing| OV["Interactive Overlays"]
     OV -->|User Interaction| AST
 ```
@@ -91,7 +91,7 @@ packages/
 │   │   ├── clusterInteractivity.ts       # Subgraph cluster selection & dblclick
 │   │   └── touchGestures.ts              # Pinch-zoom, touch pan, tap & long-press
 │   ├── renderer/               # SVG rendering & selection styling
-│   │   ├── mermaidRenderer.ts  # Obsidian native mermaid.render wrapper & sanitization
+│   │   ├── mermaidRenderer.ts  # Host SVG mounting, sanitization, and dimension normalization
 │   │   └── selectionHalo.ts    # SVG halo styling for active nodes and edges
 │   └── hooks/                  # Granular canvas state hooks (driver-dispatched)
 │       ├── useCanvasCamera.ts  # Pan, zoom, wheel, fit-view, pinNodeForCamera
@@ -148,6 +148,8 @@ packages/
   `clone(ast)` → `mutate(clone)` → `serialize(clone)` → `verify syntax` → `emit`.
 - External code changes (undo/redo, manual edits in the syntax drawer) re-parse through an effect. There is always **one active AST** owned by the current driver in `useDiagramAst`.
 
+**Implementation gap:** The required verify-before-emit step is not yet enforced by `applyMutation`; rendering errors can arrive after source changes are emitted. See [pre-save validation](docs/KNOWN_ISSUES.md#structural-edits-can-be-saved-before-syntax-validation) for the remaining work. Validation alone also cannot prove semantic preservation.
+
 ### 3.3 Camera Stabilization (Prevent Viewport Jumps)
 - Whenever a user triggers a structural modification (such as sprouting a new element or splitting a connection), call `pinNodeForCamera(activeNodeId)`.
 - The camera tracks that element's screen coordinate before and after re-rendering and automatically adjusts the pan offset so the viewport remains stable.
@@ -186,7 +188,7 @@ Every diagram package satisfies the same core contract:
 Every PR and change must maintain strict correctness:
 
 ```bash
-# Run all unit, integration, and compliance tests (417 passing tests)
+# Run all unit, integration, and compliance tests
 npm test
 
 # Run TypeScript type check and production esbuild bundle

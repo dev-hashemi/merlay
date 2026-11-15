@@ -18,9 +18,9 @@
 [![License: MIT](https://img.shields.io/github/license/dev-hashemi/merlay)](https://github.com/dev-hashemi/merlay/blob/main/LICENSE)
 [![CI](https://github.com/dev-hashemi/merlay/actions/workflows/ci.yml/badge.svg)](https://github.com/dev-hashemi/merlay/actions/workflows/ci.yml)
 
-**Merlay** lets you create and edit Mermaid diagrams visually directly inside your Obsidian notes. Build **Flowcharts**, **State Diagrams**, **Sequence Diagrams**, and **Mindmaps** with single-click relational sprouting, drag-and-drop connections, and inline renaming — without writing code or fighting diagram syntax.
+**Merlay** lets you create and edit Mermaid diagrams visually directly inside your Obsidian notes. Build **Flowcharts**, **State Diagrams**, **Sequence Diagrams**, **Mindmaps**, and **Class Diagrams** with single-click relational sprouting, drag-and-drop connections, and inline renaming.
 
-Everything you create is saved as **100% standard, clean Mermaid syntax** right inside your note. No proprietary lock-in, no layout drift, and fully compatible with Obsidian mobile, GitHub, and AI assistants.
+Edits are saved as **standard Mermaid text** right inside your note, with no proprietary layout metadata. Your source stays portable across editors and tools that support Mermaid. For syntax limitations and the current testing scope, see [Known issues](docs/KNOWN_ISSUES.md).
 
 **Merlay is also available for VS Code** and its forks (Devin, Cursor, VSCodium) on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=dev-hashemi.merlay) and [Open VSX](https://open-vsx.org/extension/dev-hashemi/merlay) — same visual editor, same core.
 
@@ -34,31 +34,33 @@ Everything you create is saved as **100% standard, clean Mermaid syntax** right 
 
 ## 📊 Supported Diagrams
 
-Merlay provides interactive visual editing for 4 major Mermaid diagram types:
+Merlay provides interactive visual editing for five Mermaid diagram types in both Obsidian and VS Code:
 
 - **Flowcharts** (`flowchart`, `graph`)
 - **State Diagrams** (`stateDiagram-v2`)
 - **Sequence Diagrams** (`sequenceDiagram`)
 - **Mindmaps** (`mindmap`)
+- **Class Diagrams** (`classDiagram`)
 
-*All other diagram types open in a high-performance view mode with smooth pan and zoom.*
+*Other diagram types open in view-only mode with pan and zoom when supported by the host renderer.* Support for a diagram type does not mean every Mermaid syntax feature is visually editable; see [Known issues](docs/KNOWN_ISSUES.md).
 
 ---
 
 ## ✨ Features
 
 - 🎯 **Visual-First Editing:** Click to select, sprout connected elements in one click, drag handles to connect, and double-click to edit text inline.
-- 🎨 **Universal Themes:** Switch between Default, Dark, Neutral, Forest, and Base themes across all diagrams using standard Mermaid frontmatter.
+- 🎨 **Diagram Themes:** Choose Auto, Default, Dark, Neutral, Forest, or Base using standard Mermaid frontmatter. Appearance depends on the host renderer.
 - 🔄 **Two-Way Sync:** Changes reflect instantly in your note, with a slide-out drawer to view and tweak Mermaid source code live.
 - ⚡ **Native Obsidian Flow:** Hover over any Mermaid block in Reading View or Live Preview and click **Visual Mode**, or insert templates via slash commands (`/flowchart`, `/state`, etc.).
 - 📂 **Standalone Files:** Create and edit `.mmd` and `.mermaid` diagram files directly from the file explorer.
+- 🖼️ **Export:** Use **Export** in the toolbar to copy PNG or SVG, download SVG, or download PNG at 1×, 2×, or 3× resolution. Choose whether to include a background.
 - 🔒 **Zero Lock-In:** Generates clean, human-readable Mermaid code with no custom comments or hidden layout data.
 
 ---
 
 ## ⚡ Quick Start
 
-1. **Open:** Hover over any Mermaid block in your note and click **Visual Mode** (or type `/flowchart`, `/state`, `/sequence`, or `/mindmap`).
+1. **Open:** Hover over any Mermaid block in your note and click **Visual Mode** (or type `/flowchart`, `/state`, `/sequence`, `/mindmap`, or `/class`).
 2. **Edit:** Sprout new items, drag connections, double-click to rename, or delete elements.
 3. **Save:** Close the overlay — your note is updated automatically in real time.
 
@@ -73,8 +75,9 @@ Merlay provides interactive visual editing for 4 major Mermaid diagram types:
 | **Connect** | `Drag` from handle to target element |
 | **Edit Text** | `Double-Click` element or connection label |
 | **Delete** | `Delete` or `Backspace` |
-| **Pan** | `Click + Drag` canvas background (or hold `Space`) |
-| **Zoom** | `Mouse Wheel` or pinch trackpad |
+| **Pan** | Hand tool (`H`) + drag, or hold `Space` and drag |
+| **Zoom** | `Ctrl` / `Cmd` + mouse wheel, or pinch |
+| **Undo / Redo** | `Ctrl` / `Cmd` + `Z` / `Shift+Z` |
 | **Toggle Syntax Drawer** | Click **`<> Syntax`** button |
 
 ---
@@ -86,7 +89,9 @@ Mermaid is a declarative, code-first diagramming language that computes its own 
 **Merlay takes a structural approach:**
 - **1:1 Native Parity:** Controls are overlaid directly on Obsidian's exact Mermaid SVG rendering — what you see is what you get.
 - **Topological Operations:** You edit structure and relationships (elements and connections), while Mermaid computes clean, natural layouts automatically.
-- **Ultra-Lean Footprint:** Zero heavy canvas framework dependencies. Bundled at just ~170 KB.
+- **Lean Canvas:** SVG overlays provide the editing controls without an additional canvas framework.
+
+Obsidian supplies its native renderer: Pele in Obsidian 1.15, and Mermaid in earlier versions. VS Code uses the bundled Mermaid library. Layout and available syntax can differ between hosts. See [compatibility checks and verification gaps](docs/KNOWN_ISSUES.md#compatibility-checks-and-verification-gaps) for the current source's testing scope and release availability.
 
 ---
 
@@ -130,6 +135,10 @@ For architecture details, see [ARCHITECTURE.md](ARCHITECTURE.md).
 ---
 
 ## Support
+
+Check [Known issues and workarounds](docs/KNOWN_ISSUES.md) before reporting a problem. For a new report, include your Merlay version, host app/version, operating system or device, a minimal Mermaid snippet, and the expected and actual behavior in [GitHub issues](https://github.com/dev-hashemi/merlay/issues).
+
+Feature ideas are tracked in [Proposals](docs/PROPOSALS.md).
 
 If Merlay saves you time, consider starring the repo — it helps others discover it.
 

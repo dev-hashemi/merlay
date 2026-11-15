@@ -2,6 +2,8 @@
 
 This document tracks feature proposals, community-submitted ideas, and design explorations for **Merlay**.
 
+Confirmed bugs, reported problems, and workarounds are tracked separately in [Known issues](KNOWN_ISSUES.md). Proposals here are not release commitments or delivery dates.
+
 Every proposal is evaluated against Merlay's core architectural tenets (see [ARCHITECTURE.md](../ARCHITECTURE.md) and [AGENTS.md](../AGENTS.md)):
 - **100% standard Mermaid**: No synthetic metadata or coordinate lock-in.
 - **Pure AST mutations**: All visual operations map to clean, deterministic Mermaid text transformations.
@@ -27,9 +29,11 @@ Every proposal is evaluated against Merlay's core architectural tenets (see [ARC
 - **Applies to:** Flowchart, State, and other graph-based diagrams
 
 #### Problem Statement
-Mermaid delegates layout to automatic layout engines (such as Dagre). The relative placement of sibling nodes (e.g. left-to-right or top-to-bottom order within the same rank or subgraph) is largely determined by the declaration sequence of nodes and connection lines in the Mermaid text.
+The host renderer computes layout automatically. Node declarations and connection order can influence sibling placement, but do not guarantee exact positions. Obsidian 1.15 uses Pele, while VS Code and earlier Obsidian versions use Mermaid.
 
 Currently, if grouping nodes or adding edges causes Mermaid to position nodes in an undesired order, users have no visual way to reorder them on the canvas. To change their relative order, users have to open the raw code editor and manually reorder the Mermaid text lines.
+
+The reported grouping behavior is tracked in [Known issues](KNOWN_ISSUES.md#grouping-can-change-node-order); its investigation is separate from adding reorder controls.
 
 #### Proposed UX
 Provide a visual affordance to reorder sibling nodes directly on the canvas:
@@ -38,7 +42,7 @@ Provide a visual affordance to reorder sibling nodes directly on the canvas:
 
 #### Technical Considerations
 - **No Coordinate Storage**: Merlay never stores layout coordinates. Reordering must translate into reordering node declarations and/or edge sequences in the AST (`ast.nodes`, `subDef.nodeIds`, `ast.edges`).
-- **Deterministic Dagre Behavior**: Investigate how Dagre ranks sibling nodes when declaration order vs edge order differ, ensuring the serializer outputs lines in a predictable order that matches the user's intended layout.
+- **Renderer Behavior**: Verify how declaration and edge order affect both Mermaid and Pele. Preserve predictable source ordering without promising identical placement across renderers.
 - **Purity & Testing**: Implement as a pure AST mutation (e.g., `reorderGroupNodes(ast, groupId, fromIndex, toIndex)`) with round-trip test coverage.
 
 ---
