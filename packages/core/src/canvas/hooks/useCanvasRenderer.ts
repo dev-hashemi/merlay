@@ -3,12 +3,13 @@
  * and binding SVG DOM interactivity via the centralized Zustand store.
  */
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import type { RenderMermaidFn } from '../../platform/types';
-import { Rect } from '../types';
+import { ConnectionCue, Rect } from '../types';
 import { MermaidNodeDef, MermaidEdgeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
 import { DiagramDriver } from '../../diagrams/types';
 import { mountMermaidSvg } from '../renderer/mermaidRenderer';
+import { showAddedEdgeHalo } from '../renderer/halos/edgeHalos';
 import { setupSvgInteractivity } from '../interaction/setupSvgInteractivity';
 import { setupViewOnlyInteractivity } from '../interaction/setupViewOnlyInteractivity';
 import { useCanvasStore } from '../store/canvasStore';
@@ -33,7 +34,8 @@ export interface UseCanvasRendererOptions {
     setEditingNodeId: (id: string | null) => void;
   };
   handleStartEditingNode: (nodeId: string, el: Element) => void;
-  stabilizeCamera: () => void;
+  stabilizeCamera: (code: string, success?: boolean) => void;
+  pendingConnectionCue: React.MutableRefObject<ConnectionCue | null>;
   setSyntaxError: (err: string | null) => void;
   onInitialRender?: () => void;
 }
@@ -54,10 +56,19 @@ export function useCanvasRenderer({
   inlineEditing,
   handleStartEditingNode,
   stabilizeCamera,
+  pendingConnectionCue,
   setSyntaxError,
   onInitialRender,
 }: UseCanvasRendererOptions) {
   const renderTicketRef = useRef<number>(0);
+  const committedCodeRef = useRef(code);
+  useLayoutEffect(() => {
+    committedCodeRef.current = code;
+    if (pendingConnectionCue.current?.code !== code) pendingConnectionCue.current = null;
+  }, [code, pendingConnectionCue]);
+  useLayoutEffect(() => () => {
+    pendingConnectionCue.current = null;
+  }, [pendingConnectionCue]);
   const viewOnlyCleanupRef = useRef<(() => void) | null>(null);
   const anchors = driver.mutations.anchors;
   const isAnchorId = (id: string | null | undefined): id is string =>
@@ -158,7 +169,7 @@ export function useCanvasRenderer({
       return null;
     };
 
-    setupSvgInteractivity({
+    return setupSvgInteractivity({
       mountEl,
       dom: driver.dom,
       displayNodes,
@@ -226,21 +237,33 @@ export function useCanvasRenderer({
     if (!mountEl) return;
 
     const ticket = ++renderTicketRef.current;
+    const cueWindow = mountEl.ownerDocument.defaultView ?? window;
+    let connectionHalo: SVGElement | null = null;
+    let cueTimeout: number | undefined;
 
     renderMermaid(code)
       .then((svgHtml) => {
-        if (ticket !== renderTicketRef.current) return;
+        if (ticket !== renderTicketRef.current || code !== committedCodeRef.current) return;
         // Parsed as XML and adopted into the DOM (no innerHTML), preserving
         // Mermaid's embedded theme <style> that Obsidian's HTML sanitizer
         // would strip.
         mountMermaidSvg(mountEl, svgHtml);
         setSyntaxError(null);
 
-        setupRef.current();
-        stabilizeRef.current();
+        const findEdgeStroke = setupRef.current();
+        stabilizeRef.current(code);
         rectRef.current();
         haloNodeRef.current();
         haloEdgeRef.current();
+        const cue = pendingConnectionCue.current;
+        if (cue?.code === code) {
+          pendingConnectionCue.current = null;
+          const stroke = findEdgeStroke?.(cue.edgeId, cue.edgeOrder);
+          if (stroke) {
+            connectionHalo = showAddedEdgeHalo(mountEl, stroke, cue.edgeId);
+            if (connectionHalo) cueTimeout = cueWindow.setTimeout(() => connectionHalo?.remove(), 1000);
+          }
+        }
 
         if (!hasRenderedOnceRef.current) {
           hasRenderedOnceRef.current = true;
@@ -268,17 +291,21 @@ export function useCanvasRenderer({
         }
       })
       .catch((err: unknown) => {
-        if (ticket !== renderTicketRef.current) return;
+        if (ticket !== renderTicketRef.current || code !== committedCodeRef.current) return;
+        if (pendingConnectionCue.current?.code === code) pendingConnectionCue.current = null;
+        stabilizeRef.current(code, false);
         console.error('Mermaid render error:', err);
         setSyntaxError(err instanceof Error ? err.message : 'Diagram syntax error');
       });
 
     return () => {
+      cueWindow.clearTimeout(cueTimeout);
+      connectionHalo?.remove();
       viewOnlyCleanupRef.current?.();
       viewOnlyCleanupRef.current = null;
       // Invalidate in-flight renders so a late resolution never touches an
       // unmounted or re-rendered view.
       renderTicketRef.current++;
     };
-  }, [code, renderMermaid, setSyntaxError, svgMountRef, displayNodes, displayEdges, displaySubgraphs]);
+  }, [code, renderMermaid, setSyntaxError, svgMountRef, displayNodes, displayEdges, displaySubgraphs, pendingConnectionCue]);
 }

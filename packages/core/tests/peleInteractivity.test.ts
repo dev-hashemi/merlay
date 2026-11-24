@@ -31,7 +31,7 @@ function setup(type: string, prepare?: (mount: HTMLElement) => void) {
   const selected: string[] = [];
   const edited: string[] = [];
   const notes: string[] = [];
-  setupSvgInteractivity({
+  const resolveEdge = setupSvgInteractivity({
     mountEl: mount, dom: driver.dom,
     displayNodes: projection.nodes, displayEdges: projection.edges, displaySubgraphs: projection.subgraphs,
     getLocalRect: () => null,
@@ -49,7 +49,7 @@ function setup(type: string, prepare?: (mount: HTMLElement) => void) {
     // jsdom has zero-sized bboxes; avoid its artificial nearest-edge ties.
     bubbles: true, cancelable: true, clientX: 1000, clientY: 1000,
   }));
-  return { mount, driver, ast, projection, selected, edited, notes, click };
+  return { mount, driver, ast, projection, selected, edited, notes, click, resolveEdge };
 }
 
 for (const type of ['flowchart', 'stateDiagram', 'sequenceDiagram', 'classDiagram']) {
@@ -90,6 +90,7 @@ for (const type of ['flowchart', 'stateDiagram', 'sequenceDiagram', 'mindmap', '
     edges.forEach((edge, i) => {
       const path = edge.matches('path') ? edge : edge.querySelector('path:not(.pele-marker)');
       assert.ok(path);
+      assert.equal(h.resolveEdge(h.projection.edges[i].id), path);
       h.click(path);
       assert.equal(h.selected.at(-1), h.projection.edges[i].id);
     });

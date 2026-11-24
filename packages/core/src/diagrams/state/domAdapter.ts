@@ -1,7 +1,9 @@
 import { SvgDomAdapter } from '../types';
+import { resolveStateStroke } from '../../utils/exactEdgeMatching';
 
 export const stateDomAdapter: SvgDomAdapter = {
   nodeIdPrefixes: ['state-'],
+  resolveEdgeStroke: resolveStateStroke,
   anchorSelectors:
     '.state-start, .state-end, .pele-state-start, .pele-state-end, [id*="root_start"], [id*="root_end"], [id*="_start"], [id*="_end"]',
   anchorNodeId: '[*]',

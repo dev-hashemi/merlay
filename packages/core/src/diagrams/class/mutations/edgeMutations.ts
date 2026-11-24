@@ -4,6 +4,7 @@
 
 import { ClassRelationship, MermaidClassAST } from '../types';
 import { addClass } from './nodeMutations';
+import { generateUniqueId } from '../../common';
 
 export function canConnectClasses(
   ast: MermaidClassAST,
@@ -22,10 +23,12 @@ export function connectClasses(
   ast: MermaidClassAST,
   fromId: string,
   toId: string
-): void {
-  if (!canConnectClasses(ast, fromId, toId)) return;
+): string | null {
+  if (!canConnectClasses(ast, fromId, toId)) return null;
 
-  const edgeId = `rel_${fromId}_${toId}_${ast.relationships.length}`;
+  const edgeId = generateUniqueId(
+    new Set(ast.relationships.map((edge) => edge.id)), `rel_${fromId}_${toId}`
+  );
   const rel: ClassRelationship = {
     id: edgeId,
     from: fromId,
@@ -37,6 +40,7 @@ export function connectClasses(
   };
 
   ast.relationships.push(rel);
+  return edgeId;
 }
 
 export function updateRelationshipType(

@@ -1,14 +1,19 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Rect } from '../types';
+import { flushSync } from 'react-dom';
+import { ConnectionCameraTarget, Rect } from '../types';
 import { findNodeEditElement } from '../interaction/nodeElement';
+import { cameraMargins } from './camera/connectionPan';
+import { useConnectionCamera } from './camera/useConnectionCamera';
 
 export interface UseCanvasCameraOptions {
+  code?: string;
   containerRef?: React.RefObject<HTMLDivElement>;
   worldRef: React.RefObject<HTMLDivElement>;
   svgMountRef: React.RefObject<HTMLDivElement>;
 }
 
 export function useCanvasCamera({
+  code,
   containerRef,
   worldRef,
   svgMountRef,
@@ -32,6 +37,11 @@ export function useCanvasCamera({
     screenX: number;
     screenY: number;
   } | null>(null);
+  const {
+    capture: captureConnection,
+    settle: settleConnection,
+    clear: clearConnection,
+  } = useConnectionCamera(code, containerRef, worldRef, svgMountRef);
 
   // True once the user takes manual camera control (zoom/pan). While false
   // the camera is a fresh fit, so container resizes (sidebar toggles, pane
@@ -81,8 +91,27 @@ export function useCanvasCamera({
     }
   }, [svgMountRef]);
 
-  // Readjust camera pan after re-rendering so mutated node remains visually stationary
-  const stabilizeCamera = useCallback(() => {
+  const pinConnectionForCamera = useCallback((nextCode: string, endpoints: ConnectionCameraTarget) => {
+    pendingCameraPinRef.current = null;
+    captureConnection(nextCode, endpoints);
+  }, [captureConnection]);
+
+  const stabilizeCamera = useCallback((renderedCode?: string, success = true) => {
+    const connectionPan = settleConnection(renderedCode, success);
+    if (connectionPan) {
+      if (connectionPan.x !== 0 || connectionPan.y !== 0) {
+        // The renderer mounts the SVG imperatively. Commit the matching pan
+        // before the browser can paint that SVG with the old camera.
+        flushSync(() => setPan((prev) => ({
+          x: prev.x + connectionPan.x,
+          y: prev.y + connectionPan.y,
+        })));
+      }
+      return;
+    }
+    if (!success) return;
+
+    // For other structural edits, keep the pinned node visually stationary.
     const pin = pendingCameraPinRef.current;
     if (!pin || !svgMountRef.current) return;
     pendingCameraPinRef.current = null;
@@ -103,10 +132,11 @@ export function useCanvasCamera({
         y: prev.y + deltaY,
       }));
     }
-  }, [svgMountRef]);
+  }, [settleConnection, svgMountRef]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
+    clearConnection();
     userAdjustedCameraRef.current = true;
     if (e.ctrlKey || e.metaKey) {
       // Zoom
@@ -123,9 +153,10 @@ export function useCanvasCamera({
         y: prev.y - e.deltaY,
       }));
     }
-  }, []);
+  }, [clearConnection]);
 
   const handleFitView = useCallback(() => {
+    clearConnection();
     const container = containerRef?.current || worldRef.current?.parentElement;
     const svg = svgMountRef.current?.querySelector('svg');
     if (!container || !svg) {
@@ -191,9 +222,9 @@ export function useCanvasCamera({
     }
 
     // Margins: account for the top bar (~60px) and comfortable border padding
-    const padX = 80;
-    const topBarHeight = 60;
-    const padBottom = 40;
+    const padX = cameraMargins.side * 2;
+    const topBarHeight = cameraMargins.top;
+    const padBottom = cameraMargins.bottom;
 
     const availWidth = Math.max(containerWidth - padX, 100);
     const availHeight = Math.max(containerHeight - (topBarHeight + padBottom), 100);
@@ -217,7 +248,7 @@ export function useCanvasCamera({
     zoomRef.current = newZoom;
     setPan({ x: Math.round(panX), y: Math.round(panY) });
     userAdjustedCameraRef.current = false;
-  }, [containerRef, worldRef, svgMountRef, getLocalRect]);
+  }, [clearConnection, containerRef, worldRef, svgMountRef, getLocalRect]);
 
   // Responsive camera: re-fit when the container resizes (host sidebar
   // toggles, pane splits, window resizes) as long as the user has not taken
@@ -262,12 +293,13 @@ export function useCanvasCamera({
   }, [containerRef, worldRef, handleFitView]);
 
   const startPan = useCallback((clientX: number, clientY: number) => {
+    clearConnection();
     setIsPanning(true);
     panStartRef.current = {
       x: clientX - pan.x,
       y: clientY - pan.y,
     };
-  }, [pan]);
+  }, [clearConnection, pan]);
 
   const updatePan = useCallback((clientX: number, clientY: number) => {
     userAdjustedCameraRef.current = true;
@@ -287,6 +319,7 @@ export function useCanvasCamera({
    */
   const startPinch = useCallback(
     (dist: number, midX: number, midY: number) => {
+      clearConnection();
       pinchRef.current = {
         startDist: Math.max(dist, 1),
         startMidX: midX,
@@ -296,7 +329,7 @@ export function useCanvasCamera({
         startPanY: pan.y,
       };
     },
-    [pan]
+    [clearConnection, pan]
   );
 
   const updatePinch = useCallback((dist: number, midX: number, midY: number) => {
@@ -330,6 +363,7 @@ export function useCanvasCamera({
     getLocalRect,
     getLocalPoint,
     pinNodeForCamera,
+    pinConnectionForCamera,
     stabilizeCamera,
     handleWheel,
     handleFitView,

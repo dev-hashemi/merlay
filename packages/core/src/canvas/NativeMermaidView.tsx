@@ -79,6 +79,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     getLocalRect,
     getLocalPoint,
     pinNodeForCamera,
+    pinConnectionForCamera,
     stabilizeCamera,
     handleWheel,
     handleFitView,
@@ -89,7 +90,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     updatePinch,
     endPinch,
     pinchRef,
-  } = useCanvasCamera({ containerRef, worldRef, svgMountRef });
+  } = useCanvasCamera({ code, containerRef, worldRef, svgMountRef });
 
   // Active touch pointers for pinch-zoom. Single-pointer gestures keep flowing
   // to the pointer-interaction hook; the moment a second finger lands, the
@@ -117,6 +118,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     pushHistoryState: history.pushState,
     diagramType,
     pinNodeForCamera,
+    pinConnectionForCamera,
   });
   const driver = astHook.driver;
   const isEditable = driver.capabilities.editable !== false;
@@ -342,6 +344,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     driver,
     ast: mutations.ast,
     applyMutation: mutations.applyMutation,
+    applyDragConnection: astHook.applyDragConnection,
     setSelectedNodeId: selection.setSelectedNodeId,
   });
 
@@ -362,6 +365,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     inlineEditing,
     handleStartEditingNode,
     stabilizeCamera,
+    pendingConnectionCue: astHook.pendingConnectionCue,
     setSyntaxError: mutations.setSyntaxError,
     onInitialRender: handleFitView,
   });

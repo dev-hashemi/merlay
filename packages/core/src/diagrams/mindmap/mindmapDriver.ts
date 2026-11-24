@@ -6,6 +6,7 @@
 
 import { DiagramDriver, NodeKindOption, ViewProjection } from '../types';
 import { MermaidEdgeDef, MermaidNodeDef } from '../viewModel';
+import { findUniqueStroke, nativeEdgeId } from '../../utils/exactEdgeMatching';
 import {
   matchesHeader,
   getDiagramTheme,
@@ -91,7 +92,7 @@ export const MindmapDriver: DiagramDriver<MermaidMindmapAST> = {
         for (const childId of node.children) {
           edges.push({
             type: 'edge',
-            id: `edge_${node.id}_${childId}`,
+            id: mm.mindmapEdgeId(node.id, childId),
             from: node.id,
             to: childId,
             arrowType: 'open',
@@ -203,6 +204,14 @@ export const MindmapDriver: DiagramDriver<MermaidMindmapAST> = {
     nodeIdPrefixes: ['node_'],
     nodeSelector: '.node, [class*="mindmap-node"]',
     edgeSelector: '.edge, path.edge',
+    resolveEdgeStroke({ edge, nodes, paths }) {
+      // Mermaid numbers branches using the preorder indices of the parent and child.
+      const ids = Array.from(nodes.keys());
+      const from = ids.indexOf(edge.from);
+      const to = ids.indexOf(edge.to);
+      if (from < 0 || to < 0) return null;
+      return findUniqueStroke(paths, (path) => nativeEdgeId(path) === `edge_${from}_${to}`);
+    },
     resolveNodeId(el: Element, displayNodes: Map<string, MermaidNodeDef>): string | null {
       if (el.classList.contains('pele-node')) {
         const ids = Array.from(displayNodes.keys());

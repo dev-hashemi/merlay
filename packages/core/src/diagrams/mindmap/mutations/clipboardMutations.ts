@@ -4,6 +4,7 @@
 
 import { MermaidMindmapAST, MindmapNode } from '../types';
 import { generateUniqueNodeId } from './nodeMutations';
+import { mindmapEdgeId } from './treeMutations';
 
 function cloneSubtree(
   ast: MermaidMindmapAST,
@@ -28,7 +29,7 @@ function cloneSubtree(
 
   ast.nodes.set(newId, clonedNode);
   createdNodeIds.push(newId);
-  createdEdgeIds.push(`edge_${newParentId}_${newId}`);
+  createdEdgeIds.push(mindmapEdgeId(newParentId, newId));
 
   for (const childId of source.children) {
     const clonedChildId = cloneSubtree(

@@ -153,6 +153,7 @@ packages/
 ### 3.3 Camera Stabilization (Prevent Viewport Jumps)
 - Whenever a user triggers a structural modification (such as sprouting a new element or splitting a connection), call `pinNodeForCamera(activeNodeId)`.
 - The camera tracks that element's screen coordinate before and after re-rendering and automatically adjusts the pan offset so the viewport remains stable.
+- A node-to-node drag connection uses both endpoints. It preserves the current zoom and keeps the full diagram visible when it was already in view and still fits. Otherwise it keeps the endpoints visible, with priority for the drop target. The source stays in place only when that takes a small pan and keeps the relevant content in view.
 
 ### 3.4 Zero Lock-In & Verbatim Preservation
 - Emitted Mermaid code must be **100% clean, standard Mermaid syntax**.

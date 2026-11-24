@@ -168,9 +168,7 @@ export const FlowchartDriver: DiagramDriver<MermaidFlowchartAST> = {
       fc.setNodeShapeParam(ast, nodeId, key, value);
     },
 
-    connect: (ast, fromId, toId) => {
-      fc.connectNodes(ast, fromId, toId);
-    },
+    connect: (ast, fromId, toId) => fc.connectNodes(ast, fromId, toId),
     canConnect: (ast, fromId, toId) => {
       if (fromId === toId) return false;
       const hasFrom = ast.nodes.has(fromId) || ast.subgraphs.has(fromId);

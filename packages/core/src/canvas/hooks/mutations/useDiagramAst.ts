@@ -6,8 +6,9 @@
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { MermaidEdgeDef, MermaidNodeDef, MermaidSubgraphDef } from '../../../diagrams/viewModel';
-import { SupportedDiagramType } from '../../../diagrams/types';
+import { ConnectionContext, SupportedDiagramType } from '../../../diagrams/types';
 import { getDriverOrDefault } from '../../../diagrams/registry';
+import type { ConnectionCameraTarget, ConnectionCue } from '../../types';
 
 export interface UseDiagramAstOptions {
   code: string;
@@ -16,6 +17,7 @@ export interface UseDiagramAstOptions {
   pushHistoryState: (code: string) => void;
   diagramType: SupportedDiagramType;
   pinNodeForCamera: (nodeId: string) => void;
+  pinConnectionForCamera: (code: string, endpoints: ConnectionCameraTarget) => void;
 }
 
 export function useDiagramAst({
@@ -25,6 +27,7 @@ export function useDiagramAst({
   pushHistoryState,
   diagramType,
   pinNodeForCamera,
+  pinConnectionForCamera,
 }: UseDiagramAstOptions) {
   const driver = getDriverOrDefault(diagramType);
 
@@ -41,6 +44,7 @@ export function useDiagramAst({
 
   const [syntaxError, setSyntaxError] = useState<string | null>(null);
   const lastEmittedCodeRef = useRef<string>(code);
+  const pendingConnectionCue = useRef<ConnectionCue | null>(null);
 
   useEffect(() => {
     if (code === lastEmittedCodeRef.current) return;
@@ -69,13 +73,25 @@ export function useDiagramAst({
 
   // Apply a mutation: clone the committed AST, mutate the clone, serialize
   // and emit. Never mutates the current AST in place.
-  const applyMutation = useCallback(
-    (mutator: (currentAst: unknown) => void, keepNodeId?: string) => {
+  const commitMutation = useCallback(
+    (mutator: (currentAst: unknown) => unknown, cameraTarget?: string | ConnectionCameraTarget) => {
       try {
-        if (keepNodeId) pinNodeForCamera(keepNodeId);
         const next = driver.clone(ast);
-        mutator(next);
-        const serialized = driver.serialize(next);
+        const result = mutator(next);
+        const connection = typeof cameraTarget === 'object' ? cameraTarget : null;
+        if (connection && typeof result !== 'string') return;
+        const edgeOrder = connection ? [] : undefined;
+        const serialized = driver.serialize(next, edgeOrder);
+        if (typeof cameraTarget === 'string') {
+          pinNodeForCamera(cameraTarget);
+        } else if (connection && typeof result === 'string') {
+          if (serialized === code) return;
+          pinConnectionForCamera(serialized, connection);
+          pendingConnectionCue.current = {
+            code: serialized, edgeId: result, edgeOrder: edgeOrder?.length ? edgeOrder : undefined,
+          };
+        }
+        if (!connection && serialized !== code) pendingConnectionCue.current = null;
         lastEmittedCodeRef.current = serialized;
         pushHistoryState(serialized);
         setCode(serialized);
@@ -86,11 +102,22 @@ export function useDiagramAst({
         console.error('AST Mutation Error:', err);
       }
     },
-    [ast, driver, pinNodeForCamera, pushHistoryState, setCode, onCodeChange]
+    [ast, code, driver, pinNodeForCamera, pinConnectionForCamera, pushHistoryState, setCode, onCodeChange]
+  );
+  const applyMutation = useCallback(
+    (mutator: (currentAst: unknown) => void, keepNodeId?: string) => commitMutation(mutator, keepNodeId),
+    [commitMutation]
+  );
+  const applyDragConnection = useCallback(
+    (endpoints: ConnectionCameraTarget, context: ConnectionContext) =>
+      commitMutation((next) => driver.mutations.connect(next, endpoints.sourceId, endpoints.targetId, context), endpoints),
+    [commitMutation, driver]
   );
 
   return {
     driver,
+    applyDragConnection,
+    pendingConnectionCue,
     ast,
     syntaxError,
     setSyntaxError,

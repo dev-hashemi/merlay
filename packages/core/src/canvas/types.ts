@@ -3,6 +3,17 @@ import { ArrowType } from '../diagrams/viewModel';
 
 export type CursorMode = 'select' | 'hand';
 
+export interface ConnectionCameraTarget {
+  sourceId: string;
+  targetId: string;
+}
+
+export interface ConnectionCue {
+  code: string;
+  edgeId: string;
+  edgeOrder?: readonly string[];
+}
+
 export interface Rect {
   x: number;
   y: number;

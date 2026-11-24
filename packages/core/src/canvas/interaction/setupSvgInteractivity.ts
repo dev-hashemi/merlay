@@ -8,7 +8,7 @@ import { MermaidEdgeDef, MermaidNodeDef, MermaidSubgraphDef } from '../../diagra
 import { SvgDomAdapter } from '../../diagrams/types';
 import { Rect } from '../types';
 import { setupNodeInteractivity, StartEndKind } from './nodeInteractivity';
-import { setupEdgeInteractivity } from './edgeInteractivity';
+import { FindEdgeStroke, setupEdgeInteractivity } from './edgeInteractivity';
 import { setupClusterInteractivity } from './clusterInteractivity';
 
 export type { StartEndKind };
@@ -32,7 +32,7 @@ export interface SetupSvgInteractivityOptions {
   findNodeForNote?: (noteEl: Element) => string | null;
 }
 
-export function setupSvgInteractivity(options: SetupSvgInteractivityOptions): void {
+export function setupSvgInteractivity(options: SetupSvgInteractivityOptions): FindEdgeStroke {
   const {
     mountEl,
     dom,
@@ -70,10 +70,11 @@ export function setupSvgInteractivity(options: SetupSvgInteractivityOptions): vo
   });
 
   // 2. Edges & edge labels
-  setupEdgeInteractivity({
+  const findEdgeStroke = setupEdgeInteractivity({
     mountEl,
     dom,
     displayEdges,
+    displayNodes,
     displaySubgraphs,
     onSelectEdge,
     onStartEditingEdge,
@@ -89,4 +90,5 @@ export function setupSvgInteractivity(options: SetupSvgInteractivityOptions): vo
     onStartEditingSubgraph,
     onHoverSubgraph: onHoverNode,
   });
+  return findEdgeStroke;
 }

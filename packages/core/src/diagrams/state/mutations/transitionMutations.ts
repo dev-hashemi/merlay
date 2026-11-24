@@ -4,6 +4,7 @@
 
 import { MermaidStateAST, MermaidTransitionDef } from '../types';
 import { addState } from './stateMutations';
+import { generateUniqueId } from '../../common';
 
 export function ensureStartEndEntry(ast: MermaidStateAST): void {
   if (!ast.states.has('[*]')) {
@@ -137,7 +138,9 @@ export function connectStates(
     ensureStartEndEntry(ast);
   }
 
-  const transitionId = `t_${actualFrom}_${actualTo}_${ast.transitions.length + 1}`;
+  const transitionId = generateUniqueId(
+    new Set(ast.transitions.map((edge) => edge.id)), `t_${actualFrom}_${actualTo}`
+  );
   const newTransition: MermaidTransitionDef = {
     type: 'transition',
     id: transitionId,

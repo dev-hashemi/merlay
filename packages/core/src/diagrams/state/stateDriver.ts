@@ -39,8 +39,8 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
   parse(code: string): MermaidStateAST {
     return parseMermaidStateDiagram(code);
   },
-  serialize(ast: MermaidStateAST): string {
-    return serializeMermaidStateDiagram(ast);
+  serialize(ast: MermaidStateAST, edgeOrder?: string[]): string {
+    return serializeMermaidStateDiagram(ast, edgeOrder);
   },
   createDefault(direction = 'LR'): string {
     const dirLine = direction ? `    direction ${direction}\n` : '';
@@ -112,7 +112,9 @@ export const StateDiagramDriver: DiagramDriver<MermaidStateAST> = {
     },
 
     connect: (ast, fromId, toId) => {
-      st.connectStates(ast, fromId, toId);
+      const count = ast.transitions.length;
+      const transition = st.connectStates(ast, fromId, toId);
+      return ast.transitions.length > count ? transition?.id ?? null : null;
     },
     canConnect: (ast, fromId, toId) => st.canConnectStates(ast, fromId, toId),
     deleteEdge: (ast, edgeId) => {

@@ -4,6 +4,7 @@
  */
 
 import { DiagramDriver } from '../types';
+import { resolveSequenceStroke } from '../../utils/exactEdgeMatching';
 import {
   MermaidSequenceAST,
   SequenceParticipantKind,
@@ -133,7 +134,7 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
       }
     },
 
-    connect: (ast, fromId, toId, context) => {
+    connect: (ast, fromId, toId, context) =>
       seq.connectParticipants(
         ast,
         fromId,
@@ -142,8 +143,7 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
         'solid_arrow',
         context?.insertAfterEdgeId,
         context?.insertAtIndex
-      );
-    },
+      ),
     // Messages between any participants (including across boxes) are legal.
     canConnect: () => true,
     deleteEdge: (ast, edgeId) => {
@@ -353,6 +353,7 @@ export const SequenceDiagramDriver: DiagramDriver<MermaidSequenceAST> = {
   dom: {
     nodeIdPrefixes: ['actor', 'participant-'],
     nodeSelector: '.node, [class*="node "], .actor, [class*="actor"]',
+    resolveEdgeStroke: resolveSequenceStroke,
     edgeSelector:
       '.edgePaths path, .edgePath path, path.flowchart-link, [class*="flowchart-link"], line.messageLine0, line.messageLine1, [class*="messageLine"], path.messageLine0, path.messageLine1',
     clusterSelector:

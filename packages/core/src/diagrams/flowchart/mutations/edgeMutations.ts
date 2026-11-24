@@ -10,6 +10,7 @@ import {
   MermaidShapeType,
 } from '../types';
 import { generateUniqueNodeId } from './nodeMutations';
+import { generateUniqueId } from '../../common';
 
 export function connectNodes(
   ast: MermaidFlowchartAST,
@@ -23,7 +24,9 @@ export function connectNodes(
   const hasTo = ast.nodes.has(toId) || ast.subgraphs.has(toId);
   if (!hasFrom || !hasTo) return null;
 
-  const edgeId = `e_${fromId}_${toId}_${Date.now()}_${ast.edges.length}`;
+  const edgeId = generateUniqueId(
+    new Set(ast.edges.map((edge) => edge.id)), `e_${fromId}_${toId}_${Date.now()}`
+  );
   const newEdge: MermaidEdgeDef = {
     type: 'edge',
     id: edgeId,

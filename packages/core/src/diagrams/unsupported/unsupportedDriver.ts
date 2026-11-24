@@ -72,7 +72,7 @@ export function createUnsupportedDiagramDriver(
       isNodeTextEditable: () => false,
       updateNodeKind: () => {},
       updateNodesKind: () => {},
-      connect: () => {},
+      connect: () => null,
       canConnect: () => false,
       deleteEdge: () => {},
       deleteEdges: () => {},

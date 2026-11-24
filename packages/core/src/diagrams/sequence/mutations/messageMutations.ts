@@ -14,7 +14,9 @@ export function generateMessageId(
   to: string,
   ast?: MermaidSequenceAST
 ): string {
-  const count = (ast ? ast.messages.length : 0) + 1;
+  let count = (ast?.messages.length ?? 0) + 1;
+  const ids = new Set(ast?.messages.map((message) => message.id));
+  while (ids.has(`msg_${count}_${from}_${to}`)) count++;
   return `msg_${count}_${from}_${to}`;
 }
 

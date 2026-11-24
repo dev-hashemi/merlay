@@ -16,6 +16,7 @@ import { applyStyles } from '../../../platform/dom';
 
 export const EDGE_SELECTED_CLONE_CLS = 'mermaid-edge-selected-clone';
 export const EDGE_HOVERED_CLONE_CLS = 'mermaid-edge-hovered-clone';
+const EDGE_ADDED_CLONE_CLS = 'mermaid-edge-added-clone';
 
 export const EDGE_SELECTED_HALO_WIDTH = 3.5;
 export const EDGE_HOVERED_HALO_WIDTH = 2;
@@ -42,9 +43,12 @@ function cloneEdgeForHalo(
   edgeId: string,
   cloneCls: string,
   baseWidth: number
-): void {
-  if (mountEl.querySelector(`.${cloneCls}[data-mermaid-edge-id="${edgeId}"]`)) {
-    return;
+): SVGElement | null {
+  const parent = original.parentNode;
+  const exists = Array.from(mountEl.querySelectorAll(`.${cloneCls}`))
+    .some((el) => el.getAttribute('data-mermaid-edge-id') === edgeId);
+  if (!parent || exists) {
+    return null;
   }
   const clone = original.cloneNode(false) as SVGElement;
   clone.removeAttribute('id');
@@ -58,9 +62,18 @@ function cloneEdgeForHalo(
   clone.setAttribute('class', `${original.getAttribute('class') || ''} ${cloneCls}`.trim());
   clone.setAttribute('data-mermaid-edge-id', edgeId);
   clone.setAttribute('pointer-events', 'none');
+  clone.setAttribute('aria-hidden', 'true');
   const origWidth = parseEdgeStrokeWidth(original) ?? 0;
   applyStyles(clone, { strokeWidth: `${Math.max(baseWidth, origWidth)}px` });
-  original.parentNode?.insertBefore(clone, original.nextSibling);
+  parent.insertBefore(clone, original.nextSibling);
+  return clone;
+}
+
+/** Accent the newly added edge without changing hover or selection. */
+export function showAddedEdgeHalo(mountEl: HTMLElement, path: SVGGraphicsElement, edgeId: string): SVGElement | null {
+  const halo = cloneEdgeForHalo(mountEl, path, edgeId, EDGE_ADDED_CLONE_CLS, EDGE_SELECTED_HALO_WIDTH);
+  halo?.removeAttribute('data-mermaid-edge-id');
+  return halo;
 }
 
 function removeEdgeClones(mountEl: HTMLElement, cloneCls: string, edgeId?: string): void {

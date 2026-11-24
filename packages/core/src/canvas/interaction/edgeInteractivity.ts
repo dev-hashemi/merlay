@@ -3,9 +3,10 @@
  * Handles edge path hit-areas, stroke hovering, and edge label click/editing.
  */
 
-import { MermaidEdgeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
+import { MermaidEdgeDef, MermaidNodeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
 import { SvgDomAdapter } from '../../diagrams/types';
 import { matchSvgEdgeToAst } from '../../utils/edgeMatching';
+import { resolveConnectionStroke } from '../../utils/exactEdgeMatching';
 import { getDistanceToSvgPath } from '../../utils/edgeGeometry';
 import {
   clearEdgeHoverHalos,
@@ -19,6 +20,7 @@ export interface SetupEdgeInteractivityOptions {
   mountEl: HTMLElement;
   dom?: SvgDomAdapter;
   displayEdges: MermaidEdgeDef[];
+  displayNodes?: ReadonlyMap<string, MermaidNodeDef>;
   displaySubgraphs?: Map<string, MermaidSubgraphDef>;
   onSelectEdge: (targetEdge: MermaidEdgeDef, resolvedPath: Element, isMulti: boolean) => void;
   onStartEditingEdge: (edgeId: string, anchorEl: Element) => void;
@@ -32,14 +34,17 @@ export interface SetupEdgeInteractivityOptions {
  */
 const EDGE_ON_STROKE_PX = 5;
 
+export type FindEdgeStroke = (edgeId: string, edgeOrder?: readonly string[]) => SVGGraphicsElement | null;
+
 export function setupEdgeInteractivity({
   mountEl,
   dom,
   displayEdges,
+  displayNodes = new Map(),
   displaySubgraphs,
   onSelectEdge,
   onStartEditingEdge,
-}: SetupEdgeInteractivityOptions): void {
+}: SetupEdgeInteractivityOptions): FindEdgeStroke {
   // Precompute which edges are internal to each subgraph cluster so edge
   // hit-areas inside a cluster still select the edge, while edges that merely
   // pass *through* a cluster defer pointer events to the cluster.
@@ -86,7 +91,7 @@ export function setupEdgeInteractivity({
     return null;
   };
 
-  const peleEdges = Array.from(mountEl.querySelectorAll('.pele-edge:not(.pele-note-edge)'));
+  const peleEdges = Array.from(mountEl.querySelectorAll<SVGGraphicsElement>('.pele-edge:not(.pele-note-edge)'));
   const findEdgeForElement = (
     el: Element,
     fallbackIdx?: number
@@ -98,7 +103,7 @@ export function setupEdgeInteractivity({
       const nativeId = peleGroup.getAttribute('data-id');
       const edge = peleGroup.classList.contains('pele-edge') ? peleGroup :
         peleEdges.find((candidate) => candidate.getAttribute('data-id') === nativeId);
-      return edge ? displayEdges[peleEdges.indexOf(edge)] ?? null : null;
+      return edge ? displayEdges[peleEdges.findIndex((candidate) => candidate === edge)] ?? null : null;
     }
     const edgeGroup = el.closest(
       '.edgePath, .edgeLabel, [class*="edgePath"], [class*="edgeLabel"]'
@@ -127,7 +132,7 @@ export function setupEdgeInteractivity({
   mountEl.querySelectorAll('.mermaid-edge-hit-area').forEach((el) => el.remove());
 
   const defaultEdgeSelector =
-    '.edgePaths path, .edgePath path, path.flowchart-link, [class*="flowchart-link"], line.messageLine0, line.messageLine1, [class*="messageLine"], path.messageLine0, path.messageLine1';
+    '.edgePaths path, .edgePath path, path.flowchart-link, [class*="flowchart-link"], path.transition, path.relation, line.messageLine0, line.messageLine1, [class*="messageLine"], path.messageLine0, path.messageLine1';
   const edgeSelector = `${dom?.edgeSelector || defaultEdgeSelector}, .pele-edge:not(.pele-note-edge) > path:not(.pele-marker), path.pele-edge`;
   const rawEdgePaths = mountEl.querySelectorAll(edgeSelector);
   const edgePaths: SVGGraphicsElement[] = [];
@@ -331,5 +336,8 @@ export function setupEdgeInteractivity({
     attachTapGestures(htmlEl, {
       onDoubleTap: () => onStartEditingEdge(targetEdgeId, htmlEl),
     });
+  });
+  return (edgeId, edgeOrder) => resolveConnectionStroke({
+    edgeId, edgeOrder, displayEdges, nodes: displayNodes, paths: edgePaths, peleEdges, dom,
   });
 }

@@ -4,8 +4,8 @@
  */
 
 import React, { useCallback, useRef } from 'react';
-import { CursorMode, Rect } from '../types';
-import { DiagramDriver } from '../../diagrams/types';
+import { ConnectionCameraTarget, CursorMode, Rect } from '../types';
+import { ConnectionContext, DiagramDriver } from '../../diagrams/types';
 import { MermaidNodeDef, MermaidEdgeDef, MermaidSubgraphDef } from '../../diagrams/viewModel';
 import { DragLine, useCanvasStore } from '../store/canvasStore';
 import { getPerimeterAnchor, getHitElement } from './mouse/mouseGeometry';
@@ -50,6 +50,7 @@ export interface UseCanvasMouseInteractionsOptions {
   /** Committed AST, for driver legality predicates (e.g. canConnect). Read-only. */
   ast: unknown;
   applyMutation: (mutator: (currentAst: unknown) => void, keepNodeId?: string) => void;
+  applyDragConnection: (endpoints: ConnectionCameraTarget, context: ConnectionContext) => void;
   setSelectedNodeId: (id: string | null) => void;
 }
 
@@ -71,6 +72,7 @@ export function useCanvasMouseInteractions({
   driver,
   ast,
   applyMutation,
+  applyDragConnection,
   setSelectedNodeId,
 }: UseCanvasMouseInteractionsOptions) {
   const m = driver.mutations;
@@ -592,13 +594,11 @@ export function useCanvasMouseInteractions({
           getLocalRect
         );
 
-        applyMutation((a) => {
-          m.connect(a, cSourceId, targetNodeId, {
-            insertAfterEdgeId,
-            insertAtIndex,
-            y: connectionY,
-          });
-        }, cSourceId);
+        applyDragConnection({ sourceId: cSourceId, targetId: targetNodeId }, {
+          insertAfterEdgeId,
+          insertAtIndex,
+          y: connectionY,
+        });
       } else if (targetEdgeId) {
         let createdNodeId: string | null = null;
         applyMutation((a) => {

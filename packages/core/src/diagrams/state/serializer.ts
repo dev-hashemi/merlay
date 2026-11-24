@@ -6,7 +6,7 @@ import { MermaidStateAST, MermaidStateDef, MermaidTransitionDef } from './types'
 import { isNodeInsideComposite } from './mutations/transitionMutations';
 import { emitFrontmatter, emitDirectives } from '../common/diagramHeader';
 
-export function serializeMermaidStateDiagram(ast: MermaidStateAST): string {
+export function serializeMermaidStateDiagram(ast: MermaidStateAST, edgeOrder?: string[]): string {
   const lines: string[] = [];
 
   // 0. Frontmatter (shared YAML block, same as every diagram kind)
@@ -58,7 +58,8 @@ export function serializeMermaidStateDiagram(ast: MermaidStateAST): string {
       ast,
       emittedStates,
       emittedTransitions,
-      '    '
+      '    ',
+      edgeOrder
     );
   }
 
@@ -98,6 +99,7 @@ export function serializeMermaidStateDiagram(ast: MermaidStateAST): string {
     }
     if (!emittedTransitions.has(tr.id)) {
       emitTransition(lines, tr, '    ');
+      edgeOrder?.push(tr.id);
       emittedTransitions.add(tr.id);
     }
   }
@@ -131,7 +133,8 @@ function emitCompositeState(
   ast: MermaidStateAST,
   emittedStates: Set<string>,
   emittedTransitions: Set<string>,
-  indent: string
+  indent: string,
+  edgeOrder?: string[]
 ) {
   const hasChildren =
     (compDef.compositeIds?.length ?? 0) > 0 ||
@@ -245,13 +248,15 @@ function emitCompositeState(
           ast,
           emittedStates,
           emittedTransitions,
-          innerIndent
+          innerIndent,
+          edgeOrder
         );
       }
     } else if (item.kind === 'state') {
       emitStateDeclaration(lines, item.state, innerIndent, true);
     } else if (item.kind === 'transition') {
       emitTransition(lines, item.tr, innerIndent);
+      edgeOrder?.push(item.tr.id);
     } else if (item.kind === 'raw') {
       lines.push(`${innerIndent}${item.text}`);
     }

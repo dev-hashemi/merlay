@@ -459,13 +459,15 @@ pre.language-mermaid {
    Stroke width is widened per-edge via setCssStyles when the original is
    custom-thick (linkStyle); the class value is the default. */
 #merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-selected-clone,
-#merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-hovered-clone {
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-hovered-clone,
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-added-clone {
   fill: none;
   stroke: var(--mermaid-accent);
   pointer-events: none;
 }
 
-#merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-selected-clone {
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-selected-clone,
+#merlay-svg-mount.mermaid-native-svg-mount .mermaid-edge-added-clone {
   stroke-width: 3.5px;
   filter: drop-shadow(0 0 5px var(--mermaid-accent));
 }

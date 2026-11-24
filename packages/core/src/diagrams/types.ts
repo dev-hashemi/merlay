@@ -221,7 +221,8 @@ export interface DiagramMutations<TAst = unknown> {
   ): void;
 
   // Connections
-  connect(ast: TAst, fromId: string, toId: string, context?: ConnectionContext): void;
+  /** Returns the projected ID of the new edge, or null if no edge was added. */
+  connect(ast: TAst, fromId: string, toId: string, context?: ConnectionContext): string | null;
   /**
    * Whether dropping fromId onto toId would create a connection. Pure predicate
    * for blocked-drop hover feedback — connect() itself remains the enforcement
@@ -340,6 +341,13 @@ export interface DiagramMutations<TAst = unknown> {
  * different DOM structure (id prefixes, anchor shapes), so matching is a
  * driver concern.
  */
+export interface EdgeStrokeContext {
+  edge: MermaidEdgeDef;
+  paths: readonly SVGGraphicsElement[];
+  edges: readonly MermaidEdgeDef[];
+  nodes: ReadonlyMap<string, MermaidNodeDef>;
+}
+
 export interface SvgDomAdapter {
   /** Prefixes mermaid uses for node element ids, e.g. 'flowchart-'. */
   nodeIdPrefixes: string[];
@@ -351,6 +359,8 @@ export interface SvgDomAdapter {
   nodeSelector?: string;
   /** Optional custom CSS selector for locating edge line/path elements. */
   edgeSelector?: string;
+  /** Exact edge lookup for renderers that do not expose the authored endpoint IDs. */
+  resolveEdgeStroke?(context: EdgeStrokeContext): SVGGraphicsElement | null;
   /** Selectors that locate anchor elements ([*]), if this diagram has them. */
   anchorSelectors?: string;
   /** View-model node id of the anchor pseudo-node ('[*]'), if this diagram has them. */
@@ -380,7 +390,8 @@ export interface DiagramDriver<TAst = unknown> {
   supportsDirection: boolean;
   canHandle(code: string): boolean;
   parse(code: string): TAst;
-  serialize(ast: TAst): string;
+  /** Optionally records edge IDs in emitted order when it differs from the projection. */
+  serialize(ast: TAst, edgeOrder?: string[]): string;
   createDefault(direction?: string): string;
 
   /** Structural copy so mutations never touch the committed AST in place. */

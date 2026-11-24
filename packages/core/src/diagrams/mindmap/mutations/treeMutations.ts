@@ -65,14 +65,12 @@ export function connect(
   ast: MermaidMindmapAST,
   fromId: string,
   toId: string
-): void {
-  if (!canConnect(ast, fromId, toId)) {
-    return;
-  }
+): string | null {
+  if (!canConnect(ast, fromId, toId)) return null;
 
   const child = ast.nodes.get(toId);
   const newParent = ast.nodes.get(fromId);
-  if (!child || !newParent) return;
+  if (!child || !newParent) return null;
 
   // Detach from previous parent
   if (child.parentId) {
@@ -84,6 +82,12 @@ export function connect(
 
   child.parentId = fromId;
   newParent.children.push(toId);
+  return mindmapEdgeId(fromId, toId);
+}
+
+export function mindmapEdgeId(parentId: string, childId: string): string {
+  // Escape the separator in the parent so different pairs cannot share an ID.
+  return `edge_${parentId.replace(/%/g, '%25').replace(/_/g, '%5F')}_${childId}`;
 }
 
 /**
@@ -94,7 +98,7 @@ export function findEdgeEndpoints(
   edgeId: string
 ): { parentId: string; childId: string } | null {
   for (const node of ast.nodes.values()) {
-    if (node.parentId && `edge_${node.parentId}_${node.id}` === edgeId) {
+    if (node.parentId && mindmapEdgeId(node.parentId, node.id) === edgeId) {
       return { parentId: node.parentId, childId: node.id };
     }
   }
