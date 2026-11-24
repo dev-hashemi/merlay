@@ -66,13 +66,18 @@ export function isPanelActive(): boolean {
 export async function openFenceEditor(
   extensionUri: vscode.Uri,
   uriString: string | undefined,
-  startLine: number | undefined
+  startLine: number | undefined,
+  options?: { onlyIfOpen: boolean },
 ): Promise<void> {
   if (typeof uriString !== 'string' || typeof startLine !== 'number') {
     void vscode.window.showErrorMessage('Merlay: open this from a mermaid fence lens or command.');
     return;
   }
+  const session = activeSession;
+  if (options?.onlyIfOpen && !session) return;
   const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(uriString));
+  // A cursor update belongs to the panel that was open when it started.
+  if (options?.onlyIfOpen && activeSession !== session) return;
   const fences = findMermaidFences(document.getText());
   const fence = fences.find((f) => f.startLine === startLine);
   if (!fence) {

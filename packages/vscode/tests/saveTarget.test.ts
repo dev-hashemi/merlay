@@ -8,6 +8,11 @@ const code = 'flowchart LR\nA-->B';
 const block = `\`\`\`mermaid\n${code}\n\`\`\``;
 type Message = { type: string; code?: string };
 type Listener = (message: Message) => void;
+type SelectionListener = (event: {
+  textEditor: { document: { languageId: string } };
+  selections: { active: { line: number } }[];
+  kind?: number;
+}) => void;
 
 async function open(documentText: string, line: number, standalone = false) {
   let text = documentText;
@@ -15,6 +20,10 @@ async function open(documentText: string, line: number, standalone = false) {
   let onMessage: Listener = () => {};
   let onDocumentChange: () => void = () => {};
   let onDispose: () => void = () => {};
+  let onSelection: SelectionListener = () => {};
+  let editFence: (uri: string, line: number) => Promise<void> = async () => {};
+  let openedPanels = 0;
+  let blockedOpen: Promise<void> | undefined;
   let applied = 0;
   let rejectWrite = false;
   let blockedWrite: Promise<void> | undefined;
@@ -24,7 +33,8 @@ async function open(documentText: string, line: number, standalone = false) {
   const disposable = { dispose() {} };
   const uri = { toString: () => 'file:///note.md', path: '/note.md' };
   const document = {
-    uri, getText: () => text, get lineCount() { return text.split('\n').length; },
+    uri, languageId: standalone ? 'mermaid' : 'markdown',
+    getText: () => text, get lineCount() { return text.split('\n').length; },
     lineAt: (i: number) => ({ text: text.split('\n')[i] }),
   };
   class WorkspaceEdit {
@@ -38,13 +48,16 @@ async function open(documentText: string, line: number, standalone = false) {
       postMessage(message: Message) { messages.push(message); },
     },
     onDidDispose(listener: () => void) { onDispose = listener; },
+    reveal() {},
   };
   const sdk = {
     Uri: { parse: () => uri, joinPath: () => uri },
+    TextEditorSelectionChangeKind: { Keyboard: 1, Mouse: 2, Command: 3 },
     Range: class {}, WorkspaceEdit, ViewColumn: { Active: 1 },
     Disposable: { from: (...items: { dispose(): void }[]) => ({ dispose: () => items.forEach((item) => item.dispose()) }) },
     workspace: {
       openTextDocument: async (request: unknown) => {
+        if (blockedOpen) await blockedOpen;
         if (typeof request === 'object' && request !== null && 'content' in request) {
           recoveryDocuments.push(String(request.content));
         }
@@ -61,22 +74,36 @@ async function open(documentText: string, line: number, standalone = false) {
         text = edit.text; version++; onDocumentChange(); return true;
       },
     },
+    languages: { registerCodeLensProvider: () => disposable },
+    commands: {
+      registerCommand(name: string, callback: typeof editFence) {
+        if (name === 'merlay.editMermaidFence') editFence = callback;
+        return disposable;
+      },
+    },
     window: {
-      createWebviewPanel: () => panel,
+      createWebviewPanel: () => { openedPanels++; return panel; },
+      registerCustomEditorProvider: () => disposable,
+      registerUriHandler: () => disposable,
+      onDidChangeTextEditorSelection(listener: SelectionListener) {
+        onSelection = listener;
+        return disposable;
+      },
       onDidChangeActiveColorTheme: () => disposable,
       showInformationMessage: () => {},
       showErrorMessage: (message: string) => { errors.push(message); },
       showTextDocument: async () => {},
     },
   };
-  const entry = standalone ? '../src/mermaidEditor.ts' : '../src/fenceLens.ts';
+  const entry = standalone ? '../src/mermaidEditor.ts' : '../src/extension.ts';
   const module = await loadHost(resolve(import.meta.dirname, entry), {
     vscode: sdk, '@merlay/core': markdown,
-  }) as typeof import('../src/fenceLens') & typeof import('../src/mermaidEditor');
+  }) as typeof import('../src/extension') & typeof import('../src/mermaidEditor');
   if (standalone) {
     await new module.MermaidEditorProvider(uri as never).resolveCustomTextEditor(document as never, panel as never, {} as never);
   } else {
-    await module.openFenceEditor(uri as never, uri.toString(), line);
+    module.activate({ extensionUri: uri, subscriptions: [] } as never);
+    await editFence(uri.toString(), line);
   }
   const flush = () => new Promise<void>((done) => setImmediate(done));
   return {
@@ -87,8 +114,33 @@ async function open(documentText: string, line: number, standalone = false) {
     reject(value: boolean) { rejectWrite = value; },
     block(value: Promise<void>) { blockedWrite = value; },
     close() { onDispose(); },
+    select(line: number) { onSelection({ textEditor: { document }, selections: [{ active: { line } }] }); },
+    reopen: () => editFence(uri.toString(), line),
+    get openedPanels() { return openedPanels; },
+    blockOpen(value: Promise<void>) { blockedOpen = value; },
   };
 }
+
+test('VS Code selection changes after closing the visual editor leave it closed', async () => {
+  const session = await open(block, 0);
+  session.close();
+  session.select(2);
+  await session.flush();
+  assert.equal(session.openedPanels, 1);
+  await session.reopen();
+  assert.equal(session.openedPanels, 2);
+});
+
+test('VS Code selection changes in flight cannot reopen a closed visual editor', async () => {
+  const session = await open(block, 0);
+  let releaseOpen = () => {};
+  session.blockOpen(new Promise<void>((resolve) => { releaseOpen = resolve; }));
+  session.select(2);
+  session.close();
+  releaseOpen();
+  await session.flush();
+  assert.equal(session.openedPanels, 1);
+});
 
 test('VS Code saves the selected duplicate after source text moves both blocks', async () => {
   const session = await open(`${block}\n\n${block}`, 5);

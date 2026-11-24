@@ -47,14 +47,7 @@ export function activate(context: vscode.ExtensionContext): void {
       selectDiagram(context.extensionUri)
     ),
     vscode.window.onDidChangeTextEditorSelection((e) => {
-      // If panel is not active, do not auto-open on normal keyboard typing or editor clicks
-      if (
-        !isPanelActive() &&
-        (e.kind === vscode.TextEditorSelectionChangeKind.Keyboard ||
-          e.kind === vscode.TextEditorSelectionChangeKind.Mouse)
-      ) {
-        return;
-      }
+      if (!isPanelActive()) return;
 
       const doc = e.textEditor.document;
       if (doc.languageId !== 'markdown') return;
@@ -76,7 +69,7 @@ export function activate(context: vscode.ExtensionContext): void {
               Math.abs(cursorLine - fence.endLine)
             );
         if (isInside || distance <= 15 || fences.length === 1) {
-          void openFenceEditor(context.extensionUri, doc.uri.toString(), fence.startLine);
+          void openFenceEditor(context.extensionUri, doc.uri.toString(), fence.startLine, { onlyIfOpen: true });
         }
       }
     }),
