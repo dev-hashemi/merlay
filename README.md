@@ -62,7 +62,7 @@ Merlay provides interactive visual editing for five Mermaid diagram types in bot
 
 1. **Open:** Hover over any Mermaid block in your note and click **Visual Mode** (or type `/flowchart`, `/state`, `/sequence`, `/mindmap`, or `/class`).
 2. **Edit:** Sprout new items, drag connections, double-click to rename, or delete elements.
-3. **Save:** Close the overlay — your note is updated automatically in real time.
+3. **Save:** Visual edits save automatically after Merlay checks that the updated diagram renders. If an edit fails that check, Merlay keeps the original source and shows a notice.
 
 ---
 

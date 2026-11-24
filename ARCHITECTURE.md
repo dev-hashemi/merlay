@@ -148,7 +148,7 @@ packages/
   `clone(ast)` → `mutate(clone)` → `serialize(clone)` → `verify syntax` → `emit`.
 - External code changes (undo/redo, manual edits in the syntax drawer) re-parse through an effect. There is always **one active AST** owned by the current driver in `useDiagramAst`.
 
-**Implementation gap:** The required verify-before-emit step is not yet enforced by `applyMutation`; rendering errors can arrive after source changes are emitted. See [pre-save validation](docs/KNOWN_ISSUES.md#structural-edits-can-be-saved-before-syntax-validation) for the remaining work. Validation alone also cannot prove semantic preservation.
+The shared visual mutation queue validates each candidate with the active host renderer and uses the resulting SVG for the canvas. Only accepted candidates enter history and reach the host save callback. Syntax drawer edits retain live write-back. Round-trip tests verify source preservation separately.
 
 ### 3.3 Camera Stabilization (Prevent Viewport Jumps)
 - Whenever a user triggers a structural modification (such as sprouting a new element or splitting a connection), call `pinNodeForCamera(activeNodeId)`.

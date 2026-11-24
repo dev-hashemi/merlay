@@ -30,12 +30,12 @@ function MerlayWebviewApp(): React.ReactElement {
     apiRef.current = getVsCodeApi();
   }
   // Outside VS Code (plain browser preview) show the fallback immediately.
-  const [docCode, setDocCode] = React.useState<string | null>(() =>
-    apiRef.current ? null : FALLBACK_CODE
+  const [source, setSource] = React.useState<{ code: string; bindingId: number } | null>(() =>
+    apiRef.current ? null : { code: FALLBACK_CODE, bindingId: 0 }
   );
   // Tracks the latest code shown so we can tell a real diagram switch
   // (different diagram) from an echo of our own write-back (same code).
-  const docCodeRef = React.useRef<string | null>(apiRef.current ? null : FALLBACK_CODE);
+  const sourceRef = React.useRef(source);
   // Bumped on every genuine switch so NativeMermaidView fully remounts with
   // fresh state instead of trying to patch a stale component instance.
   const [viewKey, setViewKey] = React.useState(0);
@@ -63,10 +63,10 @@ function MerlayWebviewApp(): React.ReactElement {
     const onMessage = (event: MessageEvent): void => {
       const message = event.data as HostToWebviewMessage;
       if (message.type === 'merlay/init' || message.type === 'merlay/update') {
-        const prev = docCodeRef.current;
+        const prev = sourceRef.current;
         // Echo guard: identical code (up to surrounding whitespace) is a no-op so
         // our own write-back round-trips keep canvas history and camera.
-        if (prev !== null && prev.trim() === message.code.trim()) {
+        if (prev?.bindingId === message.bindingId && prev.code.trim() === message.code.trim()) {
           return;
         }
         // A genuine change (e.g. switching to another diagram in the same tab):
@@ -74,8 +74,9 @@ function MerlayWebviewApp(): React.ReactElement {
         if (prev !== null) {
           setViewKey((k) => k + 1);
         }
-        docCodeRef.current = message.code;
-        setDocCode(message.code);
+        const next = { code: message.code, bindingId: message.bindingId };
+        sourceRef.current = next;
+        setSource(next);
       } else if (message.type === 'merlay/theme') {
         themeSubsRef.current.forEach((cb) => cb());
       }
@@ -85,16 +86,21 @@ function MerlayWebviewApp(): React.ReactElement {
     return () => window.removeEventListener('message', onMessage);
   }, []);
 
-  const handleCodeChange = React.useCallback((code: string) => {
-    docCodeRef.current = code;
-    apiRef.current?.postMessage({ type: 'merlay/codeChange', code });
-  }, []);
+  const bindingId = source?.bindingId;
+  const handleCodeChange = React.useCallback((code: string, baseCode?: string) => {
+    const current = sourceRef.current;
+    if (!current || current.bindingId !== bindingId) return;
+    sourceRef.current = { code, bindingId };
+    // The canvas shows a starter diagram when the underlying document is empty.
+    if (baseCode !== undefined && current.code === '') baseCode = current.code;
+    apiRef.current?.postMessage({ type: 'merlay/codeChange', bindingId, code, baseCode });
+  }, [bindingId]);
 
-  if (docCode === null) {
+  if (source === null) {
     return <div className="merlay-webview-loading">Loading diagram…</div>;
   }
   return (
-    <NativeMermaidView key={viewKey} host={host} initialCode={docCode} onCodeChange={handleCodeChange} />
+    <NativeMermaidView key={viewKey} host={host} initialCode={source.code} onCodeChange={handleCodeChange} />
   );
 }
 

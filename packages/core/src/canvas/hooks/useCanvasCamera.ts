@@ -42,6 +42,12 @@ export function useCanvasCamera({
     settle: settleConnection,
     clear: clearConnection,
   } = useConnectionCamera(code, containerRef, worldRef, svgMountRef);
+  const cameraRevision = useRef(0);
+  const clearCameraPins = useCallback(() => {
+    cameraRevision.current++;
+    pendingCameraPinRef.current = null;
+    clearConnection();
+  }, [clearConnection]);
 
   // True once the user takes manual camera control (zoom/pan). While false
   // the camera is a fresh fit, so container resizes (sidebar toggles, pane
@@ -136,7 +142,7 @@ export function useCanvasCamera({
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    clearConnection();
+    clearCameraPins();
     userAdjustedCameraRef.current = true;
     if (e.ctrlKey || e.metaKey) {
       // Zoom
@@ -153,10 +159,10 @@ export function useCanvasCamera({
         y: prev.y - e.deltaY,
       }));
     }
-  }, [clearConnection]);
+  }, [clearCameraPins]);
 
   const handleFitView = useCallback(() => {
-    clearConnection();
+    clearCameraPins();
     const container = containerRef?.current || worldRef.current?.parentElement;
     const svg = svgMountRef.current?.querySelector('svg');
     if (!container || !svg) {
@@ -248,7 +254,7 @@ export function useCanvasCamera({
     zoomRef.current = newZoom;
     setPan({ x: Math.round(panX), y: Math.round(panY) });
     userAdjustedCameraRef.current = false;
-  }, [clearConnection, containerRef, worldRef, svgMountRef, getLocalRect]);
+  }, [clearCameraPins, containerRef, worldRef, svgMountRef, getLocalRect]);
 
   // Responsive camera: re-fit when the container resizes (host sidebar
   // toggles, pane splits, window resizes) as long as the user has not taken
@@ -293,15 +299,16 @@ export function useCanvasCamera({
   }, [containerRef, worldRef, handleFitView]);
 
   const startPan = useCallback((clientX: number, clientY: number) => {
-    clearConnection();
+    clearCameraPins();
     setIsPanning(true);
     panStartRef.current = {
       x: clientX - pan.x,
       y: clientY - pan.y,
     };
-  }, [clearConnection, pan]);
+  }, [clearCameraPins, pan]);
 
   const updatePan = useCallback((clientX: number, clientY: number) => {
+    cameraRevision.current++;
     userAdjustedCameraRef.current = true;
     setPan({
       x: clientX - panStartRef.current.x,
@@ -319,7 +326,7 @@ export function useCanvasCamera({
    */
   const startPinch = useCallback(
     (dist: number, midX: number, midY: number) => {
-      clearConnection();
+      clearCameraPins();
       pinchRef.current = {
         startDist: Math.max(dist, 1),
         startMidX: midX,
@@ -329,12 +336,13 @@ export function useCanvasCamera({
         startPanY: pan.y,
       };
     },
-    [clearConnection, pan]
+    [clearCameraPins, pan]
   );
 
   const updatePinch = useCallback((dist: number, midX: number, midY: number) => {
     const s = pinchRef.current;
     if (!s || s.startDist <= 0) return;
+    cameraRevision.current++;
     userAdjustedCameraRef.current = true;
     const newZoom = Math.min(Math.max(s.startZoom * (dist / s.startDist), 0.2), 3);
     zoomRef.current = newZoom;
@@ -360,6 +368,7 @@ export function useCanvasCamera({
     zoomRef,
     panStartRef,
     pendingCameraPinRef,
+    cameraRevision,
     getLocalRect,
     getLocalPoint,
     pinNodeForCamera,

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
 
 export interface UseDiagramHistorySyncProps {
@@ -12,6 +12,7 @@ export interface UseDiagramHistorySyncProps {
   redoHistory: () => string | null;
   resetHistory: (code: string) => void;
   setSyntaxError: (err: string | null) => void;
+  cancelVisualEdits: () => void;
   updateSelectedNodeHalo: (targets?: string | null | Set<string> | string[]) => void;
   updateSelectedEdgeHalo: (targets?: string | null | Set<string> | string[]) => void;
   svgMountRef: React.RefObject<HTMLDivElement | null>;
@@ -28,6 +29,7 @@ export function useDiagramHistorySync({
   redoHistory,
   resetHistory,
   setSyntaxError,
+  cancelVisualEdits,
   updateSelectedNodeHalo,
   updateSelectedEdgeHalo,
   svgMountRef,
@@ -55,7 +57,7 @@ export function useDiagramHistorySync({
   // VS Code document sync) are not mistaken for file switches.
   const codeRef = useRef(code);
   codeRef.current = code;
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (lastInitialCodeRef.current === null) {
       lastInitialCodeRef.current = initialCode ?? null;
       return;
@@ -69,29 +71,32 @@ export function useDiagramHistorySync({
       // newline but fence write-back trims it, so the round-tripped echo
       // always differs by surrounding whitespace from the code on screen.
       if (next.trim() === codeRef.current.trim()) return;
+      cancelVisualEdits();
       resetHistory(next);
       setCode(next);
       resetTransientUiState();
     }
-  }, [initialCode, resetHistory, setCode, resetTransientUiState]);
+  }, [initialCode, cancelVisualEdits, resetHistory, setCode, resetTransientUiState]);
 
   const handleUndo = useCallback(() => {
+    cancelVisualEdits();
     const prevCode = undoHistory();
     if (prevCode === null) return;
     setCode(prevCode);
     setSyntaxError(null);
     onCodeChange(prevCode);
     resetTransientUiState();
-  }, [undoHistory, setCode, setSyntaxError, onCodeChange, resetTransientUiState]);
+  }, [cancelVisualEdits, undoHistory, setCode, setSyntaxError, onCodeChange, resetTransientUiState]);
 
   const handleRedo = useCallback(() => {
+    cancelVisualEdits();
     const nextCode = redoHistory();
     if (nextCode === null) return;
     setCode(nextCode);
     setSyntaxError(null);
     onCodeChange(nextCode);
     resetTransientUiState();
-  }, [redoHistory, setCode, setSyntaxError, onCodeChange, resetTransientUiState]);
+  }, [cancelVisualEdits, redoHistory, setCode, setSyntaxError, onCodeChange, resetTransientUiState]);
 
   // SyntaxDrawer edits bypass applyMutation, so record a single history
   // entry when the drawer closes instead of flooding the stack per keystroke.

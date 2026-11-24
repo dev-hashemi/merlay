@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { JSDOM } from 'jsdom';
+import mermaid from 'mermaid';
 import { NativeMermaidView } from '../src/canvas/NativeMermaidView';
 import { useCanvasStore } from '../src/canvas/store/canvasStore';
 import { getDriverForCode } from '../src/diagrams/registry';
 
-const initialCode = 'flowchart LR\n    %% preserve this comment\n    A[Start]\n    B[Target]\n    C[Next]';
+const initialCode = 'flowchart LR\n    accTitle: Preserve this title\n    %% preserve this comment\n    A[Start]\n    B[Target]\n    C[Next]';
 const initialSvg = layout(160, 480, 360);
 const changedSvg = layout(170, 670, 80, 'A', 'B');
 const newestSvg = layout(170, 670, 80, 'B', 'C');
@@ -24,7 +25,7 @@ function layout(left: number, width: number, sourceX: number, from?: string, to?
   </svg>`;
 }
 
-async function setup(t: TestContext) {
+async function setup(t: TestContext, source = initialCode) {
   const { window } = new JSDOM('<div id="root"></div>', { pretendToBeVisual: true });
   Object.assign(globalThis, {
     window, document: window.document, DOMParser: window.DOMParser,
@@ -40,20 +41,28 @@ async function setup(t: TestContext) {
   };
   const requests: { code: string; resolve: (svg: string) => void; reject: (error: Error) => void }[] = [];
   const edits: string[] = [];
+  const notices: string[] = [];
   const root = createRoot(document.querySelector('#root')!);
-  t.after(async () => {
+  let closed = false;
+  const close = async () => {
+    if (closed) return;
+    closed = true;
     await act(async () => root.unmount());
+  };
+  t.after(async () => {
+    await close();
     window.close();
   });
-  const render = () => act(async () => root.render(createElement(NativeMermaidView, {
+  const render = (initialCode = source) => act(async () => root.render(createElement(NativeMermaidView, {
     initialCode,
     host: {
       renderMermaid: (code) => {
         if (code === initialCode) return Promise.resolve(initialSvg);
+        if (code.includes('e1@')) return mermaid.parse(code).then(() => changedSvg);
         if (!code.includes('preserve this comment')) return Promise.resolve('<svg/>');
         return new Promise((resolve, reject) => requests.push({ code, resolve, reject }));
       },
-      notify: () => {},
+      notify: (message) => notices.push(message),
       subscribeTheme: () => () => {},
     },
     onCodeChange: (code) => edits.push(code),
@@ -69,7 +78,7 @@ async function setup(t: TestContext) {
       node.dispatchEvent(new window.MouseEvent(event, { bubbles: true }));
     });
   }
-  return { canvas, world, requests, edits, drop, retryRender: render };
+  return { canvas, world, requests, edits, notices, drop, close, retryRender: render };
 }
 
 test('a deferred connection keeps the reflowed diagram visible at the same zoom', async (t) => {
@@ -77,12 +86,15 @@ test('a deferred connection keeps the reflowed diagram visible at the same zoom'
   await drop('A', 'B');
   assert.equal(world.querySelector(cueSelector), null);
   assert.equal(world.style.transform, 'translate(0px, 0px) scale(1)');
-  assert.equal(edits.length, 1);
-  assert.match(edits[0], /%% preserve this comment/);
-  const driver = getDriverForCode(edits[0]);
-  assert.deepEqual(driver.project(driver.parse(edits[0])).edges.map(({ from, to }) => [from, to]), [['A', 'B']]);
+  assert.equal(edits.length, 0);
   assert.equal(requests.length, 1);
   await act(async () => requests[0].resolve(changedSvg));
+  assert.equal(edits.length, 1);
+  assert.match(edits[0], /%% preserve this comment/);
+  assert.match(edits[0], /accTitle: Preserve this title/);
+  const driver = getDriverForCode(edits[0]);
+  assert.deepEqual(driver.project(driver.parse(edits[0])).edges.map(({ from, to }) => [from, to]), [['A', 'B']]);
+  assert.equal(requests.length, 1, 'mount the already validated SVG');
   assert.equal(world.style.transform, 'translate(-80px, 0px) scale(1)');
   assert.equal(world.querySelector(cueSelector)?.previousElementSibling?.id, 'L_A_B_0');
   assert.equal(useCanvasStore.getState().selectedEdgeIds.size, 0);
@@ -92,17 +104,37 @@ test('a deferred connection keeps the reflowed diagram visible at the same zoom'
   assert.equal(world.style.transform, 'translate(-80px, 0px) scale(1)');
 });
 
-test('a superseded render cannot mount or consume the newer connection correction', async (t) => {
-  const { world, requests, drop } = await setup(t);
+test('rapid connections validate in order against the last accepted edit', async (t) => {
+  const { world, requests, edits, drop } = await setup(t);
   await drop('A', 'B');
   await drop('B', 'C');
-  assert.equal(requests.length, 2);
-  await act(async () => requests[0].resolve(changedSvg));
+  assert.equal(requests.length, 1);
+  assert.equal(edits.length, 0);
   assert.equal(world.querySelector('svg')?.getAttribute('data-rect'), '160 100 480 340');
   assert.equal(world.querySelector(cueSelector), null);
+  await act(async () => requests[0].resolve(changedSvg));
+  assert.equal(requests.length, 2);
+  const driver = getDriverForCode(requests[1].code);
+  assert.deepEqual(driver.project(driver.parse(requests[1].code)).edges.map(({ from, to }) => [from, to]), [['A', 'B'], ['B', 'C']]);
+  assert.equal(edits.length, 1);
   await act(async () => requests[1].resolve(newestSvg));
+  assert.equal(edits.length, 2);
   assert.equal(world.querySelector(cueSelector)?.previousElementSibling?.id, 'L_B_C_0');
   assert.equal(world.style.transform, 'translate(-80px, 0px) scale(1)');
+});
+
+test('rapid direction toggles each use the latest accepted direction', async (t) => {
+  const { requests, edits, canvas } = await setup(t);
+  await act(async () => {
+    const toggle = canvas.querySelector<HTMLButtonElement>('button[title^="Toggle Flow Direction"]');
+    assert.ok(toggle);
+    toggle.click();
+    toggle.click();
+  });
+  await act(async () => requests[0].resolve(initialSvg));
+  assert.equal(requests.length, 2);
+  await act(async () => requests[1].resolve(initialSvg));
+  assert.deepEqual(edits.map((code) => code.split('\n')[0]), ['flowchart TD', 'flowchart LR']);
 });
 
 test('manual camera movement takes precedence over an in-flight connection', async (t) => {
@@ -114,17 +146,77 @@ test('manual camera movement takes precedence over an in-flight connection', asy
   assert.equal(world.querySelector(cueSelector)?.previousElementSibling?.id, 'L_A_B_0');
 });
 
-test('a failed connection render leaves no correction for a retry of the same source', async (t) => {
-  const { world, requests, drop, retryRender } = await setup(t);
+test('a rejected connection leaves the diagram intact and can be retried', async (t) => {
+  const { world, requests, edits, notices, drop } = await setup(t);
   await drop('A', 'B');
   const error = t.mock.method(console, 'error', () => {});
   await act(async () => requests[0].reject(new Error('render failed')));
   error.mock.restore();
-  await retryRender();
+  assert.equal(edits.length, 0);
+  assert.equal(notices.length, 1);
+  assert.equal(world.querySelector(cueSelector), null);
+  await drop('A', 'B');
   assert.equal(requests[1].code, requests[0].code);
   await act(async () => requests[1].resolve(changedSvg));
-  assert.equal(world.querySelector(cueSelector), null);
-  assert.equal(world.style.transform, 'translate(0px, 0px) scale(1)');
+  assert.equal(edits.length, 1);
+  assert.ok(world.querySelector(cueSelector));
+});
+
+test('named-edge flowchart survives a visual edit that would emit malformed Mermaid', async (t) => {
+  const source = 'flowchart LR\n  A e1@--> B\n  e1@{ animate: true }';
+  const { world, edits, notices, drop } = await setup(t, source);
+  await mermaid.parse(source);
+  const driver = getDriverForCode(source);
+  const ast = driver.parse(source);
+  driver.mutations.updateNodeLabel(ast, 'B', 'Renamed');
+  await assert.rejects(mermaid.parse(driver.serialize(ast)));
+  const error = t.mock.method(console, 'error', () => {});
+  await drop('B', 'A');
+  error.mock.restore();
+  assert.deepEqual(edits, []);
+  assert.equal(notices.length, 1);
+  assert.equal(world.querySelector('svg')?.getAttribute('data-rect'), '160 100 480 340');
+  assert.equal(document.querySelector<HTMLButtonElement>('button[title^="Undo"]')?.disabled, true);
+});
+
+test('external source changes cancel pending connections and their queued successors', async (t) => {
+  const { requests, edits, drop, retryRender } = await setup(t);
+  await drop('A', 'B');
+  await drop('B', 'C');
+  await retryRender('flowchart LR\nX --> Y');
+  await act(async () => requests[0].resolve(changedSvg));
+  assert.deepEqual(edits, []);
+  assert.ok(requests.every(({ code }) => !code.includes('B --> C')));
+});
+
+test('renderer error artwork cannot be saved as a visual edit', async (t) => {
+  const { requests, edits, notices, drop } = await setup(t);
+  await drop('A', 'B');
+  await act(async () => requests[0].resolve('<svg><g><path class="error-icon"/><text class="error-text">Syntax error</text></g></svg>'));
+  assert.deepEqual(edits, []);
+  assert.equal(notices.length, 1);
+});
+
+test('closing the editor discards unvalidated visual edits', async (t) => {
+  const { requests, edits, notices, drop, close } = await setup(t);
+  await drop('A', 'B');
+  await close();
+  await act(async () => requests[0].resolve(changedSvg));
+  assert.deepEqual(edits, []);
+  assert.deepEqual(notices, []);
+});
+
+test('undo cancels an in-flight connection without adding it to history', async (t) => {
+  const { requests, edits, drop } = await setup(t);
+  await drop('A', 'B');
+  await act(async () => requests[0].resolve(changedSvg));
+  await drop('B', 'C');
+  await act(async () => document.querySelector<HTMLButtonElement>('button[title^="Undo"]')?.click());
+  const snapshot = edits[0];
+  await act(async () => requests[1].resolve(newestSvg));
+  assert.deepEqual(edits, [snapshot, initialCode]);
+  await act(async () => document.querySelector<HTMLButtonElement>('button[title^="Redo"]')?.click());
+  assert.deepEqual(edits, [snapshot, initialCode, snapshot]);
 });
 
 test('canceled and self-target drops leave no edit or camera request', async (t) => {

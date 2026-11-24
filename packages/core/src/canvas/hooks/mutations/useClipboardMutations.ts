@@ -22,14 +22,15 @@ export function useClipboardMutations({
     (nodeIds: Iterable<string>) => {
       applyMutation((currentAst) => {
         const result = m.duplicateNodes(currentAst, nodeIds);
-        if (result.nodeIds.length > 0) {
+        if (result.nodeIds.length === 0) return;
+        return () => {
           const newSet = new Set(result.nodeIds);
           const newEdges = new Set(result.edgeIds);
           useCanvasStore.getState().setSelectedNodeIds(newSet);
           useCanvasStore.getState().setSelectedEdgeIds(newEdges);
           updateSelectedNodeHalo(newSet);
           updateSelectedEdgeHalo(newEdges);
-        }
+        };
       });
     },
     [m, applyMutation, updateSelectedNodeHalo, updateSelectedEdgeHalo]

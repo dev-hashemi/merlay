@@ -80,6 +80,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     getLocalPoint,
     pinNodeForCamera,
     pinConnectionForCamera,
+    cameraRevision,
     stabilizeCamera,
     handleWheel,
     handleFitView,
@@ -115,6 +116,8 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     code,
     setCode,
     onCodeChange,
+    host,
+    cameraRevision,
     pushHistoryState: history.pushState,
     diagramType,
     pinNodeForCamera,
@@ -246,6 +249,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     redoHistory: history.redo,
     resetHistory: history.reset,
     setSyntaxError: mutations.setSyntaxError,
+    cancelVisualEdits: astHook.cancelVisualEdits,
     updateSelectedNodeHalo: selection.updateSelectedNodeHalo,
     updateSelectedEdgeHalo: selection.updateSelectedEdgeHalo,
     svgMountRef,
@@ -366,6 +370,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
     handleStartEditingNode,
     stabilizeCamera,
     pendingConnectionCue: astHook.pendingConnectionCue,
+    validatedRender: astHook.validatedRender,
     setSyntaxError: mutations.setSyntaxError,
     onInitialRender: handleFitView,
   });
@@ -598,7 +603,9 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
       </div>
 
       {/* Diagram Affordance Guide (polymorphic per driver) */}
-      {isEditable && driver.canvasHint && (
+      {astHook.isValidating ? (
+        <div className="mermaid-canvas-hint-bar nodrag" role="status">Checking visual edit…</div>
+      ) : isEditable && driver.canvasHint && (
         <div className="mermaid-canvas-hint-bar nodrag">
           <span>
             💡 <strong>Tip:</strong>{' '}
@@ -623,6 +630,7 @@ export const NativeMermaidView: React.FC<NativeMermaidViewProps> = ({
         onClose={() => setShowCodeDrawer(false)}
         onChangeCode={(newCode) => {
           if (!isEditable) return;
+          astHook.cancelVisualEdits();
           setCode(newCode);
           onCodeChange(newCode);
         }}

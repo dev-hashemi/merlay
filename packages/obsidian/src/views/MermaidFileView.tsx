@@ -52,6 +52,7 @@ export class MermaidFileView extends TextFileView {
 
     this.root.render(
       <NativeMermaidView
+        key={this.file?.path}
         host={getObsidianHost(this.app)}
         initialCode={this.currentData}
         onCodeChange={(newCode) => {

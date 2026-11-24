@@ -55,7 +55,7 @@ export interface PopoverPos {
 export interface NativeMermaidViewProps {
   host: HostAdapter;
   initialCode: string;
-  onCodeChange: (newCode: string) => void;
+  onCodeChange: (newCode: string, visualEditBase?: string) => void;
   onClose?: () => void;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;

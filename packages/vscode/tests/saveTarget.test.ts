@@ -6,7 +6,7 @@ import { loadHost } from '../../core/tests/helpers/loadHost';
 
 const code = 'flowchart LR\nA-->B';
 const block = `\`\`\`mermaid\n${code}\n\`\`\``;
-type Message = { type: string; code?: string };
+type Message = { type: string; code?: string; baseCode?: string; bindingId?: number };
 type Listener = (message: Message) => void;
 type SelectionListener = (event: {
   textEditor: { document: { languageId: string } };
@@ -18,6 +18,7 @@ async function open(documentText: string, line: number, standalone = false) {
   let text = documentText;
   let version = 0;
   let onMessage: Listener = () => {};
+  let activeBindingId: number | undefined;
   let onDocumentChange: () => void = () => {};
   let onDispose: () => void = () => {};
   let onSelection: SelectionListener = () => {};
@@ -45,7 +46,10 @@ async function open(documentText: string, line: number, standalone = false) {
     webview: {
       asWebviewUri: () => '',
       onDidReceiveMessage(listener: Listener) { onMessage = listener; return disposable; },
-      postMessage(message: Message) { messages.push(message); },
+      postMessage(message: Message) {
+        if (message.bindingId !== undefined) activeBindingId = message.bindingId;
+        messages.push(message);
+      },
     },
     onDidDispose(listener: () => void) { onDispose = listener; },
     reveal() {},
@@ -105,9 +109,13 @@ async function open(documentText: string, line: number, standalone = false) {
     module.activate({ extensionUri: uri, subscriptions: [] } as never);
     await editFence(uri.toString(), line);
   }
+  onMessage({ type: 'merlay/ready' });
+  messages.length = 0;
   const flush = () => new Promise<void>((done) => setImmediate(done));
   return {
-    send: (code: string) => onMessage({ type: 'merlay/codeChange', code }),
+    send: (code: string) => onMessage({ type: 'merlay/codeChange', code, bindingId: activeBindingId }),
+    sendVisual: (code: string, baseCode: string, bindingId: number | undefined) =>
+      onMessage({ type: 'merlay/codeChange', code, baseCode, bindingId }),
     ready: () => onMessage({ type: 'merlay/ready' }),
     change(value: string) { text = value; version++; onDocumentChange(); },
     get text() { return text; }, get applied() { return applied; }, messages, errors, recoveryDocuments, flush,
@@ -116,6 +124,7 @@ async function open(documentText: string, line: number, standalone = false) {
     close() { onDispose(); },
     select(line: number) { onSelection({ textEditor: { document }, selections: [{ active: { line } }] }); },
     reopen: () => editFence(uri.toString(), line),
+    openFence: (line: number) => editFence(uri.toString(), line),
     get openedPanels() { return openedPanels; },
     blockOpen(value: Promise<void>) { blockedOpen = value; },
   };
@@ -129,6 +138,31 @@ test('VS Code selection changes after closing the visual editor leave it closed'
   assert.equal(session.openedPanels, 1);
   await session.reopen();
   assert.equal(session.openedPanels, 2);
+});
+
+test('VS Code rejects a visual write based on an older version of the diagram', async () => {
+  const session = await open(code, 0, true);
+  session.ready();
+  const bindingId = session.messages.at(-1)?.bindingId;
+  session.change('flowchart LR\nA-->External');
+  session.sendVisual('flowchart LR\nA-->Visual', code, bindingId);
+  await session.flush();
+  assert.equal(session.text, 'flowchart LR\nA-->External');
+  assert.equal(session.applied, 0);
+  assert.equal(session.errors.length, 1);
+});
+
+test('VS Code rejects delayed visual writes after switching to an identical fence', async () => {
+  const text = `${block}\n\n${block}`;
+  const session = await open(text, 0);
+  session.ready();
+  const bindingId = session.messages.at(-1)?.bindingId;
+  await session.openFence(5);
+  session.sendVisual('flowchart LR\nA-->Visual', code, bindingId);
+  await session.flush();
+  assert.equal(session.text, text);
+  assert.equal(session.applied, 0);
+  assert.notEqual(session.messages.at(-1)?.bindingId, bindingId);
 });
 
 test('VS Code selection changes in flight cannot reopen a closed visual editor', async () => {

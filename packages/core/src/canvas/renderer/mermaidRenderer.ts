@@ -26,9 +26,7 @@ export { normalizeSvgDimensions, scrubSvgForMount };
  * the same way innerHTML does — e.g. unclosed <br> inside foreignObject
  * labels — which would fail XML parsing whenever a label wraps.
  */
-export function mountMermaidSvg(mountEl: HTMLElement, svgHtml: string): void {
-  clearElement(mountEl);
-
+export function parseMermaidSvg(svgHtml: string): SVGSVGElement | null {
   let svg: SVGSVGElement | null = null;
   try {
     const doc = new DOMParser().parseFromString(svgHtml, 'text/html');
@@ -47,11 +45,24 @@ export function mountMermaidSvg(mountEl: HTMLElement, svgHtml: string): void {
     }
   }
 
-  if (!svg) return;
+  return svg;
+}
 
+export function mountMermaidSvg(mountEl: HTMLElement, output: string | SVGSVGElement): void {
+  clearElement(mountEl);
+  const svg = typeof output === 'string' ? parseMermaidSvg(output) : output;
+  if (!svg) return;
   scrubSvgForMount(svg);
 
   normalizeSvgDimensions(svg);
 
   mountEl.append(document.importNode(svg, true));
+}
+
+export function requireDiagramSvg(output: string): SVGSVGElement {
+  const svg = parseMermaidSvg(output);
+  if (!svg || (svg.querySelector('.error-icon') && svg.querySelector('.error-text'))) {
+    throw new Error('The renderer did not return a diagram.');
+  }
+  return svg;
 }

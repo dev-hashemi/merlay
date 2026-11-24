@@ -4,16 +4,32 @@
  * shared view-model, and applies mutations through driver.clone/serialize.
  */
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useLayoutEffect, useRef } from 'react';
 import { MermaidEdgeDef, MermaidNodeDef, MermaidSubgraphDef } from '../../../diagrams/viewModel';
 import { ConnectionContext, SupportedDiagramType } from '../../../diagrams/types';
 import { getDriverOrDefault } from '../../../diagrams/registry';
 import type { ConnectionCameraTarget, ConnectionCue } from '../../types';
+import type { HostAdapter } from '../../../platform/types';
+import { requireDiagramSvg } from '../../renderer/mermaidRenderer';
+
+type VisualEdit = {
+  mutate: (ast: unknown) => string | null | void | (() => void);
+  cameraTarget?: string | ConnectionCameraTarget;
+  cameraRevision: number;
+};
+
+export interface ValidatedDiagramRender {
+  code: string;
+  svg: SVGSVGElement;
+  onMounted: () => void;
+}
 
 export interface UseDiagramAstOptions {
   code: string;
   setCode: (code: string) => void;
-  onCodeChange: (code: string) => void;
+  onCodeChange: (code: string, baseCode: string) => void;
+  host: HostAdapter;
+  cameraRevision: { current: number };
   pushHistoryState: (code: string) => void;
   diagramType: SupportedDiagramType;
   pinNodeForCamera: (nodeId: string) => void;
@@ -24,6 +40,8 @@ export function useDiagramAst({
   code,
   setCode,
   onCodeChange,
+  host,
+  cameraRevision,
   pushHistoryState,
   diagramType,
   pinNodeForCamera,
@@ -38,87 +56,151 @@ export function useDiagramAst({
     try {
       return driver.parse(code);
     } catch {
-      return driver.createEmpty();
+      return null;
     }
   });
 
   const [syntaxError, setSyntaxError] = useState<string | null>(null);
-  const lastEmittedCodeRef = useRef<string>(code);
+  const committed = useRef({ code, ast });
   const pendingConnectionCue = useRef<ConnectionCue | null>(null);
+  const validatedRender = useRef<ValidatedDiagramRender | null>(null);
+  const queue = useRef<{ edits: VisualEdit[]; running: boolean }>({ edits: [], running: false });
+  const [isValidating, setIsValidating] = useState(false);
 
-  useEffect(() => {
-    if (code === lastEmittedCodeRef.current) return;
-    lastEmittedCodeRef.current = code;
+  const cancelVisualEdits = useCallback(() => {
+    queue.current = { edits: [], running: false };
+    pendingConnectionCue.current = null;
+    validatedRender.current = null;
+    setIsValidating(false);
+  }, []);
+
+  useLayoutEffect(() => () => {
+    queue.current = { edits: [], running: false };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (code === committed.current.code) return;
+    cancelVisualEdits();
     try {
-      setAst(driver.parse(code));
+      const parsed = driver.parse(code);
+      committed.current = { code, ast: parsed };
+      setAst(parsed);
       setSyntaxError(null);
     } catch (err: unknown) {
+      committed.current = { code, ast: null };
       setSyntaxError(err instanceof Error ? err.message : 'Syntax Error');
     }
-  }, [code, driver]);
+  }, [code, driver, cancelVisualEdits]);
+
+  const canvasAst = useMemo(() => ast ?? driver.createEmpty(), [ast, driver]);
 
   // Projected view-model for the canvas overlays (read-only)
   const projection = useMemo(() => {
     try {
-      return driver.project(ast);
+      return driver.project(canvasAst);
     } catch {
       return driver.project(driver.createEmpty());
     }
-  }, [driver, ast]);
+  }, [driver, canvasAst]);
 
   const displayNodes: Map<string, MermaidNodeDef> = projection.nodes;
   const displayEdges: MermaidEdgeDef[] = projection.edges;
   const displaySubgraphs: Map<string, MermaidSubgraphDef> = projection.subgraphs;
   const displayDirection = projection.direction || 'LR';
 
-  // Apply a mutation: clone the committed AST, mutate the clone, serialize
-  // and emit. Never mutates the current AST in place.
-  const commitMutation = useCallback(
-    (mutator: (currentAst: unknown) => unknown, cameraTarget?: string | ConnectionCameraTarget) => {
-      try {
-        const next = driver.clone(ast);
-        const result = mutator(next);
-        const connection = typeof cameraTarget === 'object' ? cameraTarget : null;
-        if (connection && typeof result !== 'string') return;
-        const edgeOrder = connection ? [] : undefined;
-        const serialized = driver.serialize(next, edgeOrder);
-        if (typeof cameraTarget === 'string') {
-          pinNodeForCamera(cameraTarget);
-        } else if (connection && typeof result === 'string') {
-          if (serialized === code) return;
-          pinConnectionForCamera(serialized, connection);
-          pendingConnectionCue.current = {
-            code: serialized, edgeId: result, edgeOrder: edgeOrder?.length ? edgeOrder : undefined,
+  const enqueueEdit = useCallback(
+    (edit: Omit<VisualEdit, 'cameraRevision'>) => {
+      const work = queue.current;
+      work.edits.push({ ...edit, cameraRevision: cameraRevision.current });
+      if (work.running) return;
+      work.running = true;
+      setIsValidating(true);
+
+      const runNext = async (): Promise<void> => {
+        while (work === queue.current) {
+          const request = work.edits.shift();
+          if (!request) {
+            work.running = false;
+            setIsValidating(false);
+            return;
+          }
+          const base = committed.current;
+          const { cameraTarget } = request;
+          const connection = typeof cameraTarget === 'object' ? cameraTarget : null;
+          const edgeOrder: string[] | undefined = connection ? [] : undefined;
+          let candidate: {
+            ast: unknown;
+            code: string;
+            result: ReturnType<VisualEdit['mutate']>;
+            svg: SVGSVGElement;
           };
+          try {
+            if (base.ast === null) throw new Error('Cannot edit this diagram visually.');
+            const nextAst = driver.clone(base.ast);
+            const result = request.mutate(nextAst);
+            if (connection && typeof result !== 'string') continue;
+            const nextCode = driver.serialize(nextAst, edgeOrder);
+            if (nextCode === base.code || nextCode === driver.serialize(base.ast)) continue;
+            const svg = requireDiagramSvg(await host.renderMermaid(nextCode));
+            candidate = { ast: nextAst, code: nextCode, result, svg };
+          } catch {
+            if (work === queue.current) {
+              host.notify('Visual edit could not be saved. The diagram source was kept.');
+            }
+            continue;
+          }
+          if (work !== queue.current) return;
+
+          const { code: nextCode, result } = candidate;
+          if (request.cameraRevision === cameraRevision.current) {
+            if (typeof cameraTarget === 'string') pinNodeForCamera(cameraTarget);
+            if (connection) pinConnectionForCamera(nextCode, connection);
+          }
+          pendingConnectionCue.current = connection && typeof result === 'string'
+            ? { code: nextCode, edgeId: result, edgeOrder: edgeOrder?.length ? edgeOrder : undefined }
+            : null;
+          validatedRender.current = {
+            code: nextCode,
+            svg: candidate.svg,
+            // Mount each edit before measuring the canvas for the next camera correction.
+            onMounted: () => { void runNext(); },
+          };
+          committed.current = { code: nextCode, ast: candidate.ast };
+          pushHistoryState(nextCode);
+          setCode(nextCode);
+          setAst(candidate.ast);
+          setSyntaxError(null);
+          onCodeChange(nextCode, base.code);
+          if (typeof result === 'function') result();
+          return;
         }
-        if (!connection && serialized !== code) pendingConnectionCue.current = null;
-        lastEmittedCodeRef.current = serialized;
-        pushHistoryState(serialized);
-        setCode(serialized);
-        setAst(next);
-        setSyntaxError(null);
-        onCodeChange(serialized);
-      } catch (err: unknown) {
-        console.error('AST Mutation Error:', err);
-      }
+      };
+      void runNext();
     },
-    [ast, code, driver, pinNodeForCamera, pinConnectionForCamera, pushHistoryState, setCode, onCodeChange]
+    [cameraRevision, driver, host, pinNodeForCamera, pinConnectionForCamera, pushHistoryState, setCode, onCodeChange]
   );
   const applyMutation = useCallback(
-    (mutator: (currentAst: unknown) => void, keepNodeId?: string) => commitMutation(mutator, keepNodeId),
-    [commitMutation]
+    (mutate: (currentAst: unknown) => void | (() => void), cameraTarget?: string) =>
+      enqueueEdit({ mutate, cameraTarget }),
+    [enqueueEdit]
   );
   const applyDragConnection = useCallback(
     (endpoints: ConnectionCameraTarget, context: ConnectionContext) =>
-      commitMutation((next) => driver.mutations.connect(next, endpoints.sourceId, endpoints.targetId, context), endpoints),
-    [commitMutation, driver]
+      enqueueEdit({
+        mutate: (next) => driver.mutations.connect(next, endpoints.sourceId, endpoints.targetId, context),
+        cameraTarget: endpoints,
+      }),
+    [enqueueEdit, driver]
   );
 
   return {
     driver,
     applyDragConnection,
     pendingConnectionCue,
-    ast,
+    validatedRender,
+    cancelVisualEdits,
+    isValidating,
+    ast: canvasAst,
     syntaxError,
     setSyntaxError,
     displayNodes,

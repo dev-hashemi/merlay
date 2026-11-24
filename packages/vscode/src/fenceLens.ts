@@ -50,7 +50,7 @@ interface ActiveFenceSession {
   documentUri: string;
   startLine: number;
   anchor: FenceAnchor;
-  wiring: vscode.Disposable;
+  wiring: ReturnType<typeof attachVisualPanel>;
 }
 
 let activeSession: ActiveFenceSession | null = null;
@@ -137,7 +137,7 @@ export async function openFenceEditor(
       activeSession.startLine = fence.startLine;
       activeSession.anchor = anchor;
       activeSession.wiring = wirePanel(panel);
-      void panel.webview.postMessage({ type: 'merlay/update', code: fence.code });
+      activeSession.wiring.publishSource();
     }
     return;
   }

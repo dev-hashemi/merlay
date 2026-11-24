@@ -188,15 +188,15 @@ export function useSubgraphMutations({ astHook }: UseSubgraphMutationsOptions) {
 
   const handleSproutFromSubgraph = useCallback(
     (subId: string) => {
-      let createdChildId: string | null = null;
       applyMutation((a) => {
-        createdChildId = m.addChildNode(a, subId, driver.labels.addChild);
+        const createdChildId = m.addChildNode(a, subId, driver.labels.addChild);
+        if (!createdChildId) return;
+        return () => {
+          useCanvasStore.getState().setSelectedNodeIds(new Set([createdChildId]));
+          useCanvasStore.getState().setSelectedSubgraphId(null);
+          useCanvasStore.getState().setSelectedSubgraphRect(null);
+        };
       }, subId);
-      if (createdChildId) {
-        useCanvasStore.getState().setSelectedNodeIds(new Set([createdChildId]));
-        useCanvasStore.getState().setSelectedSubgraphId(null);
-        useCanvasStore.getState().setSelectedSubgraphRect(null);
-      }
     },
     [m, driver, applyMutation]
   );

@@ -49,7 +49,7 @@ export interface UseCanvasMouseInteractionsOptions {
   driver: DiagramDriver;
   /** Committed AST, for driver legality predicates (e.g. canConnect). Read-only. */
   ast: unknown;
-  applyMutation: (mutator: (currentAst: unknown) => void, keepNodeId?: string) => void;
+  applyMutation: (mutator: (currentAst: unknown) => void | (() => void), keepNodeId?: string) => void;
   applyDragConnection: (endpoints: ConnectionCameraTarget, context: ConnectionContext) => void;
   setSelectedNodeId: (id: string | null) => void;
 }
@@ -600,11 +600,10 @@ export function useCanvasMouseInteractions({
           y: connectionY,
         });
       } else if (targetEdgeId) {
-        let createdNodeId: string | null = null;
         applyMutation((a) => {
-          createdNodeId = m.insertNodeOnEdge(a, targetEdgeId, `New ${driver.labels.node}`);
-        });
-        if (createdNodeId) setSelectedNodeId(createdNodeId);
+          const createdNodeId = m.insertNodeOnEdge(a, targetEdgeId, `New ${driver.labels.node}`);
+          if (createdNodeId) return () => setSelectedNodeId(createdNodeId);
+        }, cSourceId);
       }
 
       store.setConnecting(null, null, null);

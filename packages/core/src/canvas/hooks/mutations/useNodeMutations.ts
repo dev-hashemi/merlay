@@ -34,7 +34,6 @@ export function useNodeMutations({
 
   const handleSproutNextStep = useCallback(
     (parentId: string) => {
-      let createdChildId: string | null = null;
       // Reuse the last applied shape when the driver offers it, so users
       // building e.g. a document flow don't re-pick the shape every sprout.
       const lastKind = useCanvasStore.getState().lastNodeKind;
@@ -43,14 +42,12 @@ export function useNodeMutations({
           ? lastKind
           : undefined;
       applyMutation((currentAst) => {
-        createdChildId = m.addChildNode(currentAst, parentId, driver.labels.addChild);
+        const createdChildId = m.addChildNode(currentAst, parentId, driver.labels.addChild);
         if (reuseKind && createdChildId) {
           m.updateNodesKind(currentAst, [createdChildId], reuseKind);
         }
+        if (createdChildId) return () => setSelectedNodeId(createdChildId);
       }, parentId);
-      if (createdChildId) {
-        setSelectedNodeId(createdChildId);
-      }
     },
     [m, driver, applyMutation, setSelectedNodeId]
   );
@@ -117,13 +114,10 @@ export function useNodeMutations({
   );
 
   const handleAddStandaloneStep = useCallback(() => {
-    let createdNodeId: string | null = null;
     applyMutation((a) => {
-      createdNodeId = m.addNode(a, `New ${driver.labels.node}`);
+      const createdNodeId = m.addNode(a, `New ${driver.labels.node}`);
+      if (createdNodeId) return () => setSelectedNodeId(createdNodeId);
     });
-    if (createdNodeId) {
-      setSelectedNodeId(createdNodeId);
-    }
   }, [m, driver, applyMutation, setSelectedNodeId]);
 
   const handleSetNodeMembers = useCallback(
@@ -168,12 +162,10 @@ export function useNodeMutations({
 
   const handleToggleDirection = useCallback(() => {
     if (!driver.capabilities.supportsDirection) return;
-    const currentDir = m.getDirection(ast) || 'TD';
-    const nextDir = currentDir === 'LR' ? 'TD' : 'LR';
     applyMutation((a) => {
-      m.setDirection(a, nextDir);
+      m.setDirection(a, m.getDirection(a) === 'LR' ? 'TD' : 'LR');
     });
-  }, [driver, m, ast, applyMutation]);
+  }, [driver, m, applyMutation]);
 
   const currentTheme = useMemo(() => {
     return m.getTheme ? m.getTheme(ast) : undefined;
@@ -190,30 +182,22 @@ export function useNodeMutations({
 
   const handleAddStartState = useCallback(
     (compositeId?: string) => {
-      if (!anchors) return null;
-      let createdId: string | null = null;
+      if (!anchors) return;
       applyMutation((a) => {
-        createdId = anchors.add(a, 'start', compositeId);
+        const createdId = anchors.add(a, 'start', compositeId);
+        if (createdId) return () => setSelectedNodeId(createdId);
       });
-      if (createdId) {
-        setSelectedNodeId(createdId);
-      }
-      return createdId;
     },
     [anchors, applyMutation, setSelectedNodeId]
   );
 
   const handleAddEndState = useCallback(
     (compositeId?: string) => {
-      if (!anchors) return null;
-      let createdId: string | null = null;
+      if (!anchors) return;
       applyMutation((a) => {
-        createdId = anchors.add(a, 'end', compositeId);
+        const createdId = anchors.add(a, 'end', compositeId);
+        if (createdId) return () => setSelectedNodeId(createdId);
       });
-      if (createdId) {
-        setSelectedNodeId(createdId);
-      }
-      return createdId;
     },
     [anchors, applyMutation, setSelectedNodeId]
   );
@@ -255,11 +239,10 @@ export function useNodeMutations({
   const isAutonumbered = m.isAutonumbered ? m.isAutonumbered(ast) : false;
   const handleToggleAutonumber = useCallback(() => {
     if (!m.setAutonumbered || !m.isAutonumbered) return;
-    const current = m.isAutonumbered(ast);
     applyMutation((a) => {
-      m.setAutonumbered?.(a, !current);
+      m.setAutonumbered?.(a, !m.isAutonumbered?.(a));
     });
-  }, [m, ast, applyMutation]);
+  }, [m, applyMutation]);
 
   const diagramTitle = m.getTitle ? m.getTitle(ast) : undefined;
   const handleSetDiagramTitle = useCallback(

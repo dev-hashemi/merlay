@@ -31,11 +31,13 @@ export function useEdgeMutations({
       if (!selectedEdgeId || !m.updateEdgeType) return;
       applyMutation((a) => {
         m.updateEdgeType!(a, selectedEdgeId, newType, length);
+        return () => {
+          const { selectedEdgeIds, selectedEdgePos } = useCanvasStore.getState();
+          if (selectedEdgePos && selectedEdgeIds.has(selectedEdgeId)) {
+            useCanvasStore.getState().setSelectedEdgePos({ ...selectedEdgePos, arrowType: newType as ArrowType });
+          }
+        };
       });
-      const pos = useCanvasStore.getState().selectedEdgePos;
-      if (pos) {
-        useCanvasStore.getState().setSelectedEdgePos({ ...pos, arrowType: newType as ArrowType });
-      }
     },
     [m, applyMutation]
   );
@@ -44,48 +46,42 @@ export function useEdgeMutations({
     (length: number) => {
       const selectedEdgeId = getSelectedEdgeId();
       if (!selectedEdgeId || !m.updateEdgeType) return;
-      const pos = useCanvasStore.getState().selectedEdgePos;
-      const currentType = pos?.arrowType || 'arrow';
       applyMutation((a) => {
-        m.updateEdgeType!(a, selectedEdgeId, currentType, length);
+        const edge = driver.project(a).edges.find((item) => item.id === selectedEdgeId);
+        if (edge) m.updateEdgeType!(a, selectedEdgeId, edge.arrowType, length);
       });
     },
-    [m, applyMutation]
+    [m, driver, applyMutation]
   );
 
   const handleReverseEdge = useCallback(() => {
     const selectedEdgeId = getSelectedEdgeId();
     if (!selectedEdgeId) return;
-    let newEdgeId: string | null = null;
     applyMutation((a) => {
-      newEdgeId = m.reverseEdge(a, selectedEdgeId);
+      const newEdgeId = m.reverseEdge(a, selectedEdgeId);
+      if (!newEdgeId) return;
+      return () => {
+        setSelectedEdgeId(newEdgeId);
+        const pos = useCanvasStore.getState().selectedEdgePos;
+        if (pos) useCanvasStore.getState().setSelectedEdgePos({ ...pos, from: pos.to, to: pos.from });
+      };
     });
-    if (newEdgeId) {
-      setSelectedEdgeId(newEdgeId);
-      const pos = useCanvasStore.getState().selectedEdgePos;
-      if (pos) {
-        useCanvasStore.getState().setSelectedEdgePos({
-          ...pos,
-          from: pos.to,
-          to: pos.from,
-        });
-      }
-    }
   }, [m, applyMutation, setSelectedEdgeId]);
 
   const handleInsertNodeOnEdge = useCallback(
     (edgeId: string) => {
-      let createdNodeId: string | null = null;
+      const from = driver.project(ast).edges.find((edge) => edge.id === edgeId)?.from;
       applyMutation((a) => {
-        createdNodeId = m.insertNodeOnEdge(a, edgeId, `New ${driver.labels.node}`);
-      });
-      setSelectedEdgeId(null);
-      useCanvasStore.getState().setSelectedEdgePos(null);
-      if (createdNodeId) {
-        setSelectedNodeId(createdNodeId);
-      }
+        const createdNodeId = m.insertNodeOnEdge(a, edgeId, `New ${driver.labels.node}`);
+        if (!createdNodeId) return;
+        return () => {
+          setSelectedEdgeId(null);
+          useCanvasStore.getState().setSelectedEdgePos(null);
+          setSelectedNodeId(createdNodeId);
+        };
+      }, from);
     },
-    [m, driver, applyMutation, setSelectedEdgeId, setSelectedNodeId]
+    [m, driver, ast, applyMutation, setSelectedEdgeId, setSelectedNodeId]
   );
 
   const handleDeleteSelectedEdge = useCallback(() => {
@@ -106,11 +102,13 @@ export function useEdgeMutations({
       if (!selectedEdgeId) return;
       applyMutation((a) => {
         m.updateEdgeLabel(a, selectedEdgeId, newLabel);
+        return () => {
+          const { selectedEdgeIds, selectedEdgePos } = useCanvasStore.getState();
+          if (selectedEdgePos && selectedEdgeIds.has(selectedEdgeId)) {
+            useCanvasStore.getState().setSelectedEdgePos({ ...selectedEdgePos, label: newLabel });
+          }
+        };
       });
-      const pos = useCanvasStore.getState().selectedEdgePos;
-      if (pos) {
-        useCanvasStore.getState().setSelectedEdgePos({ ...pos, label: newLabel });
-      }
     },
     [m, applyMutation]
   );

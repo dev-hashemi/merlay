@@ -14,6 +14,7 @@ import { setupSvgInteractivity } from '../interaction/setupSvgInteractivity';
 import { setupViewOnlyInteractivity } from '../interaction/setupViewOnlyInteractivity';
 import { useCanvasStore } from '../store/canvasStore';
 import { createRendererSelectionHandlers } from './renderer/rendererSelectionHandlers';
+import type { ValidatedDiagramRender } from './mutations/useDiagramAst';
 
 export interface UseCanvasRendererOptions {
   renderMermaid: RenderMermaidFn;
@@ -36,6 +37,7 @@ export interface UseCanvasRendererOptions {
   handleStartEditingNode: (nodeId: string, el: Element) => void;
   stabilizeCamera: (code: string, success?: boolean) => void;
   pendingConnectionCue: React.MutableRefObject<ConnectionCue | null>;
+  validatedRender: React.MutableRefObject<ValidatedDiagramRender | null>;
   setSyntaxError: (err: string | null) => void;
   onInitialRender?: () => void;
 }
@@ -57,6 +59,7 @@ export function useCanvasRenderer({
   handleStartEditingNode,
   stabilizeCamera,
   pendingConnectionCue,
+  validatedRender,
   setSyntaxError,
   onInitialRender,
 }: UseCanvasRendererOptions) {
@@ -241,7 +244,9 @@ export function useCanvasRenderer({
     let connectionHalo: SVGElement | null = null;
     let cueTimeout: number | undefined;
 
-    renderMermaid(code)
+    const validated = validatedRender.current?.code === code ? validatedRender.current : null;
+    const output = validated ? Promise.resolve(validated.svg) : renderMermaid(code);
+    output
       .then((svgHtml) => {
         if (ticket !== renderTicketRef.current || code !== committedCodeRef.current) return;
         // Parsed as XML and adopted into the DOM (no innerHTML), preserving
@@ -296,6 +301,12 @@ export function useCanvasRenderer({
         stabilizeRef.current(code, false);
         console.error('Mermaid render error:', err);
         setSyntaxError(err instanceof Error ? err.message : 'Diagram syntax error');
+      })
+      .finally(() => {
+        if (validated && ticket === renderTicketRef.current && validated === validatedRender.current) {
+          validatedRender.current = null;
+          validated.onMounted();
+        }
       });
 
     return () => {
@@ -307,5 +318,5 @@ export function useCanvasRenderer({
       // unmounted or re-rendered view.
       renderTicketRef.current++;
     };
-  }, [code, renderMermaid, setSyntaxError, svgMountRef, displayNodes, displayEdges, displaySubgraphs, pendingConnectionCue]);
+  }, [code, renderMermaid, setSyntaxError, svgMountRef, displayNodes, displayEdges, displaySubgraphs, pendingConnectionCue, validatedRender]);
 }
