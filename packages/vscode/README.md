@@ -14,8 +14,6 @@ clean Mermaid code writes itself.
 - **Markdown fences** — a ✨ Edit visually lens above every ` ```mermaid `
   block opens the visual editor for that block; edits write straight back
   into the fence.
-- **Flowchart, state, sequence, mindmap & class diagrams** — each type gets its own
-  tailored controls for its elements and relationships.
 - **Diagram themes** — Auto plus Default, Dark, Forest, Neutral and Base presets,
   stored as Mermaid frontmatter.
 - **Syntax drawer** — a slide-out panel shows the live Mermaid source for
@@ -25,6 +23,18 @@ clean Mermaid code writes itself.
 - **Clean output, no lock-in** — edits serialize to 100% standard Mermaid.
   No metadata, no proprietary format. The code is always the source of truth:
   typing, VS Code undo, and formatters sync live into the open editor.
+
+## Supported diagrams
+
+Merlay provides visual editing for five Mermaid diagram types:
+
+- **Flowcharts** (`flowchart`, `graph`)
+- **State diagrams** (`stateDiagram-v2`)
+- **Sequence diagrams** (`sequenceDiagram`)
+- **Mindmaps** (`mindmap`)
+- **Class diagrams** (`classDiagram`)
+
+Other diagram types supported by the bundled Mermaid renderer open in view-only mode with pan and zoom.
 
 ## Usage
 

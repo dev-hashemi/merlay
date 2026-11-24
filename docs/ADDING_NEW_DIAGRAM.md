@@ -1,6 +1,6 @@
 # Mermaid Diagram Expansion Playbook & Architecture Procedure
 
-This document defines the standardized, 5-phase engineering and product procedure for introducing support for any new Mermaid diagram type (e.g. Class, Entity-Relationship, Mindmap, Sequence, Git Graph, Gantt, Timeline, Architecture) into **Merlay (`merlay`)**.
+Merlay supports visual editing for flowcharts, state diagrams, sequence diagrams, mindmaps, and class diagrams. This playbook covers how to add visual editing for another Mermaid diagram type, such as entity-relationship diagrams, Gantt charts, or timelines.
 
 It is designed to be directly actionable by human developers and autonomous AI coding assistants, guaranteeing zero regressions, strict round-trip syntax fidelity, and UX coherence across the entire app.
 
@@ -348,9 +348,9 @@ npm run build
 When instructing an AI coding assistant to add a new diagram type, use the following standardized prompt template:
 
 ```markdown
-You are tasked with adding support for the Mermaid `<DIAGRAM_TYPE>` diagram (e.g. Class Diagram, ER Diagram, Mindmap) to Merlay.
+You are tasked with adding visual editing support for the Mermaid `<DIAGRAM_TYPE>` diagram (e.g. ER Diagram, Gantt Chart, Timeline) to Merlay.
 
-Follow the procedure defined in `new_diagram_playbook.md` and `ARCHITECTURE.md`.
+Follow the procedure defined in `docs/ADDING_NEW_DIAGRAM.md` and `ARCHITECTURE.md`.
 
 ### Execution Scope & Instructions:
 1. **Analyze Rules & Grammar**:

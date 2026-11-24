@@ -49,7 +49,7 @@ packages/
 │   │   │   ├── common/           # Shared plumbing across all diagram types
 │   │   │   │   ├── diagramHeader.ts # splitFrontmatter, emitFrontmatter, theme helpers, unique ID generation
 │   │   │   │   └── index.ts      # Barrel export
-│   │   │   └── <diagramPackage>/ # Pluggable diagram packages (e.g. flowchart, state, sequence, mindmap, ...)
+│   │   │   └── <diagramPackage>/ # Editable drivers: flowchart, state, sequence, mindmap, class
 │   │   │       ├── types.ts      # Diagram AST definitions & domain-specific tokens
 │   │   │       ├── lexer.ts      # Tokenizer for diagram syntax
 │   │   │       ├── parser.ts     # Code -> AST parser (uses splitFrontmatter from common/)
